@@ -1,0 +1,17 @@
+{
+  "name": "@eighty4/sidelines-root",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "github"
+  ],
+  "dependencies": {
+    "@eighty4/sidelines-github": "workspace:^",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.2",
+    "@types/node": "^22.13.4",
+    "@types/react-dom": "^19.0.3"
+  }
+}
