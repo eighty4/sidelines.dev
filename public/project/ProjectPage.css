@@ -1,0 +1,45 @@
+#project {
+    background: rgb(26, 26, 36);
+    color: #eee;
+
+    & #project-workspace {
+        --file-ls-width: calc(max(20vw, 250px));
+        --file-editor-width: calc(100vw - var(--file-ls-width));
+        display: flex;
+        flex-direction: row;
+
+        & #project-files {
+            height: 100vh;
+            width: var(--file-ls-width);
+
+            .file-explorer-header {
+                background: rgb(22, 22, 25);
+                letter-spacing: .01rem;
+                font-size: .7rem;
+                font-weight: 500;
+                text-transform: uppercase;
+                padding: .4rem 1rem;
+                user-select: none;
+            }
+
+            & .file {
+                padding: .2rem 1rem;
+                font-size: .85rem;
+                user-select: none;
+                cursor: pointer;
+
+                &.open {
+                    background: rgb(46, 46, 62);
+                }
+            }
+        }
+
+        & #editor-pane {
+            width: var(--file-editor-width);
+
+            & #editor-status-bar {
+                height: 1rem;
+            }
+        }
+    }
+}

@@ -1,17 +1,23 @@
-import { useEffect, useState } from 'react'
+import { doesNotesRepoExist, getAppInstallation, getAppInstallationConfigureUrl, getAppUrl, getUserLogin } from '@eighty4/sidelines-github'
+import { useEffect, useState, type FC } from 'react'
 import { createRoot } from 'react-dom/client'
-import { doesNotesRepoExist, getAppInstallation, getAppUrl, getAppInstallationConfigureUrl } from '@eighty4/sidelines-github'
+import { ghLoginCache, readGhTokenCookie } from '../storage.ts'
 import { ChooseProject } from './ChooseProject.tsx'
 import { MakeNotesRepo } from './MakeNotesRepo.tsx'
-import { getCookie } from '../../cookie.ts'
 
 type AppState = 'loading' | 'api-error' | 'not-installed' | 'not-all-repos' | 'no-notes-repo' | 'all-good'
 
-const ConfigurePage = () => {
-  const ghToken = getCookie(document.cookie, 'ght')!
+interface ConfigurePageProps {
+  ghToken: string
+}
+
+// todo provide alternatives to repositorySelection === all
+//  `gh repo create --template eighty4/.sidelines.templates` with .sidelines as an installed repository
+const ConfigurePage: FC<ConfigurePageProps> = ({ ghToken }) => {
   const [installationId, setInstallationId] = useState<number | undefined>()
   const [appState, setAppState] = useState<AppState>('loading')
   useEffect(() => {
+    // todo hard-coded value should be a build env variable or globalThis
     getAppInstallation(ghToken, 1144785)
       .then(async installation => {
         if (!installation) {
@@ -52,6 +58,13 @@ const ConfigurePage = () => {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  createRoot(document.getElementById("root")!).render(<ConfigurePage />)
+document.addEventListener('DOMContentLoaded', async () => {
+  const ghToken = readGhTokenCookie()
+  try {
+    await ghLoginCache.readThrough(() => getUserLogin(ghToken))
+  } catch (e) {
+    // todo redirect 401 to /login
+    console.error(e)
+  }
+  createRoot(document.getElementById("root")!).render(<ConfigurePage ghToken={ghToken} />)
 })

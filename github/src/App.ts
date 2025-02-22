@@ -36,7 +36,7 @@ export async function getAppInstallation(ghToken: string, appId: number): Promis
         }
       }
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error(e.message)
     throw new Error('wtf')
   }

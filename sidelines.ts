@@ -1,8 +1,8 @@
-import homePage from './public/home.html'
+import { GH_TOKEN, getCookie } from './cookie.ts'
 import configurePage from './public/configure/configure.html'
-import projectPage from './public/project/project.html'
+import homePage from './public/home.html'
 import loginPage from './public/login.html'
-import { getCookie } from './cookie.ts'
+import projectPage from './public/project/project.html'
 
 const server = Bun.serve({
   port: 3000,
@@ -34,20 +34,21 @@ const server = Bun.serve({
 console.log('sidelines.dev is running at http://127.0.0.1:' + server.port)
 
 function logoutRedirect(req: Request): Response {
+  const headers: Record<string, string> = {
+    'Clear-Site-Data': '"storage"',
+    'Location': 'http://127.0.0.1:3000/',
+  }
   const cookie = req.headers.get('cookie')
   if (cookie) {
-    const ghToken = getCookie(cookie, 'ght')
+    const ghToken = getCookie(cookie, GH_TOKEN)
     if (ghToken) {
-      return new Response(null, {
-        status: 302,
-        headers: {
-          'Location': 'http://127.0.0.1:3000/',
-          'Set-Cookie': `ght=${ghToken}; Secure; SameSite=Strict; Path=/; Max-Age=0`,
-        },
-      })
+      headers['Set-Cookie'] = `${GH_TOKEN}=${ghToken}; Secure; SameSite=Strict; Path=/; Max-Age=0`
     }
   }
-  return Response.redirect('http://127.0.0.1:3000', 302)
+  return new Response('Found', {
+    status: 302,
+    headers,
+  })
 }
 
 async function redirectToLogin(req: Request): Promise<Response> {
@@ -88,7 +89,7 @@ async function loginAndRedirectToConfigurePage(url: URL): Promise<Response> {
   }
   try {
     const token = await exchangeAuthorizationCodeForAccessToken(authorizationCode)
-    return new Response(null, {
+    return new Response('Found', {
       status: 302,
       headers: {
         'Location': 'http://127.0.0.1:3000/configure',
@@ -97,7 +98,7 @@ async function loginAndRedirectToConfigurePage(url: URL): Promise<Response> {
     })
   } catch (e) {
     console.error(e)
-    return new Response(null, { status: 500 })
+    return new Response('Internal Server Error', { status: 500 })
   }
 }
 

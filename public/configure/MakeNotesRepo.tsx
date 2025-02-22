@@ -1,6 +1,7 @@
 import { type FC, useState } from 'react'
 import { createNotesRepo } from '@eighty4/sidelines-github'
 import { ConfigureError } from './ConfigureError.tsx'
+import { ghLoginCache } from '../storage.ts'
 
 export interface MakeNotesRepoProps {
   ghToken: string
@@ -14,7 +15,7 @@ export const MakeNotesRepo: FC<MakeNotesRepoProps> = ({ ghToken, onRepoMade }) =
   async function createRepository() {
     setCreating(true)
     try {
-      await createNotesRepo(ghToken)
+      await createNotesRepo(ghToken, ghLoginCache.read()!)
       onRepoMade()
     } catch (e) {
       console.error(e)
