@@ -1,4 +1,6 @@
-export async function getUserLogin(ghToken: string): Promise<string> {
+import { onUnauthorized } from './responses.ts'
+
+export async function getUserLogin(ghToken: string): Promise<string | 'unauthorized'> {
   const query = 'query { viewer { login } }'
   const response = await fetch('https://api.github.com/graphql', {
     method: 'POST',
@@ -8,19 +10,9 @@ export async function getUserLogin(ghToken: string): Promise<string> {
     },
     body: JSON.stringify({ query }),
   })
+  if (response.status === 401) {
+    onUnauthorized()
+  }
   const json = await response.json()
   return json.data.viewer.login
-}
-
-export async function isTokenValid(ghToken: string): Promise<boolean> {
-  const query = 'query { viewer { login } }'
-  const response = await fetch('https://api.github.com/graphql', {
-    method: 'POST',
-    headers: {
-      'Authorization': 'Bearer ' + ghToken,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ query }),
-  })
-  return response.status !== 401
 }

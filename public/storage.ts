@@ -1,7 +1,9 @@
-import { getCookie, GH_TOKEN } from "../cookie.ts"
+import { getCookie, GH_TOKEN } from '../cookie.ts'
 
 export interface SessionCache<T> {
   clear(): void
+
+  expect(): T
 
   hasValue(): boolean
 
@@ -31,6 +33,9 @@ export function createCache(storage: StorageApi, key: string): SessionCache<stri
     clear() {
       storage.removeItem(key)
     },
+    expect() {
+      return this.read()!
+    },
     hasValue() {
       return storage.getItem(key) !== null
     },
@@ -51,6 +56,9 @@ export function createJsonCache<T>(storage: StorageApi, key: string): SessionCac
     clear() {
       storage.removeItem(key)
     },
+    expect() {
+      return this.read()!
+    },
     hasValue() {
       return storage.getItem(key) !== null
     },
@@ -67,9 +75,11 @@ export function createJsonCache<T>(storage: StorageApi, key: string): SessionCac
   }
 }
 
+export const projectHistoryCache = createJsonCache<Array<string>>(localStorage, 'sld.projects.nav.history')
+
 export const ghLoginCache = createCache(localStorage, 'sld.user.gh.login')
 
-export function readGhTokenCookie(): string {
+export function expectGhToken(): string {
   const ghToken = getCookie(document.cookie, GH_TOKEN)
   if (!ghToken) {
     location.assign('/logout')

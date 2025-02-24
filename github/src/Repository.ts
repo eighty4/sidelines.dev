@@ -1,12 +1,29 @@
+import { onUnauthorized } from './responses.ts'
+
 // graphql mutation createCommitOnBranch requires a pre-existing ref
 // so we use a template repo to seed a commit at refs/head/main
 //
-// generating from template does not allow setting homepage
-// so we update that after generating from template to check
-// a repo value before writing to any .sidelines repo
-export async function createNotesRepo(ghToken: string, owner: string) {
+// generating from template does not allow setting homepage url
+// so we update that after generating from template
+//  homepage url is used to check the gh user's .sidelines repo
+//  before any mutations to ensure its meant for sidelines.dev
+export async function createNotesRepo(ghToken: string, owner: string, repo?: string) {
   await generateNotesRepoFromTemplate(ghToken)
   await updateNotesRepoHomepage(ghToken, owner)
+  if (repo) {
+    await new Promise(res => setTimeout(res, 500))
+    await createCommitOnBranch({
+      ghToken,
+      owner,
+      repo: '.sidelines',
+      commitMessage: `add ${owner}/${repo} notes README.md`,
+      branch: await getRepoDefaultBranch(ghToken, '.sidelines'),
+      additions: [{
+        path: repo + '/README.md',
+        contents: btoa(`# ${owner}/${repo} notes`),
+      }],
+    })
+  }
 }
 
 async function generateNotesRepoFromTemplate(ghToken: string): Promise<void> {
@@ -24,6 +41,9 @@ async function generateNotesRepoFromTemplate(ghToken: string): Promise<void> {
       private: true,
     })
   })
+  if (response.status === 401) {
+    onUnauthorized()
+  }
   if (response.status !== 201) {
     console.error(await response.text())
     throw new Error('generate notes repo from template failed with ' + response.status)
@@ -42,6 +62,9 @@ async function updateNotesRepoHomepage(ghToken: string, owner: string): Promise<
       homepage: 'https://sidelines.dev',
     }),
   })
+  if (response.status === 401) {
+    onUnauthorized()
+  }
   if (response.status !== 200) {
     console.error(await response.text())
     throw new Error('update notes repo homepage failed with ' + response.status)
@@ -67,6 +90,9 @@ export async function doesNotesRepoExist(ghToken: string, repo?: string): Promis
     },
     body: JSON.stringify({ query }),
   })
+  if (response.status === 401) {
+    onUnauthorized()
+  }
   const json = await response.json()
   if (!json.data.viewer.repository) {
     return false
@@ -92,6 +118,9 @@ export async function doesRepoExist(ghToken: string, repo: string): Promise<bool
     },
     body: JSON.stringify({ query }),
   })
+  if (response.status === 401) {
+    onUnauthorized()
+  }
   const json = await response.json()
   return !!json.data.viewer.repository
 }
@@ -138,9 +167,16 @@ export async function createCommitOnBranch({ ghToken, owner, repo, commitMessage
     },
     body: JSON.stringify({ query }),
   })
+  if (response.status === 401) {
+    onUnauthorized()
+  }
   if (response.status !== 200) {
     console.error(await response.text())
-    throw new Error('graphql mutation createCommitOnBranch is an absolute dog shit failure')
+    throw new Error('graphql http error')
+  }
+  const json = await response.json()
+  if (json.errors) {
+    throw new Error('graphql mutation createCommitOnBranch error:\n' + JSON.stringify(json, null, 4))
   }
 }
 
@@ -168,6 +204,9 @@ export async function getRepoDefaultBranch(ghToken: string, repo: string): Promi
     },
     body: JSON.stringify({ query }),
   })
+  if (response.status === 401) {
+    onUnauthorized()
+  }
   const json = await response.json()
   const name = json.data.viewer.repository.defaultBranchRef.name
   const headOid = json.data.viewer.repository.defaultBranchRef.target.history.edges[0].node.oid
@@ -183,7 +222,7 @@ export type RepoContent = {
   size: number
 }
 
-export async function getRepoDirListing(ghToken: string, repo: string, dirpath: string): Promise<Array<RepoContent>> {
+export async function getRepoDirListing(ghToken: string, repo: string, dirpath: string): Promise<Array<RepoContent> | 'repo-does-not-exist'> {
   const query = `query {
     viewer {
       repository(name: "${repo}") {
@@ -211,7 +250,13 @@ export async function getRepoDirListing(ghToken: string, repo: string, dirpath: 
     },
     body: JSON.stringify({ query }),
   })
+  if (response.status === 401) {
+    onUnauthorized()
+  }
   const json = await response.json()
+  if (!json.data.viewer.repository) {
+    return 'repo-does-not-exist'
+  }
   if (!json.data.viewer.repository.object) {
     return []
   }
@@ -248,8 +293,33 @@ export async function getRepoContent(ghToken: string, repo: string, path: string
     },
     body: JSON.stringify({ query }),
   })
+  if (response.status === 401) {
+    onUnauthorized()
+  }
   const json = await response.json()
   return json.data.viewer.repository?.object?.text || null
+}
+
+export interface SearchRepoNamesResult {
+  term: string
+  matches: Array<string>
+}
+
+export async function searchRepoNames(ghToken: string, owner: string, term: string): Promise<SearchRepoNamesResult> {
+  const query = `{ search(query: "user:${owner} in:name ${term}", type: REPOSITORY, first: 5) { nodes { ... on Repository { name }}}}`
+  const response = await fetch('https://api.github.com/graphql', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + ghToken,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query }),
+  })
+  if (response.status === 401) {
+    onUnauthorized()
+  }
+  const json = await response.json()
+  return { term, matches: json.data.search.nodes.length ? json.data.search.nodes.map((datum: { name: string }) => datum.name) : [] }
 }
 
 // sorts dirs on filename a-z, then files on filename a-z

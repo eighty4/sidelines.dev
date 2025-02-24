@@ -1,7 +1,8 @@
 import { getUserLogin } from '@eighty4/sidelines-github'
 import type { FC } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ghLoginCache, readGhTokenCookie } from '../storage.ts'
+import { expectGhToken, ghLoginCache } from '../storage.ts'
+import { ProjectNavbar } from './navbar/ProjectNavbar.tsx'
 import { ProjectWorkspace } from './workspace/ProjectWorkspace.tsx'
 
 function getProjectName(): string {
@@ -19,18 +20,15 @@ interface ProjectPageProps {
 
 const ProjectPage: FC<ProjectPageProps> = ({ ghToken, repo }) => {
   return <div id="project">
+    <ProjectNavbar ghToken={ghToken} repo={repo} />
     <ProjectWorkspace ghToken={ghToken} repo={repo} />
   </div>
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const ghToken = readGhTokenCookie()
+  const ghToken = expectGhToken()
+  const preppingGhLoginCache = ghLoginCache.readThrough(() => getUserLogin(ghToken))
   const repo = getProjectName()
-  try {
-    await ghLoginCache.readThrough(() => getUserLogin(ghToken))
-  } catch (e) {
-    // todo redirect 401 to /login
-    console.error(e)
-  }
+  await preppingGhLoginCache
   createRoot(document.getElementById('root')!).render(<ProjectPage ghToken={ghToken} repo={repo} />)
 })

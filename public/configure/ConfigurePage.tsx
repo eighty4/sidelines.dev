@@ -1,7 +1,7 @@
 import { doesNotesRepoExist, getAppInstallation, getAppInstallationConfigureUrl, getAppUrl, getUserLogin } from '@eighty4/sidelines-github'
 import { useEffect, useState, type FC } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ghLoginCache, readGhTokenCookie } from '../storage.ts'
+import { expectGhToken, ghLoginCache } from '../storage.ts'
 import { ChooseProject } from './ChooseProject.tsx'
 import { MakeNotesRepo } from './MakeNotesRepo.tsx'
 
@@ -52,19 +52,13 @@ const ConfigurePage: FC<ConfigurePageProps> = ({ ghToken }) => {
       return <p>Api error</p>
     case 'all-good':
       return <ChooseProject ghToken={ghToken} onProjectChoice={(repo) => {
-        // @ts-ignore
-        location = '/project?name=' + repo
+        location.assign('/project?name=' + repo)
       }} />
   }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const ghToken = readGhTokenCookie()
-  try {
-    await ghLoginCache.readThrough(() => getUserLogin(ghToken))
-  } catch (e) {
-    // todo redirect 401 to /login
-    console.error(e)
-  }
-  createRoot(document.getElementById("root")!).render(<ConfigurePage ghToken={ghToken} />)
+  const ghToken = expectGhToken()
+  await ghLoginCache.readThrough(() => getUserLogin(ghToken))
+  createRoot(document.getElementById('root')!).render(<ConfigurePage ghToken={ghToken} />)
 })

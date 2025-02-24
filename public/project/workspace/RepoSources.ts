@@ -1,5 +1,6 @@
 import { getRepoContent, getRepoDirListing } from '@eighty4/sidelines-github'
 import { BehaviorSubject, map, Observable } from 'rxjs'
+import { createJsonCache, type SessionCache } from '../../storage.ts'
 
 type RepoTreePath = {
   repo: string
@@ -9,9 +10,7 @@ type RepoTreePath = {
   name: string
 }
 
-export type RepoDir = RepoTreePath & {
-  type: 'dir'
-}
+export type RepoDir = RepoTreePath & { type: 'dir' }
 
 export type RepoFile = RepoTreePath & {
   // abs path from repo root including filename
@@ -20,22 +19,29 @@ export type RepoFile = RepoTreePath & {
   size: number
 } & ({
   type: 'file-ls'
+  // status of loading git object blob from HEAD
   status: 'not-loaded' | 'loading'
 } | {
   type: 'file-cat'
+  // status of syncing local changes to github
   status: 'dirty' | 'synced' | 'syncing' | 'error'
   content: string
 })
 
 export type RepoDirListing = {
-  status: 'loading'
   dirpath: string
+  repo: string
+} & ({
+  status: 'loading'
+  // placeholder names used from ls start to resolve
   cached: Array<string> | null
 } | {
   status: 'listed'
-  dirpath: string
+  // ls result of git objects at dirpath
   files: Array<RepoDir | RepoFile>
-}
+} | {
+  status: 'repo-does-not-exist'
+})
 
 type _RepoSources = {
   openFile?: {
@@ -47,8 +53,9 @@ type _RepoSources = {
 }
 
 export class RepoSources {
-  readonly #state: BehaviorSubject<_RepoSources>
   readonly #ghToken: string
+  readonly #cacheOpenFile: SessionCache<RepoTreePath>
+  readonly #state: BehaviorSubject<_RepoSources>
 
   constructor(ghToken: string, repo: string) {
     this.#ghToken = ghToken
@@ -56,17 +63,43 @@ export class RepoSources {
     repos['.sidelines'] = {}
     repos[repo] = {}
     this.#state = new BehaviorSubject({ repos })
+    this.#cacheOpenFile = createJsonCache<RepoTreePath>(localStorage, `sld.project.${repo}.open`)
+    this.#loadLastOpenFile().then().catch()
+  }
+
+  async #loadLastOpenFile() {
+    const read = this.#cacheOpenFile.read()
+    if (read) {
+      const subscription = this.ls(read.repo, read.dirpath).subscribe((ls) => {
+        if (ls.status === 'listed') {
+          subscription.unsubscribe()
+          const found = ls.files.find(f => f.name === read.name)
+          if (found && found.type !== 'dir') {
+            this.openFile = found
+          }
+        }
+      })
+    }
   }
 
   ls(repo: string, dirpath: string = ''): Observable<RepoDirListing> {
     if (typeof this.#state.getValue().repos[repo][dirpath] === 'undefined') {
       this.#ls(repo, dirpath).then(ls => {
-        lsCacheWrite(repo, dirpath, ls)
-        this.#mutateDirListing(repo, dirpath, {
-          status: 'listed',
-          dirpath,
-          files: ls,
-        })
+        if (ls === 'repo-does-not-exist') {
+          this.#mutateDirListing(repo, dirpath, {
+            status: 'repo-does-not-exist',
+            repo,
+            dirpath,
+          })
+        } else {
+          lsCacheWrite(repo, dirpath, ls)
+          this.#mutateDirListing(repo, dirpath, {
+            status: 'listed',
+            repo,
+            dirpath,
+            files: ls,
+          })
+        }
       })
     }
     return this.#state.asObservable().pipe(map((s) => s.repos[repo][dirpath]))
@@ -88,6 +121,9 @@ export class RepoSources {
   }
 
   set openFile(openFile: RepoFile | null) {
+    if (openFile !== null) {
+      this.#cacheOpenFile.write({ dirpath: openFile.dirpath, name: openFile.name, repo: openFile.repo })
+    }
     if (openFile?.status === 'not-loaded') {
       this.#loadFileContent(openFile.repo, openFile.dirpath, openFile.name)
     }
@@ -102,13 +138,18 @@ export class RepoSources {
     })
   }
 
-  async #ls(repo: string, dirpath: string): Promise<Array<RepoDir | RepoFile>> {
+  async #ls(repo: string, dirpath: string): Promise<Array<RepoDir | RepoFile> | 'repo-does-not-exist'> {
     this.#mutateDirListing(repo, dirpath, {
       status: 'loading',
+      repo,
       dirpath,
       cached: lsCacheRead(repo, dirpath),
     })
-    return (await getRepoDirListing(this.#ghToken, repo, dirpath)).map(rc => {
+    const contents = await getRepoDirListing(this.#ghToken, repo, dirpath)
+    if (contents === 'repo-does-not-exist') {
+      return contents
+    }
+    return contents.map(rc => {
       switch (rc.type) {
         case 'dir':
           return {

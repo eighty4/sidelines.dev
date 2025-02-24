@@ -1,6 +1,7 @@
 import { doesRepoExist, getUserLogin } from '@eighty4/sidelines-github'
-import { type FC, useEffect, useState } from 'react'
+import { type FC, useEffect, useMemo, useState } from 'react'
 import { ConfigureError } from './ConfigureError.tsx'
+import { projectHistoryCache } from '../storage.ts'
 
 export interface ChooseProjectProps {
   ghToken: string
@@ -10,6 +11,7 @@ export interface ChooseProjectProps {
 type ChooseProjectError = 'server' | 'not-a-repo'
 
 export const ChooseProject: FC<ChooseProjectProps> = ({ ghToken, onProjectChoice }) => {
+  const projectHistory = useMemo(() => projectHistoryCache.read(), [])
   const [repo, setRepo] = useState('')
   const [username, setUsername] = useState<string | undefined>()
   const [clicked, setClicked] = useState(false)
@@ -54,8 +56,9 @@ export const ChooseProject: FC<ChooseProjectProps> = ({ ghToken, onProjectChoice
   }
 
   return <div>
-    <p>Choose a project to get started.</p>
-    <p>This repo must be owned by your GitHub account.</p>
+    <h3>Choose a project</h3>
+    <p>This repo must be directly owned by your GitHub account. Organizations are not supported.</p>
+    <h4>Repository name</h4>
     {username && <p>
       {username} / <input disabled={clicked} value={repo}
         onChange={onInputChange}
@@ -65,5 +68,12 @@ export const ChooseProject: FC<ChooseProjectProps> = ({ ghToken, onProjectChoice
     <div>
       <button disabled={clicked || !repo.length} onClick={onButtonClick}>Let's fucking rock!</button>
     </div>
+    {!!projectHistory?.length && <div>
+      <h3>Return to recent projects</h3>
+      {projectHistory.map(repo => <div key={repo}>
+        <a href={`/project?name=${repo}`}>{username}/{repo}</a>
+      </div>)}
+    </div>}
+
   </div>
 }

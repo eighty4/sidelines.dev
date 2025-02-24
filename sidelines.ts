@@ -1,7 +1,6 @@
 import { GH_TOKEN, getCookie } from './cookie.ts'
 import configurePage from './public/configure/configure.html'
-import homePage from './public/home.html'
-import loginPage from './public/login.html'
+import homePage from './public/home/home.html'
 import projectPage from './public/project/project.html'
 
 const server = Bun.serve({
@@ -10,7 +9,6 @@ const server = Bun.serve({
   static: {
     '/': homePage,
     '/configure': configurePage,
-    '/login': loginPage,
     '/project': projectPage,
   },
   fetch(req) {
