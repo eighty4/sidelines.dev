@@ -7,8 +7,6 @@
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
-    "composite": true,
-    "incremental": true,
     /* Linting */
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
