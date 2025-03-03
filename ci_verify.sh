@@ -3,5 +3,5 @@ set -e
 
 # run through all the checks done for ci
 
-bunx tsc --noEmit
-bunx prettier --check .
+bunx --bun tsc --noEmit
+bunx --bun prettier --check .
