@@ -15,20 +15,20 @@
             padding-left: 1rem;
             box-sizing: border-box;
             width: calc(max(20vw, 250px));
-            font-size: .95rem;
+            font-size: 0.95rem;
         }
 
         & #project-nav-recent {
             flex: 1;
             display: flex;
             align-items: center;
-            font-size: .8rem;
+            font-size: 0.8rem;
             gap: 1rem;
 
             & a {
                 color: aqua;
-                padding: .25rem;
-                margin: .25rem;
+                padding: 0.25rem;
+                margin: 0.25rem;
             }
         }
 
@@ -50,7 +50,7 @@
                 position-anchor: --search-input;
                 left: anchor(--search-input left);
                 top: anchor(--search-input bottom);
-                margin-top: .5rem;
+                margin-top: 0.5rem;
 
                 width: var(--input-size);
                 background: #222;
@@ -89,17 +89,17 @@
 
             .file-explorer-header {
                 background: rgb(22, 22, 25);
-                letter-spacing: .01rem;
-                font-size: .7rem;
+                letter-spacing: 0.01rem;
+                font-size: 0.7rem;
                 font-weight: 500;
                 text-transform: uppercase;
-                padding: .4rem 1rem;
+                padding: 0.4rem 1rem;
                 user-select: none;
             }
 
             & .file {
-                padding: .2rem 1rem;
-                font-size: .85rem;
+                padding: 0.2rem 1rem;
+                font-size: 0.85rem;
                 user-select: none;
                 cursor: pointer;
 

@@ -1,3 +1,3 @@
 export function onUnauthorized() {
-  location.assign('/logout')
+    location.assign('/logout')
 }
