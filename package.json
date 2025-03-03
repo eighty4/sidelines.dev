@@ -7,6 +7,7 @@
   ],
   "dependencies": {
     "@eighty4/sidelines-github": "workspace:^",
+    "monaco-editor": "^0.52.2",
     "react-dom": "^19.0.0",
     "rxjs": "^7.8.1"
   },

@@ -1,10 +1,41 @@
+import path from 'node:path/posix'
 import { GH_TOKEN, getCookie } from './cookie.ts'
 import configurePage from './public/configure/configure.html'
 import homePage from './public/home/home.html'
 import projectPage from './public/project/project.html'
 
+const monacoWorkerBuilds = await Bun.build({
+    entrypoints: [
+        'editor/editor.worker.js',
+        'language/css/css.worker.js',
+        'language/html/html.worker.js',
+        'language/json/json.worker.js',
+        'language/typescript/ts.worker.js',
+    ].map(src => './node_modules/monaco-editor/esm/vs/' + src),
+    format: 'iife',
+})
+
+const [mainWorker, cssWorker, htmlWorker, jsonWorker, tsWorker] =
+    monacoWorkerBuilds.outputs
+
+function resolveMonacoWorker(filename: string): Blob {
+    switch (filename) {
+        case 'main.js':
+            return mainWorker
+        case 'css.js':
+            return cssWorker
+        case 'html.js':
+            return htmlWorker
+        case 'json.js':
+            return jsonWorker
+        case 'ts.js':
+            return tsWorker
+        default:
+            throw new Error(filename + ' is not a prebuilt monaco module')
+    }
+}
+
 const server = Bun.serve({
-    port: 3000,
     development: true,
     static: {
         '/': homePage,
@@ -14,6 +45,11 @@ const server = Bun.serve({
     fetch(req) {
         const url = new URL(req.url)
         console.log(req.method, url.pathname)
+        if (url.pathname.startsWith('/lib/monaco/worker/')) {
+            return new Response(
+                resolveMonacoWorker(path.basename(url.pathname)),
+            )
+        }
         switch (url.pathname) {
             case '/installation/setup':
                 return acceptInstallationRedirect(req, url)

@@ -3,6 +3,7 @@ import { useEffect, useState, type FC } from 'react'
 import { MakeNotesRepo } from '../../../configure/MakeNotesRepo.tsx'
 import { ghLoginCache } from '../../../storage.ts'
 import type { RepoFile, RepoSources } from '../RepoSources.ts'
+import { EditorPane } from './EditorPane.tsx'
 
 export interface WorkspaceEditorProps {
     ghToken: string
@@ -61,15 +62,7 @@ export const WorkspaceEditor: FC<WorkspaceEditorProps> = ({
     }
 
     if (openFile) {
-        return (
-            <div>
-                <code>
-                    <pre>
-                        {openFile.type === 'file-cat' && openFile.content}
-                    </pre>
-                </code>
-            </div>
-        )
+        return <EditorPane openFile={openFile} />
     } else {
         if (notesRepoExists === 'project-readme-missing') {
             const owner = ghLoginCache.read()
