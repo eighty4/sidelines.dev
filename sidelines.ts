@@ -4,6 +4,10 @@ import configurePage from './public/configure/configure.html'
 import homePage from './public/home/home.html'
 import projectPage from './public/project/project.html'
 
+const PROD = Bun.env.PROD === 'true'
+
+console.log(`sidelines.dev is starting in ${PROD ? 'PROD' : 'DEV'} mode`)
+
 if (!process.env.WEBAPP_ADDRESS) {
     throw new Error('WEBAPP_ADDRESS is required')
 }
@@ -40,7 +44,7 @@ function resolveMonacoWorker(filename: string): Blob {
 }
 
 const server = Bun.serve({
-    development: true,
+    development: !PROD,
     static: {
         '/': homePage,
         '/configure': configurePage,
