@@ -4,6 +4,10 @@ import configurePage from './public/configure/configure.html'
 import homePage from './public/home/home.html'
 import projectPage from './public/project/project.html'
 
+if (!process.env.WEBAPP_ADDRESS) {
+    throw new Error('WEBAPP_ADDRESS is required')
+}
+
 const monacoWorkerBuilds = await Bun.build({
     entrypoints: [
         'editor/editor.worker.js',
@@ -70,7 +74,7 @@ console.log('sidelines.dev is running at http://127.0.0.1:' + server.port)
 function logoutRedirect(req: Request): Response {
     const headers: Record<string, string> = {
         'Clear-Site-Data': '"storage"',
-        Location: 'http://127.0.0.1:3000/',
+        Location: process.env.WEBAPP_ADDRESS!,
     }
     const cookie = req.headers.get('cookie')
     if (cookie) {
@@ -90,7 +94,7 @@ async function redirectToLogin(req: Request): Promise<Response> {
     if (req.method !== 'GET') {
         return new Response('Method Not Allowed', { status: 405 })
     }
-    const ghUrl = `https://github.com/login/oauth/authorize?prompt=select_account&client_id=${process.env.GH_CLIENT_ID}&state=abcdefg&redirect_uri=${encodeURIComponent(process.env.GH_REDIRECT_URI!)}`
+    const ghUrl = `https://github.com/login/oauth/authorize?prompt=select_account&client_id=${process.env.GH_CLIENT_ID}&state=abcdefg&redirect_uri=${encodeURIComponent(`${process.env.WEBAPP_ADDRESS}/login/authorized`)}`
     console.debug('gh login authorize redirect', ghUrl)
     return Response.redirect(ghUrl, 302)
 }
@@ -134,7 +138,7 @@ async function loginAndRedirectToConfigurePage(url: URL): Promise<Response> {
         return new Response('Found', {
             status: 302,
             headers: {
-                Location: 'http://127.0.0.1:3000/configure',
+                Location: `${process.env.WEBAPP_ADDRESS}/configure`,
                 'Set-Cookie': `ght=${token.access.value}; Secure; SameSite=Strict; Path=/; Max-Age=${token.access.expiresIn}`,
             },
         })
