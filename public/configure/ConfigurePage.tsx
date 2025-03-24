@@ -11,6 +11,9 @@ import { expectGhToken, ghLoginCache } from '../storage.ts'
 import { ChooseProject } from './ChooseProject.tsx'
 import { MakeNotesRepo } from './MakeNotesRepo.tsx'
 
+// todo hard-coded value should be a build env variable or globalThis
+const GH_APP_ID = location.host === 'sidelines.dev' ? 1166711 : 1144785
+
 type AppState =
     | 'loading'
     | 'api-error'
@@ -29,8 +32,7 @@ const ConfigurePage: FC<ConfigurePageProps> = ({ ghToken }) => {
     const [installationId, setInstallationId] = useState<number | undefined>()
     const [appState, setAppState] = useState<AppState>('loading')
     useEffect(() => {
-        // todo hard-coded value should be a build env variable or globalThis
-        getAppInstallation(ghToken, 1144785)
+        getAppInstallation(ghToken, GH_APP_ID)
             .then(async installation => {
                 if (!installation) {
                     return 'not-installed'
