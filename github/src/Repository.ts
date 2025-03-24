@@ -1,4 +1,4 @@
-import { onUnauthorized } from './responses.ts'
+import { onUnauthorized, type Pageable } from './responses.ts'
 
 // graphql mutation createCommitOnBranch requires a pre-existing ref
 // so we use a template repo to seed a commit at refs/head/main
@@ -416,4 +416,82 @@ function sortRepoContents(rc1: RepoContent, rc2: RepoContent): -1 | 0 | 1 {
         }
     }
     return rc1.type === 'dir' ? -1 : 1
+}
+
+export type ObjectHistory = {
+    oid: string
+    authorName: string
+    message: string
+    authoredDate: string
+}
+
+export async function getObjectHistory(
+    ghToken: string,
+    repo: string,
+    branch: string,
+    path: string,
+    pageSize: number,
+    cursor?: string,
+): Promise<Pageable<ObjectHistory>> {
+    const query = `{
+      viewer {
+        repository(name: "${repo}") {
+          ref(qualifiedName: "${branch}") {
+            target {
+              ... on Commit {
+                history(first:${pageSize}, path: "${path}", after: ${!!cursor ? `"${cursor}"` : 'null'}) {
+                  nodes {
+                    oid
+                    author {
+                      name
+                    }
+                    message
+                    authoredDate
+                  }
+                  pageInfo {
+                    hasNextPage
+                    endCursor
+                  }
+                  totalCount
+                }
+              }
+            }
+          }
+        }
+      }
+    }`
+    const response = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        headers: {
+            Authorization: 'Bearer ' + ghToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+    })
+    if (response.status === 401) {
+        onUnauthorized()
+    }
+    const json = await response.json()
+    if (!json.data.viewer.repository?.ref?.target?.history) {
+        throw new Error(
+            `repo ${repo} branch ${branch} path ${path} object history not found`,
+        )
+    }
+    const { nodes, totalCount, pageInfo } =
+        json.data.viewer.repository.ref.target.history
+    return {
+        totalCount,
+        pageInfo: {
+            hasNextPage: pageInfo.hasNextPage,
+            endCursor: pageInfo.endCursor,
+        },
+        data: nodes.map((node: any) => {
+            return {
+                oid: node.oid,
+                authorName: node.author.name,
+                message: node.message,
+                authoredDate: node.authoredDate,
+            }
+        }),
+    }
 }
