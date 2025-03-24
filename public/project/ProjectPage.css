@@ -47,6 +47,7 @@
             }
 
             & #project-nav-suggestions {
+                z-index: 5;
                 position: fixed;
                 position-anchor: --search-input;
                 left: anchor(--search-input left);
@@ -58,7 +59,7 @@
                 border: 1px solid #456;
                 border-radius: 5px;
                 padding: 8px;
-                box-sizing: content-box;
+                box-sizing: border-box;
 
                 display: flex;
                 flex-direction: column;
@@ -72,6 +73,14 @@
 
                     &:hover {
                         background: #333;
+                    }
+
+                    &.highlight {
+                        background: #456;
+                    }
+
+                    &.highlight:hover {
+                        background: #567;
                     }
                 }
             }

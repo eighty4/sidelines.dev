@@ -22,6 +22,7 @@ export const SearchInput: FC<SearchInputProps> = ({ ghToken, repo }) => {
     )
     const [searchSuggestions, setSearchSuggestions] =
         useState<SearchRepoNamesResult | null>(null)
+    const [highlightCursor, setHighlightCursor] = useState<number>(0)
 
     useEffect(() => {
         function onKeyDown(e: KeyboardEvent) {
@@ -35,22 +36,22 @@ export const SearchInput: FC<SearchInputProps> = ({ ghToken, repo }) => {
 
     useEffect(() => {
         if (!searchTerm.length) {
-            setSearchSuggestions(null)
+            resetState()
             return
         } else if (searchResults[searchTerm]) {
-            setSearchSuggestions(searchResults[searchTerm])
+            updateState(searchResults[searchTerm])
         } else if (
             searchSuggestions?.term?.length &&
             !searchTerm.startsWith(searchSuggestions.term)
         ) {
-            setSearchSuggestions(null)
+            resetState()
         }
         searchRepoNames(ghToken, ghLoginCache.expect(), searchTerm).then(
             result => {
                 result.matches = result.matches.filter(match => match !== repo)
                 searchResults[result.term] = result
                 if (searchTerm === result.term) {
-                    setSearchSuggestions(result)
+                    updateState(result)
                 }
             },
         )
@@ -58,11 +59,59 @@ export const SearchInput: FC<SearchInputProps> = ({ ghToken, repo }) => {
 
     useEffect(() => {
         if (focused) {
-            setSearchSuggestions(searchResults[searchTerm] || null)
+            updateState(searchResults[searchTerm] || null)
         } else if (closeOnBlur) {
-            setSearchSuggestions(null)
+            resetState()
         }
     }, [focused])
+
+    function resetState() {
+        updateState(null)
+    }
+
+    function updateState(result: SearchRepoNamesResult | null) {
+        setSearchSuggestions(result)
+        setHighlightCursor(0)
+    }
+
+    function onInputKeyUp(e: React.KeyboardEvent<HTMLInputElement>) {
+        switch (e.key) {
+            case 'ArrowUp':
+                moveHighlightCursorUp()
+                break
+            case 'ArrowDown':
+                moveHighlightCursorDown()
+                break
+            case 'Escape':
+                searchInputRef.current!.blur()
+                break
+            case 'Enter':
+                if (highlightCursor !== null && searchSuggestions !== null) {
+                    navToProject(searchSuggestions.matches[highlightCursor])
+                }
+                break
+        }
+    }
+
+    function moveHighlightCursorUp() {
+        if (highlightCursor !== null && highlightCursor > 1) {
+            setHighlightCursor(highlightCursor - 1)
+        } else {
+            setHighlightCursor(0)
+        }
+    }
+
+    function moveHighlightCursorDown() {
+        if (highlightCursor !== null) {
+            setHighlightCursor(highlightCursor + 1)
+        } else {
+            setHighlightCursor(0)
+        }
+    }
+
+    function navToProject(project: string) {
+        location.assign(`/project?name=${project}`)
+    }
 
     return (
         <div id="project-nav-search">
@@ -72,6 +121,7 @@ export const SearchInput: FC<SearchInputProps> = ({ ghToken, repo }) => {
                 placeholder={focused ? 'Search repos' : 'Cmd + K'}
                 onBlur={() => setFocused(false)}
                 onFocus={() => setFocused(true)}
+                onKeyUp={e => onInputKeyUp(e)}
                 onChange={e => setSearchTerm(e.target.value)}
             />
             {!!searchSuggestions?.matches.length && (
@@ -80,14 +130,12 @@ export const SearchInput: FC<SearchInputProps> = ({ ghToken, repo }) => {
                     onMouseEnter={() => setCloseOnBlur(false)}
                     onMouseLeave={() => setCloseOnBlur(true)}
                 >
-                    {searchSuggestions.matches.map(match => {
+                    {searchSuggestions.matches.map((match, i) => {
                         return (
                             <div
-                                className="suggestion"
+                                className={`suggestion ${i === highlightCursor ? 'highlight' : ''}`}
                                 key={match}
-                                onClick={() =>
-                                    location.assign(`/project?name=${match}`)
-                                }
+                                onClick={() => navToProject(match)}
                             >
                                 {match}
                             </div>
