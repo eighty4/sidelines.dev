@@ -5,6 +5,10 @@
   "workspaces": [
     "github"
   ],
+  "scripts": {
+    "fmt": "prettier --write .",
+    "fmtcheck": "prettier --check ."
+  },
   "dependencies": {
     "@eighty4/sidelines-github": "workspace:^",
     "monaco-editor": "^0.52.2",
