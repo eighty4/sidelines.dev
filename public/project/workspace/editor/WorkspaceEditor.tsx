@@ -1,4 +1,4 @@
-import { doesNotesRepoExist } from '@eighty4/sidelines-github'
+import { doesSidelinesRepoExist } from '@eighty4/sidelines-github'
 import { useEffect, useState, type FC } from 'react'
 import { MakeNotesRepo } from '../../../configure/MakeNotesRepo.tsx'
 import { ghLoginCache } from '../../../storage.ts'
@@ -18,10 +18,10 @@ export const WorkspaceEditor: FC<WorkspaceEditorProps> = ({
 }) => {
     const [openFile, setOpenFile] = useState<RepoFile | null>()
     const [notesRepoExists, setNotesRepoExists] =
-        useState<Awaited<ReturnType<typeof doesNotesRepoExist>>>()
+        useState<Awaited<ReturnType<typeof doesSidelinesRepoExist>>>()
 
     useEffect(() => {
-        doesNotesRepoExist(ghToken, repo).then(setNotesRepoExists)
+        doesSidelinesRepoExist(ghToken, repo).then(setNotesRepoExists)
     }, [])
 
     useEffect(() => {

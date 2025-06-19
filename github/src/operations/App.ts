@@ -1,4 +1,4 @@
-import { onUnauthorized } from './responses.ts'
+import { onUnauthorized } from '../responses.ts'
 
 export function getAppUrl(): string {
     return 'https://github.com/apps/sidelines-dev'
@@ -11,12 +11,6 @@ export function getAppInstallationConfigureUrl(installationId: number): string {
 export interface SidelinesAppInstallation {
     installationId: number
     repositorySelection: 'all' | 'selected'
-}
-
-interface GHAppInstallation {
-    id: number
-    app_id: number
-    repository_selection: 'all' | 'selected'
 }
 
 export async function getAppInstallation(
@@ -33,10 +27,15 @@ export async function getAppInstallation(
     if (response.status === 401) {
         onUnauthorized()
     }
-    const { installations }: { installations: Array<GHAppInstallation> } =
-        await response.json()
-    if (installations.length) {
-        const found = installations.find(
+    const json: {
+        installations: Array<{
+            id: number
+            app_id: number
+            repository_selection: 'all' | 'selected'
+        }>
+    } = await response.json()
+    if (json.installations.length) {
+        const found = json.installations.find(
             installation => installation.app_id === appId,
         )
         if (found) {
@@ -47,7 +46,3 @@ export async function getAppInstallation(
         }
     }
 }
-
-// export async function getSelectedAppInstallationRepositories(ghToken: string, installationId: number) {
-
-// }

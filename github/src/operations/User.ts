@@ -1,8 +1,6 @@
-import { onUnauthorized } from './responses.ts'
+import { onUnauthorized } from '../responses.ts'
 
-export async function getUserLogin(
-    ghToken: string,
-): Promise<string | 'unauthorized'> {
+export async function getUserLogin(ghToken: string): Promise<string> {
     const query = 'query { viewer { login } }'
     const response = await fetch('https://api.github.com/graphql', {
         method: 'POST',

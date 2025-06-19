@@ -19,13 +19,7 @@ export const ProjectWorkspace: FC<ProjectWorkspaceProps> = ({
             <div id="file-ls">
                 <ProjectFiles repo={repo} sources={sources} />
             </div>
-            <div id="editor-pane">
-                <WorkspaceEditor
-                    ghToken={ghToken}
-                    repo={repo}
-                    sources={sources}
-                />
-            </div>
+            <WorkspaceEditor ghToken={ghToken} repo={repo} sources={sources} />
         </div>
     )
 }

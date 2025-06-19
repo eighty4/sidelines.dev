@@ -1,5 +1,5 @@
 import {
-    doesNotesRepoExist,
+    doesSidelinesRepoExist,
     getAppInstallation,
     getAppInstallationConfigureUrl,
     getAppUrl,
@@ -40,7 +40,7 @@ const ConfigurePage: FC<ConfigurePageProps> = ({ ghToken }) => {
                     setInstallationId(installation.installationId)
                     if (installation.repositorySelection !== 'all') {
                         return 'not-all-repos'
-                    } else if (!(await doesNotesRepoExist(ghToken))) {
+                    } else if (!(await doesSidelinesRepoExist(ghToken))) {
                         return 'no-notes-repo'
                     }
                 }
