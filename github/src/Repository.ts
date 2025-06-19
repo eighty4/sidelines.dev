@@ -1,5 +1,12 @@
 import { onUnauthorized, type Pageable } from './responses.ts'
 
+class NotFoundError extends Error {
+    constructor() {
+        super('not found')
+        this.name = this.constructor.name
+    }
+}
+
 // graphql mutation createCommitOnBranch requires a pre-existing ref
 // so we use a template repo to seed a commit at refs/head/main
 //
@@ -15,17 +22,20 @@ export async function createNotesRepo(
     await generateNotesRepoFromTemplate(ghToken)
     await updateNotesRepoHomepage(ghToken, owner)
     if (repo) {
-        await new Promise(res => setTimeout(res, 500))
+        const branch = await pollForDefaultBranchAfterCreatingRepo(
+            ghToken,
+            '.sidelines',
+        )
         await createCommitOnBranch({
             ghToken,
             owner,
             repo: '.sidelines',
             commitMessage: `add ${owner}/${repo} notes README.md`,
-            branch: await getRepoDefaultBranch(ghToken, '.sidelines'),
+            branch,
             additions: [
                 {
-                    path: repo + '/README.md',
-                    contents: btoa(`# ${owner}/${repo} notes`),
+                    path: `${repo}/README.md`,
+                    contents: btoa(`# ${owner}/${repo}`),
                 },
             ],
         })
@@ -56,6 +66,40 @@ async function generateNotesRepoFromTemplate(ghToken: string): Promise<void> {
         throw new Error(
             'generate notes repo from template failed with ' + response.status,
         )
+    }
+}
+
+// todo eval if REST API has more immediate availability and could skip polling logic
+async function pollForDefaultBranchAfterCreatingRepo(
+    ghToken: string,
+    repo: string,
+): Promise<{ name: string; headOid: string }> {
+    const DELAY_MS = 200
+    const INTERVAL_MS = 50
+    const TIMEOUT_MS = 5000
+    await new Promise(res => setTimeout(res, DELAY_MS))
+    const timeout: Promise<'timeout'> = new Promise(res =>
+        setTimeout(() => res('timeout'), TIMEOUT_MS),
+    )
+    let fetching: Promise<{ name: string; headOid: string }>
+    while (true) {
+        fetching = getRepoDefaultBranch(ghToken, repo)
+        try {
+            let branch: 'timeout' | { name: string; headOid: string }
+            branch = await Promise.race([timeout, fetching])
+            if (branch === 'timeout') {
+                throw new Error('timed out')
+            } else {
+                return branch
+            }
+        } catch (e) {
+            if (e instanceof NotFoundError) {
+                await new Promise(res => setTimeout(res, INTERVAL_MS))
+                continue
+            } else {
+                throw e
+            }
+        }
     }
 }
 
@@ -247,11 +291,19 @@ export async function getRepoDefaultBranch(
         onUnauthorized()
     }
     const json = await response.json()
-    const name = json.data.viewer.repository.defaultBranchRef.name
-    const headOid =
-        json.data.viewer.repository.defaultBranchRef.target.history.edges[0]
-            .node.oid
-    return { name, headOid }
+    if (
+        json.data.viewer.repository?.defaultBranchRef?.name &&
+        json.data.viewer.repository?.defaultBranchRef?.target?.history?.edges
+            ?.length
+    ) {
+        const name = json.data.viewer.repository.defaultBranchRef.name
+        const headOid =
+            json.data.viewer.repository.defaultBranchRef.target.history.edges[0]
+                .node.oid
+        return { name, headOid }
+    } else {
+        throw new NotFoundError()
+    }
 }
 
 export type RepoContent =
