@@ -4,7 +4,9 @@
     "": {
       "name": "@eighty4/sidelines-root",
       "dependencies": {
-        "@eighty4/sidelines-github": "workspace:^",
+        "@eighty4/model-t": "0.0.5-2",
+        "@sidelines/data": "workspace:*",
+        "@sidelines/github": "workspace:*",
         "monaco-editor": "^0.52.2",
         "react-dom": "^19.0.0",
         "rxjs": "^7.8.1",
@@ -17,12 +19,22 @@
         "typescript": "^5.8.2",
       },
     },
-    "github": {
-      "name": "@eighty4/sidelines-github",
+    "packages/data": {
+      "name": "@sidelines/data",
+      "dependencies": {
+        "@sidelines/github": "workspace:*",
+      },
+    },
+    "packages/github": {
+      "name": "@sidelines/github",
     },
   },
   "packages": {
-    "@eighty4/sidelines-github": ["@eighty4/sidelines-github@workspace:github"],
+    "@eighty4/model-t": ["@eighty4/model-t@0.0.5-2", "", { "dependencies": { "yaml": "^2.8.0" }, "bin": { "model-t": "lib_js/bin.js" } }, "sha512-FBK0XUMdc7dPSgO074o3Fi6/jnp4tvPBitGoT2tvqiNp9qhL+8PjAn1TnajhAovXOs6NKEr+msgwpupmDKuoVg=="],
+
+    "@sidelines/data": ["@sidelines/data@workspace:packages/data"],
+
+    "@sidelines/github": ["@sidelines/github@workspace:packages/github"],
 
     "@types/bun": ["@types/bun@1.2.2", "", { "dependencies": { "bun-types": "1.2.2" } }, "sha512-tr74gdku+AEDN5ergNiBnplr7hpDp3V1h7fqI2GcR/rsUaM39jpSeKH0TFibRvU0KwniRx5POgaYnaXbk0hU+w=="],
 
@@ -55,5 +67,7 @@
     "typescript": ["typescript@5.8.2", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ=="],
 
     "undici-types": ["undici-types@6.20.0", "", {}, "sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg=="],
+
+    "yaml": ["yaml@2.8.0", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-4lLa/EcQCB0cJkyts+FpIRx5G/llPxfP6VQU5KByHEhLxY3IJCH0f0Hy1MHI8sClTvsIb8qwRJ6R/ZdlDJ/leQ=="],
   }
 }

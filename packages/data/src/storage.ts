@@ -1,5 +1,3 @@
-import { getCookie, GH_TOKEN } from '../cookie.ts'
-
 export interface SessionCache<T> {
     clear(): void
 
@@ -9,24 +7,7 @@ export interface SessionCache<T> {
 
     read(): T | null
 
-    readThrough(fb: () => Promise<T | null>): Promise<T | null>
-
     write(data: T): void
-}
-
-async function readThroughImpl<T>(
-    cache: SessionCache<T>,
-    fb: () => Promise<T | null>,
-): Promise<T | null> {
-    const read = cache.read()
-    if (read) {
-        return read
-    }
-    const created = await fb()
-    if (created) {
-        cache.write(created)
-    }
-    return created
 }
 
 type StorageApi =
@@ -49,9 +30,6 @@ export function createCache(
         },
         read() {
             return storage.getItem(key)
-        },
-        readThrough(fb: () => Promise<string | null>) {
-            return readThroughImpl(this, fb)
         },
         write(data: string) {
             storage.setItem(key, data)
@@ -77,26 +55,8 @@ export function createJsonCache<T>(
             const data = storage.getItem(key)
             return data === null ? null : JSON.parse(data)
         },
-        async readThrough(fb: () => Promise<T | null>) {
-            return readThroughImpl(this, fb)
-        },
         write(data: T) {
             storage.setItem(key, JSON.stringify(data))
         },
     }
-}
-
-export const projectHistoryCache = createJsonCache<Array<string>>(
-    localStorage,
-    'sld.projects.nav.history',
-)
-
-export const ghLoginCache = createCache(localStorage, 'sld.user.gh.login')
-
-export function expectGhToken(): string {
-    const ghToken = getCookie(document.cookie, GH_TOKEN)
-    if (!ghToken) {
-        location.assign('/logout')
-    }
-    return ghToken!
 }

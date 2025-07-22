@@ -1,6 +1,0 @@
-export * from './logical/configure/createSidelinesRepo.ts'
-export * from './logical/configure/doesSidelinesRepoExist.ts'
-export * from './operations/App.ts'
-export * from './operations/Repository.ts'
-export * from './operations/User.ts'
-export type { Pageable } from './responses.ts'

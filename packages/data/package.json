@@ -1,0 +1,12 @@
+{
+  "name": "@sidelines/data",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./web": "./src/web.ts"
+  },
+  "dependencies": {
+    "@sidelines/github": "workspace:*"
+  }
+}

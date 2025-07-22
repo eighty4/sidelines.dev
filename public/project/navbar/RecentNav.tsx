@@ -1,34 +1,72 @@
-import { useMemo, type FC } from 'react'
-import { projectHistoryCache } from '../../storage.ts'
+import {
+    createJsonCache,
+    type RepositoryId,
+    type UserDataClient,
+} from '@sidelines/data/web'
+import { type FC, useState, useEffect, useMemo } from 'react'
+import { buildProjectUrl } from '../../nav.js'
 
 interface RecentNavProps {
-    ghToken: string
-    repo: string
+    currentPageProject: RepositoryId
+    userData: UserDataClient
+}
+
+type CacheState = { current: RepositoryId; nav: Array<RepositoryId> }
+
+function sameRepo(one: RepositoryId, two: RepositoryId): boolean {
+    return one.owner === two.owner && one.name === two.name
 }
 
 // todo on cron background check and cache gh actions of navbar projects
 //  show indicator with project name for status of gh actions
-export const RecentNav: FC<RecentNavProps> = ({ repo }) => {
-    const quickNav = useMemo(() => {
-        const read = projectHistoryCache.read() || []
-        updateProjectHistoryCache(read, repo)
-        return read.filter(qnr => qnr !== repo).splice(0, 3)
-    }, [repo])
+export const RecentNav: FC<RecentNavProps> = ({
+    currentPageProject,
+    userData,
+}) => {
+    const navCache = useMemo(
+        () => createJsonCache<CacheState>(sessionStorage, 'sld.nav'),
+        [],
+    )
+    const [quickNav, setQuickNav] = useState<null | Array<RepositoryId>>(null)
+
+    useEffect(() => {
+        const fromCache = navCache.read()
+        if (fromCache !== null) {
+            if (sameRepo(currentPageProject, fromCache.current)) {
+                setQuickNav(fromCache.nav)
+            } else {
+                navCache.clear()
+            }
+        }
+    }, [])
+
+    useEffect(() => {
+        if (quickNav === null) {
+            userData
+                .navHistory(5)
+                .then(projects =>
+                    projects
+                        .filter(repo => !sameRepo(currentPageProject, repo))
+                        .splice(0, 4),
+                )
+                .then(projects => {
+                    navCache.write({
+                        current: currentPageProject,
+                        nav: projects,
+                    })
+                    setQuickNav(projects)
+                })
+        }
+    }, [currentPageProject])
 
     return (
         <div id="project-nav-recent">
-            {quickNav.map(qnr => (
-                <div key={qnr}>
-                    <a href={`/project?name=${qnr}`}>{qnr}</a>
-                </div>
-            ))}
+            {!!quickNav?.length &&
+                quickNav.map(repo => (
+                    <div key={repo.name}>
+                        <a href={buildProjectUrl(repo)}>{repo.name}</a>
+                    </div>
+                ))}
         </div>
     )
-}
-
-function updateProjectHistoryCache(previous: Array<string>, current: string) {
-    const updateCopy = [...previous]
-    updateCopy.unshift(current)
-    const update = Array.from(new Set(updateCopy))
-    projectHistoryCache.write(update.splice(0, 5))
 }

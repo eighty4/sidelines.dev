@@ -1,4 +1,4 @@
-import { onUnauthorized } from '../responses.ts'
+import { UnauthorizedError } from '../responses.ts'
 
 export async function getUserLogin(ghToken: string): Promise<string> {
     const query = 'query { viewer { login } }'
@@ -11,7 +11,7 @@ export async function getUserLogin(ghToken: string): Promise<string> {
         body: JSON.stringify({ query }),
     })
     if (response.status === 401) {
-        onUnauthorized()
+        throw new UnauthorizedError('401')
     }
     const json = await response.json()
     return json.data.viewer.login

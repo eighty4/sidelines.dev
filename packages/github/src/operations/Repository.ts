@@ -1,4 +1,5 @@
-import { NotFoundError, onUnauthorized, type Pageable } from '../responses.ts'
+import { NotFoundError, onUnauthorized } from '../responses.ts'
+import { type Pageable } from '../paging.ts'
 
 // checks if user authed by ghToken has a repo within its personal account
 //
@@ -145,6 +146,12 @@ export type RepoContent =
           name: string
           size: number
       }
+    | {
+          type: 'content'
+          name: string
+          size: number
+          content: string
+      }
 
 export async function getRepoDirListing(
     ghToken: string,
@@ -218,8 +225,82 @@ export async function getRepoDirListing(
         .sort(sortRepoContents)
 }
 
+export async function getRepoDirContent(
+    ghToken: string,
+    repo: string,
+    dirpath: string,
+): Promise<Array<RepoContent> | 'repo-does-not-exist'> {
+    const query = `query {
+    viewer {
+      repository(name: "${repo}") {
+        object(expression: "HEAD:${dirpath}") {
+          ... on Tree {
+            entries {
+              name
+              type
+              object {
+                ... on Blob {
+                  byteSize
+                  text
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }`
+    const response = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        headers: {
+            Authorization: 'Bearer ' + ghToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+    })
+    if (response.status === 401) {
+        onUnauthorized()
+    }
+    const json = await response.json()
+    if (!json.data.viewer.repository) {
+        return 'repo-does-not-exist'
+    }
+    if (!json.data.viewer.repository.object) {
+        return []
+    }
+    return json.data.viewer.repository.object.entries
+        .map(
+            (
+                entry:
+                    | { name: string; type: 'tree' }
+                    | {
+                          name: string
+                          type: 'blob'
+                          object: { byteSize: number; text: string }
+                      },
+            ): RepoContent => {
+                switch (entry.type) {
+                    case 'blob':
+                        return {
+                            type: 'content',
+                            name: entry.name,
+                            size: entry.object.byteSize,
+                            content: entry.object.text,
+                        }
+                    case 'tree':
+                        return { type: 'dir', name: entry.name }
+                    default:
+                        throw new Error(
+                            `what is repository object ${JSON.stringify(entry)}?`,
+                        )
+                }
+            },
+        )
+        .sort(sortRepoContents)
+}
+
 // cat of file at a given path in a repository, scoped to a user's personal repos
-export async function getRepoContent(
+export async function getRepoObjectContent(
     ghToken: string,
     repo: string,
     path: string,

@@ -1,6 +1,10 @@
+html,
+body {
+    background: rgb(26, 26, 26);
+}
+
 #project {
     --project-nav-height: 3rem;
-    background: rgb(26, 26, 36);
     color: #eee;
 
     & #project-nav {

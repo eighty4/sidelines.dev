@@ -1,4 +1,4 @@
-# @eighty4/sidelines-github
+# @sidelines/github
 
 Package of GitHub API based features for Sidelines.dev.
 

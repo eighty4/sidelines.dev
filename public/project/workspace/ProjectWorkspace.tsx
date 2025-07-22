@@ -1,15 +1,18 @@
+import type { RepositoryId } from '@sidelines/data/web'
 import { useMemo, type FC } from 'react'
-import { ProjectFiles } from '../files/ProjectFiles.tsx'
 import { RepoSources } from './RepoSources.ts'
 import { WorkspaceEditor } from './editor/WorkspaceEditor.tsx'
+import { ProjectFiles } from '../files/ProjectFiles.tsx'
 
 export interface ProjectWorkspaceProps {
     ghToken: string
-    repo: string
+    ghLogin: string
+    repo: RepositoryId
 }
 
 export const ProjectWorkspace: FC<ProjectWorkspaceProps> = ({
     ghToken,
+    ghLogin,
     repo,
 }) => {
     const sources = useMemo(() => new RepoSources(ghToken, repo), [])
@@ -19,7 +22,12 @@ export const ProjectWorkspace: FC<ProjectWorkspaceProps> = ({
             <div id="file-ls">
                 <ProjectFiles repo={repo} sources={sources} />
             </div>
-            <WorkspaceEditor ghToken={ghToken} repo={repo} sources={sources} />
+            <WorkspaceEditor
+                ghToken={ghToken}
+                ghLogin={ghLogin}
+                repo={repo}
+                sources={sources}
+            />
         </div>
     )
 }

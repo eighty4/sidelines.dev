@@ -1,5 +1,5 @@
 import path from 'node:path/posix'
-import { GH_TOKEN, getCookie } from './cookie.ts'
+import { GH_TOKEN, getCookie } from '@sidelines/data'
 import configurePage from './public/configure/configure.html'
 import homePage from './public/home/home.html'
 import projectPage from './public/project/project.html'
@@ -12,19 +12,31 @@ if (!process.env.WEBAPP_ADDRESS) {
     throw new Error('WEBAPP_ADDRESS is required')
 }
 
-const monacoWorkerBuilds = await Bun.build({
+const workerBuilds = await Bun.build({
     entrypoints: [
-        'editor/editor.worker.js',
-        'language/css/css.worker.js',
-        'language/html/html.worker.js',
-        'language/json/json.worker.js',
-        'language/typescript/ts.worker.js',
-    ].map(src => './node_modules/monaco-editor/esm/vs/' + src),
+        'packages/data/src/workers/userData.ts',
+        'packages/data/src/workers/callToActions/ghActions.ts',
+        './node_modules/monaco-editor/esm/vs/editor/editor.worker.js',
+        './node_modules/monaco-editor/esm/vs/language/css/css.worker.js',
+        './node_modules/monaco-editor/esm/vs/language/html/html.worker.js',
+        './node_modules/monaco-editor/esm/vs/language/json/json.worker.js',
+        './node_modules/monaco-editor/esm/vs/language/typescript/ts.worker.js',
+    ],
     format: 'iife',
+    minify: PROD,
+    splitting: false,
+    target: 'browser',
 })
 
-const [mainWorker, cssWorker, htmlWorker, jsonWorker, tsWorker] =
-    monacoWorkerBuilds.outputs
+const [
+    userDataWorker,
+    ghActionsWorker,
+    mainWorker,
+    cssWorker,
+    htmlWorker,
+    jsonWorker,
+    tsWorker,
+] = workerBuilds.outputs
 
 function resolveMonacoWorker(filename: string): Blob {
     switch (filename) {
@@ -43,6 +55,21 @@ function resolveMonacoWorker(filename: string): Blob {
     }
 }
 
+function resolveSidelinesWorker(path: string): Blob {
+    switch (path) {
+        case 'userData.js':
+            return userDataWorker
+        case 'callToActions/ghActions.js':
+            return ghActionsWorker
+        default:
+            throw new Error(path + ' is not a prebuilt sidelines module')
+    }
+}
+
+const MONACO_WORKER_PATH_PREFIX = '/lib/monaco/worker/'
+
+const SIDELINES_WORKER_PATH_PREFIX = '/lib/sidelines/worker/'
+
 const server = Bun.serve({
     development: !PROD,
     static: {
@@ -53,9 +80,16 @@ const server = Bun.serve({
     fetch(req) {
         const url = new URL(req.url)
         console.log(req.method, url.pathname)
-        if (url.pathname.startsWith('/lib/monaco/worker/')) {
+        if (url.pathname.startsWith(MONACO_WORKER_PATH_PREFIX)) {
             return new Response(
                 resolveMonacoWorker(path.basename(url.pathname)),
+            )
+        }
+        if (url.pathname.startsWith(SIDELINES_WORKER_PATH_PREFIX)) {
+            return new Response(
+                resolveSidelinesWorker(
+                    url.pathname.substring(SIDELINES_WORKER_PATH_PREFIX.length),
+                ),
             )
         }
         switch (url.pathname) {

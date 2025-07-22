@@ -3,13 +3,14 @@ import {
     getAppInstallation,
     getAppInstallationConfigureUrl,
     getAppUrl,
-    getUserLogin,
-} from '@eighty4/sidelines-github'
+    UnauthorizedError,
+} from '@sidelines/github'
 import { useEffect, useState, type FC } from 'react'
 import { createRoot } from 'react-dom/client'
-import { expectGhToken, ghLoginCache } from '../storage.ts'
-import { ChooseProject } from './ChooseProject.tsx'
 import { MakeNotesRepo } from './MakeNotesRepo.tsx'
+import { ChooseWorkflow } from './workflow/ChooseWorkflow.tsx'
+import { expectGhLogin, expectGhToken } from '../init.js'
+import { logout } from '../nav.js'
 
 // todo hard-coded value should be a build env variable or globalThis
 const GH_APP_ID = location.host === 'sidelines.dev' ? 1166711 : 1144785
@@ -24,11 +25,12 @@ type AppState =
 
 interface ConfigurePageProps {
     ghToken: string
+    ghLogin: string
 }
 
 // todo provide alternatives to repositorySelection === all
 //  `gh repo create --template eighty4/.sidelines.templates` with .sidelines as an installed repository
-const ConfigurePage: FC<ConfigurePageProps> = ({ ghToken }) => {
+const ConfigurePage: FC<ConfigurePageProps> = ({ ghToken, ghLogin }) => {
     const [installationId, setInstallationId] = useState<number | undefined>()
     const [appState, setAppState] = useState<AppState>('loading')
     useEffect(() => {
@@ -55,7 +57,7 @@ const ConfigurePage: FC<ConfigurePageProps> = ({ ghToken }) => {
 
     switch (appState) {
         case 'loading':
-            return <p>Loading...</p>
+            return <p></p>
         case 'not-installed':
             return (
                 <p>
@@ -74,27 +76,30 @@ const ConfigurePage: FC<ConfigurePageProps> = ({ ghToken }) => {
             return (
                 <MakeNotesRepo
                     ghToken={ghToken}
+                    ghLogin={ghLogin}
                     onRepoMade={() => setAppState('all-good')}
                 />
             )
         case 'api-error':
             return <p>Api error</p>
         case 'all-good':
-            return (
-                <ChooseProject
-                    ghToken={ghToken}
-                    onProjectChoice={repo => {
-                        location.assign('/project?name=' + repo)
-                    }}
-                />
-            )
+            return <ChooseWorkflow ghToken={ghToken} ghLogin={ghLogin} />
     }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const ghToken = expectGhToken()
-    await ghLoginCache.readThrough(() => getUserLogin(ghToken))
-    createRoot(document.getElementById('root')!).render(
-        <ConfigurePage ghToken={ghToken} />,
-    )
+    try {
+        const ghToken = expectGhToken()
+        const ghLogin = await expectGhLogin(ghToken)
+        createRoot(document.getElementById('root')!).render(
+            <ConfigurePage ghToken={ghToken} ghLogin={ghLogin} />,
+        )
+    } catch (e) {
+        if (e instanceof UnauthorizedError) {
+            logout()
+            return
+        } else {
+            throw e
+        }
+    }
 })

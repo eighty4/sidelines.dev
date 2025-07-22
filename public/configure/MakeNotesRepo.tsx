@@ -1,17 +1,19 @@
-import { createSidelinesRepo } from '@eighty4/sidelines-github'
+import type { RepositoryId } from '@sidelines/data/web'
+import { createSidelinesRepo } from '@sidelines/github'
 import { type FC, useState } from 'react'
-import { ghLoginCache } from '../storage.ts'
 import { ConfigureError } from './ConfigureError.tsx'
 
 export interface MakeNotesRepoProps {
     ghToken: string
-    // repo name to create a project README.md for
-    repo?: string
+    ghLogin: string
+    // optionally provide name of project repo to init sidelines repo with
+    repo?: RepositoryId
     onRepoMade: () => void
 }
 
 export const MakeNotesRepo: FC<MakeNotesRepoProps> = ({
     ghToken,
+    ghLogin,
     repo,
     onRepoMade,
 }) => {
@@ -21,7 +23,7 @@ export const MakeNotesRepo: FC<MakeNotesRepoProps> = ({
     async function createRepository() {
         setCreating(true)
         try {
-            await createSidelinesRepo(ghToken, ghLoginCache.expect(), repo)
+            await createSidelinesRepo(ghToken, ghLogin, repo?.name)
             onRepoMade()
         } catch (e) {
             console.error(e)

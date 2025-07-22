@@ -1,6 +1,6 @@
 export const GH_TOKEN = 'ght'
 
-export function getCookie(cookieStr: string, name: string): string | undefined {
+export function getCookie(cookieStr: string, name: string): string | null {
     if (cookieStr.length) {
         for (const cookie of cookieStr.split(';')) {
             const [key, value] = cookie.split('=')
@@ -9,4 +9,5 @@ export function getCookie(cookieStr: string, name: string): string | undefined {
             }
         }
     }
+    return null
 }

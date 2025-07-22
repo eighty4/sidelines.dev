@@ -1,40 +1,54 @@
-import { getUserLogin } from '@eighty4/sidelines-github'
+import { type RepositoryId, UserDataClient } from '@sidelines/data/web'
+import { UnauthorizedError } from '@sidelines/github'
 import type { FC } from 'react'
 import { createRoot } from 'react-dom/client'
-import { expectGhToken, ghLoginCache } from '../storage.ts'
 import { ProjectNavbar } from './navbar/ProjectNavbar.tsx'
 import { ProjectWorkspace } from './workspace/ProjectWorkspace.tsx'
+import { expectUserDataClient } from '../init.js'
+import { logout } from '../nav.js'
 
-function getProjectName(): string {
-    const repo = new URL(location.href).searchParams.get('name')
-    if (!repo) {
-        location.assign('/')
+function getRepoFromLocation(ghLogin: string): RepositoryId {
+    const { searchParams } = new URL(location.href)
+    const owner = searchParams.get('owner')
+    const name = searchParams.get('name')
+    if (owner === null || name === null || owner !== ghLogin) {
+        throw new UnauthorizedError(`${owner} != ${ghLogin}`)
     }
-    return repo!
+    return { owner, name }
 }
 
 interface ProjectPageProps {
-    ghToken: string
-    repo: string
+    repo: RepositoryId
+    userData: UserDataClient
 }
 
-const ProjectPage: FC<ProjectPageProps> = ({ ghToken, repo }) => {
+const ProjectPage: FC<ProjectPageProps> = ({ repo, userData }) => {
     return (
         <div id="project">
-            <ProjectNavbar ghToken={ghToken} repo={repo} />
-            <ProjectWorkspace ghToken={ghToken} repo={repo} />
+            <ProjectNavbar repo={repo} userData={userData} />
+            <ProjectWorkspace
+                ghToken={userData.ghToken}
+                ghLogin={userData.ghLogin}
+                repo={repo}
+            />
         </div>
     )
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const ghToken = expectGhToken()
-    const preppingGhLoginCache = ghLoginCache.readThrough(() =>
-        getUserLogin(ghToken),
-    )
-    const repo = getProjectName()
-    await preppingGhLoginCache
-    createRoot(document.getElementById('root')!).render(
-        <ProjectPage ghToken={ghToken} repo={repo} />,
-    )
+    try {
+        const userData = await expectUserDataClient()
+        const repo = getRepoFromLocation(userData.ghLogin)
+        userData.postNavVisit(repo)
+        createRoot(document.getElementById('root')!).render(
+            <ProjectPage repo={repo} userData={userData} />,
+        )
+    } catch (e) {
+        if (e instanceof UnauthorizedError) {
+            logout()
+            return
+        } else {
+            throw e
+        }
+    }
 })

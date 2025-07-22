@@ -1,59 +1,58 @@
-import { doesRepoExist, getUserLogin } from '@eighty4/sidelines-github'
-import { type FC, useEffect, useMemo, useState } from 'react'
-import { ConfigureError } from './ConfigureError.tsx'
-import { projectHistoryCache } from '../storage.ts'
+import type { RepositoryId, UserDataClient } from '@sidelines/data/web'
+import { doesRepoExist } from '@sidelines/github'
+import {
+    type ChangeEvent,
+    type FC,
+    type KeyboardEvent,
+    useEffect,
+    useState,
+} from 'react'
+import { ConfigureError } from '../ConfigureError.tsx'
+import { navToProject } from '../../nav.js'
 
 export interface ChooseProjectProps {
-    ghToken: string
-    onProjectChoice: (repo: string) => void
+    userData: UserDataClient
 }
 
 type ChooseProjectError = 'server' | 'not-a-repo'
 
-export const ChooseProject: FC<ChooseProjectProps> = ({
-    ghToken,
-    onProjectChoice,
-}) => {
-    const projectHistory = useMemo(() => projectHistoryCache.read(), [])
+export const ChooseProject: FC<ChooseProjectProps> = ({ userData }) => {
+    const [recentRepos, setRecentRepos] = useState<
+        'loading' | Array<RepositoryId>
+    >('loading')
     const [repo, setRepo] = useState('')
-    const [username, setUsername] = useState<string | undefined>()
     const [clicked, setClicked] = useState(false)
     const [error, setError] = useState<ChooseProjectError | undefined>()
 
     useEffect(() => {
-        getUserLogin(ghToken)
-            .then(setUsername)
-            .catch(e => {
-                console.error(e)
-                setError('server')
-            })
+        userData.navHistory(3).then(setRecentRepos)
     }, [])
 
     if (error === 'server') {
         return (
             <ConfigureError
-                msg={`An unexpected error occured verifying if the repo ${repo} exists.`}
+                msg={`An unexpected error occurred verifying if the repo ${repo} exists.`}
             />
         )
     }
 
-    function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    function onInputChange(e: ChangeEvent<HTMLInputElement>) {
         setRepo(e.target.value)
         if (error) {
             setError(undefined)
         }
     }
 
-    function onInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    async function onInputKeyDown(e: KeyboardEvent<HTMLInputElement>) {
         if (e.key === 'Enter') {
-            onButtonClick()
+            await onButtonClick()
         }
     }
 
-    async function onButtonClick() {
+    async function onButtonClick(): Promise<void> {
         try {
-            if (await doesRepoExist(ghToken, repo)) {
-                onProjectChoice(repo)
+            if (await doesRepoExist(userData.ghToken, repo)) {
+                navToProject({ owner: userData.ghLogin, name: repo })
             } else {
                 setClicked(false)
                 setError('not-a-repo')
@@ -72,9 +71,9 @@ export const ChooseProject: FC<ChooseProjectProps> = ({
                 Organizations are not supported.
             </p>
             <h4>Repository name</h4>
-            {username && (
+            {userData.ghLogin && (
                 <p>
-                    {username} /{' '}
+                    {userData.ghLogin} /{' '}
                     <input
                         disabled={clicked}
                         value={repo}
@@ -96,13 +95,15 @@ export const ChooseProject: FC<ChooseProjectProps> = ({
                     Let's fucking rock!
                 </button>
             </div>
-            {!!projectHistory?.length && (
+            {recentRepos !== 'loading' && !!recentRepos?.length && (
                 <div>
                     <h3>Return to recent projects</h3>
-                    {projectHistory.map(repo => (
-                        <div key={repo}>
-                            <a href={`/project?name=${repo}`}>
-                                {username}/{repo}
+                    {recentRepos.map(repo => (
+                        <div key={repo.name}>
+                            <a
+                                href={`/project?owner=${repo.owner}&name=${repo.name}`}
+                            >
+                                {repo.owner}/{repo.name}
                             </a>
                         </div>
                     ))}

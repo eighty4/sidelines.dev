@@ -1,10 +1,23 @@
 <!doctype html>
-<html>
+<html lang="en">
     <head>
         <title>Sidelines.dev</title>
+        <link rel="stylesheet" href="../global.css" />
+        <link rel="stylesheet" href="./ConfigurePage.css" />
+        <link rel="stylesheet" href="./workflow/ChooseWorkflow.css" />
+        <script type="module" src="./ConfigurePage.tsx"></script>
+        <link
+            rel="preload"
+            href="/lib/sidelines/worker/userData.js"
+            as="script"
+        />
+        <link
+            rel="preload"
+            href="/lib/sidelines/worker/callToActions/ghActions.js"
+            as="script"
+        />
     </head>
     <body>
         <div id="root"></div>
-        <script type="module" src="./ConfigurePage.tsx"></script>
     </body>
 </html>

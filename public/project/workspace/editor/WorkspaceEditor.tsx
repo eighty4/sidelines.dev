@@ -1,18 +1,20 @@
-import { doesSidelinesRepoExist } from '@eighty4/sidelines-github'
-import { useEffect, useState, type FC } from 'react'
-import { MakeNotesRepo } from '../../../configure/MakeNotesRepo.tsx'
-import { ghLoginCache } from '../../../storage.ts'
-import type { RepoFile, RepoSources } from '../RepoSources.ts'
+import type { RepositoryId } from '@sidelines/data/web'
+import { doesSidelinesRepoExist } from '@sidelines/github'
+import { type FC, useEffect, useState } from 'react'
 import { EditorPane } from './EditorPane.tsx'
+import type { RepoFile, RepoSources } from '../RepoSources.ts'
+import { MakeNotesRepo } from '../../../configure/MakeNotesRepo.tsx'
 
 export interface WorkspaceEditorProps {
     ghToken: string
-    repo: string
+    ghLogin: string
+    repo: RepositoryId
     sources: RepoSources
 }
 
 export const WorkspaceEditor: FC<WorkspaceEditorProps> = ({
     ghToken,
+    ghLogin,
     repo,
     sources,
 }) => {
@@ -21,7 +23,7 @@ export const WorkspaceEditor: FC<WorkspaceEditorProps> = ({
         useState<Awaited<ReturnType<typeof doesSidelinesRepoExist>>>()
 
     useEffect(() => {
-        doesSidelinesRepoExist(ghToken, repo).then(setNotesRepoExists)
+        doesSidelinesRepoExist(ghToken, repo.name).then(setNotesRepoExists)
     }, [])
 
     useEffect(() => {
@@ -34,13 +36,12 @@ export const WorkspaceEditor: FC<WorkspaceEditorProps> = ({
     }
 
     if (notesRepoExists === 'misconfigured') {
-        const owner = ghLoginCache.read()
         return (
             <div>
                 <p>
                     Your{' '}
-                    <a href={`https://github.com/${owner}/.sidelines`}>
-                        {owner}/.sidelines
+                    <a href={`https://github.com/${ghLogin}/.sidelines`}>
+                        {ghLogin}/.sidelines
                     </a>{' '}
                     repository might not be correct for management by
                     Sidelines.dev. Set the repository's homepage URL to
@@ -55,6 +56,7 @@ export const WorkspaceEditor: FC<WorkspaceEditorProps> = ({
         return (
             <MakeNotesRepo
                 ghToken={ghToken}
+                ghLogin={ghLogin}
                 repo={repo}
                 onRepoMade={() => setNotesRepoExists(true)}
             />
@@ -65,15 +67,15 @@ export const WorkspaceEditor: FC<WorkspaceEditorProps> = ({
         return <EditorPane openFile={openFile} />
     } else {
         if (notesRepoExists === 'project-readme-missing') {
-            const owner = ghLoginCache.read()
             return (
                 <div>
                     <p>
                         Your .sidelines repository does not have a notes
-                        README.md for your {repo} project.
+                        README.md for your {repo.name} project.
                     </p>
                     <p>
-                        The missing file is {repo}/README.md in {owner}/{repo}.
+                        The missing file is {repo.name}/README.md in{' '}
+                        {repo.owner}/{repo.name}.
                     </p>
                     <p>
                         <button>Click here to create it</button>

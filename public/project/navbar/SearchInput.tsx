@@ -1,17 +1,20 @@
-import {
-    searchRepoNames,
-    type SearchRepoNamesResult,
-} from '@eighty4/sidelines-github'
+import { type RepositoryId } from '@sidelines/data/web'
+import { searchRepoNames, type SearchRepoNamesResult } from '@sidelines/github'
 import { useEffect, useMemo, useRef, useState, type FC } from 'react'
-import { ghLoginCache } from '../../storage.ts'
+import { navToProject } from '../../nav.js'
 
 interface SearchInputProps {
+    currentPageProject: RepositoryId
     ghToken: string
-    repo: string
+    ghLogin: string
 }
 
 // todo keyboard access for search suggestions
-export const SearchInput: FC<SearchInputProps> = ({ ghToken, repo }) => {
+export const SearchInput: FC<SearchInputProps> = ({
+    currentPageProject,
+    ghToken,
+    ghLogin,
+}) => {
     const searchInputRef = useRef<HTMLInputElement>(null)
     const [focused, setFocused] = useState(false)
     const [closeOnBlur, setCloseOnBlur] = useState(true)
@@ -46,15 +49,15 @@ export const SearchInput: FC<SearchInputProps> = ({ ghToken, repo }) => {
         ) {
             resetState()
         }
-        searchRepoNames(ghToken, ghLoginCache.expect(), searchTerm).then(
-            result => {
-                result.matches = result.matches.filter(match => match !== repo)
-                searchResults[result.term] = result
-                if (searchTerm === result.term) {
-                    updateState(result)
-                }
-            },
-        )
+        searchRepoNames(ghToken, ghLogin, searchTerm).then(result => {
+            result.matches = result.matches.filter(
+                repoName => repoName !== currentPageProject.name,
+            )
+            searchResults[result.term] = result
+            if (searchTerm === result.term) {
+                updateState(result)
+            }
+        })
     }, [searchTerm])
 
     useEffect(() => {
@@ -87,7 +90,10 @@ export const SearchInput: FC<SearchInputProps> = ({ ghToken, repo }) => {
                 break
             case 'Enter':
                 if (highlightCursor !== null && searchSuggestions !== null) {
-                    navToProject(searchSuggestions.matches[highlightCursor])
+                    navToProject({
+                        owner: ghLogin,
+                        name: searchSuggestions.matches[highlightCursor],
+                    })
                 }
                 break
         }
@@ -107,10 +113,6 @@ export const SearchInput: FC<SearchInputProps> = ({ ghToken, repo }) => {
         } else {
             setHighlightCursor(0)
         }
-    }
-
-    function navToProject(project: string) {
-        location.assign(`/project?name=${project}`)
     }
 
     return (
@@ -135,7 +137,12 @@ export const SearchInput: FC<SearchInputProps> = ({ ghToken, repo }) => {
                             <div
                                 className={`suggestion ${i === highlightCursor ? 'highlight' : ''}`}
                                 key={match}
-                                onClick={() => navToProject(match)}
+                                onClick={() =>
+                                    navToProject({
+                                        owner: ghLogin,
+                                        name: match,
+                                    })
+                                }
                             >
                                 {match}
                             </div>

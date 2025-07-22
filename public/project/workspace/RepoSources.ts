@@ -1,6 +1,10 @@
-import { getRepoContent, getRepoDirListing } from '@eighty4/sidelines-github'
+import {
+    createJsonCache,
+    type RepositoryId,
+    type SessionCache,
+} from '@sidelines/data/web'
+import { getRepoDirListing, getRepoObjectContent } from '@sidelines/github'
 import { BehaviorSubject, map, Observable } from 'rxjs'
-import { createJsonCache, type SessionCache } from '../../storage.ts'
 
 type RepoTreePath = {
     repo: string
@@ -64,11 +68,11 @@ export class RepoSources {
     readonly #cacheOpenFile: SessionCache<RepoTreePath>
     readonly #state: BehaviorSubject<_RepoSources>
 
-    constructor(ghToken: string, repo: string) {
+    constructor(ghToken: string, repo: RepositoryId) {
         this.#ghToken = ghToken
         const repos: _RepoSources['repos'] = {}
         repos['.sidelines'] = {}
-        repos[repo] = {}
+        repos[repo.name] = {}
         this.#state = new BehaviorSubject({ repos })
         this.#cacheOpenFile = createJsonCache<RepoTreePath>(
             localStorage,
@@ -192,6 +196,7 @@ export class RepoSources {
                         dirpath,
                         name: rc.name,
                     }
+                case 'content':
                 case 'file':
                     return {
                         type: 'file-ls',
@@ -217,7 +222,7 @@ export class RepoSources {
                     status: 'loading',
                 }) as RepoFile,
         )
-        getRepoContent(this.#ghToken, repo, `${dirpath}/${name}`).then(
+        getRepoObjectContent(this.#ghToken, repo, `${dirpath}/${name}`).then(
             content => {
                 this.#mutateFile(
                     repo,
