@@ -1,4 +1,4 @@
-import type { Language, Repository } from '@sidelines/data/web'
+import type { Language, Repository } from '@sidelines/model'
 import { type FC, useEffect, useMemo, useState } from 'react'
 import type { CallToAction, WorkflowRepoSearch } from './WorkflowRepoSearch.ts'
 

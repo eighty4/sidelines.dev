@@ -14,8 +14,8 @@ if (!process.env.WEBAPP_ADDRESS) {
 
 const workerBuilds = await Bun.build({
     entrypoints: [
-        'packages/data/src/workers/userData.ts',
-        'packages/data/src/workers/callToActions/ghActions.ts',
+        'packages/data/src/userData/worker.ts',
+        'packages/data/src/callToActions/ghActions.ts',
         './node_modules/monaco-editor/esm/vs/editor/editor.worker.js',
         './node_modules/monaco-editor/esm/vs/language/css/css.worker.js',
         './node_modules/monaco-editor/esm/vs/language/html/html.worker.js',

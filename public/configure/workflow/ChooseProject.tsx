@@ -1,5 +1,6 @@
-import type { RepositoryId, UserDataClient } from '@sidelines/data/web'
+import type { UserDataClient } from '@sidelines/data/web'
 import { doesRepoExist } from '@sidelines/github'
+import type { RepositoryId } from '@sidelines/model'
 import {
     type ChangeEvent,
     type FC,

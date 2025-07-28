@@ -1,17 +1,17 @@
 import {
     createJsonCache,
-    type RepositoryId,
     type SessionCache,
+    UserDataClient,
 } from '@sidelines/data/web'
-import { getRepoDirListing, getRepoObjectContent } from '@sidelines/github'
+import type { RepositoryId } from '@sidelines/model'
 import { BehaviorSubject, map, Observable } from 'rxjs'
 
 type RepoTreePath = {
-    repo: string
     // abs path from repo root excluding name of file or dir
     dirpath: string
     // name of file or dir
     name: string
+    repo: RepositoryId
 }
 
 export type RepoDir = RepoTreePath & { type: 'dir' }
@@ -37,7 +37,7 @@ export type RepoFile = RepoTreePath & {
 
 export type RepoDirListing = {
     dirpath: string
-    repo: string
+    repo: RepositoryId
 } & (
     | {
           status: 'loading'
@@ -56,28 +56,40 @@ export type RepoDirListing = {
 
 type _RepoSources = {
     openFile?: {
-        repo: string
+        repo: RepositoryId
         dirpath: string
         name: string
     }
-    repos: Record<string, Record<string, RepoDirListing>>
+    // repos[owner][name][dirpath]
+    repos: Record<string, Record<string, Record<string, RepoDirListing>>>
+}
+
+function createInitState(ghLogin: string, repo: RepositoryId): _RepoSources {
+    const repos: _RepoSources['repos'] = {}
+    repos[ghLogin] = {
+        ['.sidelines']: {},
+    }
+    if (!repos[repo.owner]) {
+        repos[repo.owner] = {}
+    }
+    repos[repo.owner][repo.name] = {}
+    return { repos }
 }
 
 export class RepoSources {
-    readonly #ghToken: string
     readonly #cacheOpenFile: SessionCache<RepoTreePath>
     readonly #state: BehaviorSubject<_RepoSources>
+    readonly #userData: UserDataClient
 
-    constructor(ghToken: string, repo: RepositoryId) {
-        this.#ghToken = ghToken
-        const repos: _RepoSources['repos'] = {}
-        repos['.sidelines'] = {}
-        repos[repo.name] = {}
-        this.#state = new BehaviorSubject({ repos })
+    constructor(repo: RepositoryId, userData: UserDataClient) {
+        this.#state = new BehaviorSubject(
+            createInitState(userData.ghLogin, repo),
+        )
         this.#cacheOpenFile = createJsonCache<RepoTreePath>(
             localStorage,
             `sld.project.${repo}.open`,
         )
+        this.#userData = userData
         this.#loadLastOpenFile().then().catch()
     }
 
@@ -98,12 +110,14 @@ export class RepoSources {
         }
     }
 
-    ls(repo: string, dirpath: string = ''): Observable<RepoDirListing> {
+    ls(repo: RepositoryId, dirpath: string = ''): Observable<RepoDirListing> {
         if (
-            typeof this.#state.getValue().repos[repo][dirpath] === 'undefined'
+            typeof this.#state.getValue().repos[repo.owner][repo.name][
+                dirpath
+            ] === 'undefined'
         ) {
             this.#ls(repo, dirpath).then(ls => {
-                if (ls === 'repo-does-not-exist') {
+                if (ls === 'repo-not-found') {
                     this.#mutateDirListing(repo, dirpath, {
                         status: 'repo-does-not-exist',
                         repo,
@@ -120,7 +134,9 @@ export class RepoSources {
                 }
             })
         }
-        return this.#state.asObservable().pipe(map(s => s.repos[repo][dirpath]))
+        return this.#state
+            .asObservable()
+            .pipe(map(s => s.repos[repo.owner][repo.name][dirpath]))
     }
 
     get openFile(): Observable<RepoFile | null> {
@@ -128,7 +144,9 @@ export class RepoSources {
             map(s => {
                 if (s.openFile) {
                     const dirListing =
-                        s.repos[s.openFile.repo][s.openFile.dirpath]
+                        s.repos[s.openFile.repo.owner][s.openFile.repo.name][
+                            s.openFile.dirpath
+                        ]
                     if (dirListing.status === 'listed') {
                         const f = dirListing.files.find(
                             f =>
@@ -174,17 +192,17 @@ export class RepoSources {
     }
 
     async #ls(
-        repo: string,
+        repo: RepositoryId,
         dirpath: string,
-    ): Promise<Array<RepoDir | RepoFile> | 'repo-does-not-exist'> {
+    ): Promise<Array<RepoDir | RepoFile> | 'repo-not-found'> {
         this.#mutateDirListing(repo, dirpath, {
             status: 'loading',
             repo,
             dirpath,
             cached: lsCacheRead(repo, dirpath),
         })
-        const contents = await getRepoDirListing(this.#ghToken, repo, dirpath)
-        if (contents === 'repo-does-not-exist') {
+        const contents = await this.#userData.repoListing(repo, dirpath)
+        if (contents === 'repo-not-found') {
             return contents
         }
         return contents.map(rc => {
@@ -196,8 +214,8 @@ export class RepoSources {
                         dirpath,
                         name: rc.name,
                     }
-                case 'content':
-                case 'file':
+                case 'file-cat':
+                case 'file-ls':
                     return {
                         type: 'file-ls',
                         repo,
@@ -211,37 +229,35 @@ export class RepoSources {
         })
     }
 
-    #loadFileContent(repo: string, dirpath: string, name: string) {
+    #loadFileContent(repo: RepositoryId, dirpath: string, filename: string) {
         this.#mutateFile(
             repo,
             dirpath,
-            name,
+            filename,
             f =>
                 ({
                     ...f,
                     status: 'loading',
                 }) as RepoFile,
         )
-        getRepoObjectContent(this.#ghToken, repo, `${dirpath}/${name}`).then(
-            content => {
-                this.#mutateFile(
-                    repo,
-                    dirpath,
-                    name,
-                    f =>
-                        ({
-                            ...f,
-                            type: 'file-cat',
-                            status: 'synced',
-                            content: content || '',
-                        }) as RepoFile,
-                )
-            },
-        )
+        this.#userData.repoContent(repo, dirpath, filename).then(content => {
+            this.#mutateFile(
+                repo,
+                dirpath,
+                filename,
+                f =>
+                    ({
+                        ...f,
+                        type: 'file-cat',
+                        status: 'synced',
+                        content: content || '',
+                    }) as RepoFile,
+            )
+        })
     }
 
     #mutateDirListing(
-        repo: string,
+        repo: RepositoryId,
         dirpath: string,
         dirListing: RepoDirListing,
     ) {
@@ -250,21 +266,25 @@ export class RepoSources {
             openFile: s.openFile,
             repos: {
                 ...s.repos,
-                [repo]: {
-                    ...s.repos[repo],
-                    [dirpath]: dirListing,
+                [repo.owner]: {
+                    ...s.repos[repo.owner],
+                    [repo.name]: {
+                        ...s.repos[repo.owner][repo.name],
+                        [dirpath]: dirListing,
+                    },
                 },
             },
         })
     }
 
     #mutateFile(
-        repo: string,
+        repo: RepositoryId,
         dirpath: string,
         name: string,
         fn: (f: RepoFile) => RepoFile,
     ) {
-        const dirListing = this.#state.getValue().repos[repo][dirpath]
+        const dirListing =
+            this.#state.getValue().repos[repo.owner][repo.name][dirpath]
         if (dirListing.status === 'listed') {
             const file = dirListing.files.find(f => f.name === name)
             if (file && file.type !== 'dir') {
@@ -284,7 +304,7 @@ export class RepoSources {
 }
 
 function lsCacheWrite(
-    repo: string,
+    repo: RepositoryId,
     dirpath: string,
     ls: Array<RepoDir | RepoFile>,
 ) {
@@ -294,11 +314,14 @@ function lsCacheWrite(
     )
 }
 
-function lsCacheRead(repo: string, dirpath: string): Array<string> | null {
+function lsCacheRead(
+    repo: RepositoryId,
+    dirpath: string,
+): Array<string> | null {
     const read = localStorage.getItem(lsCacheKey(repo, dirpath))
     return read === null ? null : JSON.parse(read)
 }
 
-function lsCacheKey(repo: string, dirpath: string): string {
-    return `sld.ls ${repo}/${dirpath}`
+function lsCacheKey(repo: RepositoryId, dirpath: string): string {
+    return `sld.ls ${repo.owner}/${repo.name}/${dirpath}`
 }

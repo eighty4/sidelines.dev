@@ -1,4 +1,4 @@
-import type { RepositoryId } from '@sidelines/data'
+import type { RepositoryId } from '@sidelines/model'
 
 export function buildProjectUrl(repo: RepositoryId): string {
     return `/project?owner=${repo.owner}&name=${repo.name}`

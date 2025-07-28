@@ -1,5 +1,5 @@
-import type { RepositoryId } from '@sidelines/data/web'
 import { createSidelinesRepo } from '@sidelines/github'
+import type { RepositoryId } from '@sidelines/model'
 import { type FC, useState } from 'react'
 import { ConfigureError } from './ConfigureError.tsx'
 

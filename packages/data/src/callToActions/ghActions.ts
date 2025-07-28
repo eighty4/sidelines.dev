@@ -3,11 +3,8 @@ import {
     type GHWorkflow,
     type GHWorkflowSchemaError,
 } from '@eighty4/model-t'
-import {
-    getRepoDirContent,
-    isWorkflowPassing,
-    type RepoContent,
-} from '@sidelines/github'
+import { getRepoDirContent, isWorkflowPassing } from '@sidelines/github'
+import type { RepositoryObject } from '@sidelines/model'
 
 export type CicdCallToAction = {
     // no CICD checks on push or pull_request
@@ -104,8 +101,8 @@ async function checkRepoWorkflows(
     } else {
         const workflowFiles: Array<{ name: string; content: string }> =
             workflowDirFiles.filter(
-                (workflow: RepoContent) =>
-                    workflow.type === 'content' &&
+                (workflow: RepositoryObject) =>
+                    workflow.type === 'file-cat' &&
                     /.*\.ya?ml$/.test(workflow.name),
             ) as Array<{ name: string; content: string }>
         if (!workflowFiles.length) {

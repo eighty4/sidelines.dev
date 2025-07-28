@@ -3,10 +3,9 @@ import type {
     ActionsCallToActionsRequest,
     ActionsCallToActionsUpdate,
     CicdCallToAction,
-    Language,
     WorkflowCallToAction,
-    Repository,
 } from '@sidelines/data/web'
+import { type Language, type Repository } from '@sidelines/model'
 import {
     type PackageSearchResult,
     searchForPackages,

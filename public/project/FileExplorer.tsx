@@ -1,17 +1,72 @@
-import { useEffect, useState, type FC } from 'react'
-import type {
-    RepoDirListing,
-    RepoFile,
-    RepoSources,
-} from '../workspace/RepoSources.ts'
+import type { RepositoryId } from '@sidelines/model'
+import { type FC, useEffect, useState } from 'react'
+import type { RepoDirListing, RepoFile, RepoSources } from './RepoSources.ts'
 
-interface DirIndexProps {
-    dirpath: string
-    repo: string
+export type FileExplorerProps = {
+    ghLogin: string
+    repo: RepositoryId
     sources: RepoSources
 }
 
-export const DirIndex: FC<DirIndexProps> = ({ dirpath, repo, sources }) => {
+export const FileExplorer: FC<FileExplorerProps> = ({
+    ghLogin,
+    repo,
+    sources,
+}) => {
+    return (
+        <div id="project-files">
+            <FileExplorerSection
+                sources={sources}
+                repo={{ owner: ghLogin, name: '.sidelines' }}
+                rootDirpath={repo.name}
+                title="Notes"
+            />
+            <FileExplorerSection
+                sources={sources}
+                repo={repo}
+                rootDirpath=".github/workflows"
+                title="Workflows"
+            />
+        </div>
+    )
+}
+
+type FileExplorerSectionProps = {
+    repo: RepositoryId
+    rootDirpath: string
+    sources: RepoSources
+    title: 'Notes' | 'Workflows'
+}
+
+const FileExplorerSection: FC<FileExplorerSectionProps> = ({
+    repo,
+    rootDirpath,
+    sources,
+    title,
+}) => {
+    return (
+        <div>
+            <div className="file-explorer-header">{title}</div>
+            <FileExplorerDirIndex
+                dirpath={rootDirpath}
+                repo={repo}
+                sources={sources}
+            />
+        </div>
+    )
+}
+
+type FileExplorerDirIndexProps = {
+    dirpath: string
+    repo: RepositoryId
+    sources: RepoSources
+}
+
+const FileExplorerDirIndex: FC<FileExplorerDirIndexProps> = ({
+    dirpath,
+    repo,
+    sources,
+}) => {
     const [listing, setListing] = useState<RepoDirListing>()
     const [openFile, setOpenFile] = useState<RepoFile | null>()
 

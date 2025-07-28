@@ -1,7 +1,7 @@
 import { editor as Editor, Uri } from 'monaco-editor'
 import { useEffect, useRef, type FC } from 'react'
-import type { RepoFile } from '../RepoSources.ts'
 import './initMonaco.ts'
+import type { RepoFile } from '../RepoSources.ts'
 
 interface EditorPaneProps {
     openFile: RepoFile

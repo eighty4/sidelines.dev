@@ -1,8 +1,10 @@
 const DB_NAME = 'sidelines-dev'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 export const DB_STORE_NAV = 'repo-nav'
 export const DB_INDEX_NAV = 'repo-nav-visited'
+export const DB_STORE_FILES = 'repo-objects'
+export const DB_STORE_FILES_KEY = ['owner', 'name', 'sha', 'dirpath']
 
 function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
     console.log('upgrading db from', oldVersion)
@@ -12,6 +14,10 @@ function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
                 keyPath: 'nameWithOwner',
             })
             projectNavStore.createIndex(DB_INDEX_NAV, 'when')
+        } else if (oldVersion === 1) {
+            db.createObjectStore(DB_STORE_FILES, {
+                keyPath: DB_STORE_FILES_KEY,
+            })
         }
         oldVersion++
     }

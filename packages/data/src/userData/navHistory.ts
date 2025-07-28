@@ -1,5 +1,5 @@
-import { connectToDb, DB_INDEX_NAV, DB_STORE_NAV } from './open.ts'
-import type { RepositoryId } from '../model.ts'
+import type { RepositoryId } from '@sidelines/model'
+import { connectToDb, DB_INDEX_NAV, DB_STORE_NAV } from '../database.ts'
 
 const LIMIT_NAV = 5
 

@@ -1,12 +1,14 @@
+import type { RepositoryId, RepositoryObject } from '@sidelines/model'
 import { Subject } from 'rxjs'
 import type {
     ProjectNavGetResponse,
+    RepoObjectResponse,
+    RepoListingResponse,
     UserDataRequest,
     UserDataRpcMessageBase,
     UserDataRpcRequest,
     UserDataRpcResponse,
-} from './userData.ts'
-import type { RepositoryId } from '../model.ts'
+} from './worker.ts'
 
 export class UserDataClient {
     readonly ghToken: string
@@ -22,7 +24,7 @@ export class UserDataClient {
             this.#responses.next(e.data)
     }
 
-    postNavVisit(repo: RepositoryId) {
+    navVisit(repo: RepositoryId) {
         this.#request({
             kind: 'nav-update',
             repo,
@@ -38,7 +40,37 @@ export class UserDataClient {
         return repos
     }
 
-    #request(request: UserDataRequest | UserDataRpcMessageBase) {
+    async repoContent(
+        repo: RepositoryId,
+        dirpath: string | null,
+        filename: string,
+    ): Promise<string> {
+        const { content } = await this.#requestAndReply<RepoObjectResponse>({
+            id: crypto.randomUUID(),
+            kind: 'repo-cat',
+            ghToken: this.ghToken,
+            repo,
+            dirpath,
+            filename,
+        })
+        return content
+    }
+
+    async repoListing(
+        repo: RepositoryId,
+        dirpath: string | null,
+    ): Promise<Array<RepositoryObject> | 'repo-not-found'> {
+        const { objects } = await this.#requestAndReply<RepoListingResponse>({
+            id: crypto.randomUUID(),
+            kind: 'repo-ls',
+            ghToken: this.ghToken,
+            repo,
+            dirpath,
+        })
+        return objects
+    }
+
+    #request(request: UserDataRequest | UserDataRpcMessageBase<any>) {
         this.#w.postMessage(request)
     }
 

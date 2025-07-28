@@ -1,13 +1,13 @@
 import {
-    type Language,
-    type PackageConfig,
-    type Repository,
-} from '@sidelines/data/web'
-import {
     listRepositoriesForActivityRelevance,
     search,
     type RepositoryRelevanceData,
 } from '@sidelines/github'
+import {
+    type Language,
+    type PackageConfig,
+    type Repository,
+} from '@sidelines/model'
 
 const LANG_CFGS: Record<Language, PackageConfig> = {
     dart: 'pubspec.yaml',

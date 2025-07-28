@@ -1,0 +1,129 @@
+import type { RepositoryId, RepositoryObject } from '@sidelines/model'
+import { readRecentNav, writeNavVisit } from './navHistory.ts'
+import {
+    type ReadRepoContent,
+    readRepoContent,
+    type ReadRepoListing,
+    readRepoListing,
+} from './repoSources.js'
+
+export type UserDataMessageBase<KIND> = {
+    kind: KIND
+}
+
+export type UserDataRpcMessageBase<KIND> = UserDataMessageBase<KIND> & {
+    id: string
+}
+
+export type ProjectNavUpdateRequest = {
+    repo: RepositoryId
+} & UserDataMessageBase<'nav-update'>
+
+export type ProjectNavGetRequest = {
+    limit?: number
+} & UserDataRpcMessageBase<'nav-get'>
+
+export type ProjectNavGetResponse = {
+    repos: Array<RepositoryId>
+} & UserDataRpcMessageBase<ProjectNavGetRequest['kind']>
+
+export type RepoListingRequest = ReadRepoListing &
+    UserDataRpcMessageBase<'repo-ls'>
+
+export type RepoListingResponse = {
+    objects: 'repo-not-found' | Array<RepositoryObject>
+} & UserDataRpcMessageBase<RepoListingRequest['kind']>
+
+export type RepoObjectRequest = ReadRepoContent &
+    UserDataRpcMessageBase<'repo-cat'>
+
+export type RepoObjectResponse = {
+    content: 'file-not-found' | 'repo-not-found' | string
+} & UserDataRpcMessageBase<RepoObjectRequest['kind']>
+
+export type UserDataRequest = UserDataRpcRequest | ProjectNavUpdateRequest
+
+export type UserDataRpcRequest =
+    | ProjectNavGetRequest
+    | RepoListingRequest
+    | RepoObjectRequest
+
+export type UserDataRpcResponse =
+    | ProjectNavGetResponse
+    | RepoListingResponse
+    | RepoObjectResponse
+
+async function processAsyncRequest(request: UserDataRequest): Promise<void> {
+    switch (request.kind) {
+        case 'nav-update':
+            await writeNavVisit(request.repo)
+            break
+        default:
+            throw Error()
+    }
+}
+
+async function processRpcRequest(
+    request: UserDataRpcRequest,
+): Promise<UserDataRpcResponse> {
+    switch (request.kind) {
+        case 'nav-get':
+            return {
+                kind: request.kind,
+                id: request.id,
+                repos: await readRecentNav(request),
+            }
+        case 'repo-cat':
+            return {
+                kind: request.kind,
+                id: request.id,
+                content: await readRepoContent(request),
+            }
+        case 'repo-ls':
+            return {
+                kind: request.kind,
+                id: request.id,
+                objects: await readRepoListing(request),
+            }
+        default:
+            throw Error()
+    }
+}
+
+function isMessage(req: unknown): req is UserDataMessageBase<any> {
+    if (req === null || typeof req !== 'object') {
+        return false
+    }
+    return 'kind' in req && typeof req.kind === 'string'
+}
+
+function isRpcRequest(
+    req: UserDataMessageBase<any>,
+): req is UserDataRpcRequest {
+    switch (req.kind) {
+        case 'nav-get':
+        case 'repo-cat':
+        case 'repo-ls':
+            return 'id' in req && typeof req.id === 'string'
+    }
+    return false
+}
+
+onmessage = async (e: MessageEvent<UserDataRequest>) => {
+    if (!isMessage(e.data)) {
+        console.error('workers/userData.js onmessage bad input', e.data)
+    } else {
+        const req = e.data
+        try {
+            if (isRpcRequest(req)) {
+                postMessage(await processRpcRequest(req))
+            } else {
+                await processAsyncRequest(req)
+            }
+        } catch (e) {
+            console.error('error processing', req.kind, 'request:', e)
+        }
+    }
+}
+
+onmessageerror = e => console.error('workers/userData.js onmessageerror', e)

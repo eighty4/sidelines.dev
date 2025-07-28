@@ -1,6 +1,6 @@
 import {
     createCommitOnBranch,
-    getRepoDefaultBranch,
+    getViewerRepoDefaultBranch,
 } from '../../operations/Repository.ts'
 import { NotFoundError, onUnauthorized } from '../../responses.ts'
 
@@ -81,7 +81,7 @@ async function pollForDefaultBranchAfterCreatingRepo(
     )
     let fetching: Promise<{ name: string; headOid: string }>
     while (true) {
-        fetching = getRepoDefaultBranch(ghToken, repo)
+        fetching = getViewerRepoDefaultBranch(ghToken, repo)
         try {
             let branch: 'timeout' | { name: string; headOid: string }
             branch = await Promise.race([timeout, fetching])

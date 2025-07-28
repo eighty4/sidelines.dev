@@ -1,3 +1,3 @@
 export * from './index.js'
 export * from './storage.ts'
-export * from './workers/UserDataClient.ts'
+export * from './userData/UserDataClient.ts'

@@ -1,5 +1,6 @@
-import { NotFoundError, onUnauthorized } from '../responses.ts'
+import type { RepositoryId, RepositoryObject } from '@sidelines/model'
 import { type Pageable } from '../paging.ts'
+import { NotFoundError, onUnauthorized } from '../responses.ts'
 
 // checks if user authed by ghToken has a repo within its personal account
 //
@@ -90,11 +91,58 @@ export async function createCommitOnBranch({
     }
 }
 
-// lookup the default branch name and its HEAD's commit object id, scoped to a user's personal repo
+export type RepoBranchReference = {
+    headOid: string
+    name: string
+}
+
 export async function getRepoDefaultBranch(
     ghToken: string,
+    repo: RepositoryId,
+): Promise<RepoBranchReference> {
+    const query = `query {
+      repository(owner: "${repo.owner}", name: "${repo.name}") {
+        defaultBranchRef {
+          name
+          target {
+            ... on Commit {
+              history(first: 1) { edges { node { ... on Commit { oid } } } }
+            }
+          }
+        }
+      }
+  }`
+    const response = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        headers: {
+            Authorization: 'Bearer ' + ghToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+    })
+    if (response.status === 401) {
+        onUnauthorized()
+    }
+    const json = await response.json()
+    if (
+        json.data.repository?.defaultBranchRef?.name &&
+        json.data.repository?.defaultBranchRef?.target?.history?.edges?.length
+    ) {
+        const name = json.data.repository.defaultBranchRef.name
+        const headOid =
+            json.data.repository.defaultBranchRef.target.history.edges[0].node
+                .oid
+        return { name, headOid }
+    } else {
+        throw new NotFoundError()
+    }
+}
+
+// lookup the default branch name and its HEAD's commit object id, scoped to a user's personal repo
+export async function getViewerRepoDefaultBranch(
+    ghToken: string,
     repo: string,
-): Promise<{ name: string; headOid: string }> {
+): Promise<RepoBranchReference> {
     const query = `query {
     viewer {
       repository(name: "${repo}") {
@@ -136,28 +184,82 @@ export async function getRepoDefaultBranch(
     }
 }
 
-export type RepoContent =
-    | {
-          type: 'dir'
-          name: string
-      }
-    | {
-          type: 'file'
-          name: string
-          size: number
-      }
-    | {
-          type: 'content'
-          name: string
-          size: number
-          content: string
-      }
-
 export async function getRepoDirListing(
+    ghToken: string,
+    repo: RepositoryId,
+    dirpath: string | null,
+): Promise<Array<RepositoryObject> | 'repo-not-found'> {
+    dirpath = dirpath || ''
+    const query = `query {
+    repository(owner: "${repo.owner}", name: "${repo.name}") {
+      object(expression: "HEAD:${dirpath || ''}") {
+        ... on Tree {
+          entries {
+            name
+            type
+            object {
+              ... on Blob {
+                byteSize
+              }
+            }
+          }
+        }
+      }
+    }
+  }`
+    const response = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        headers: {
+            Authorization: 'Bearer ' + ghToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+    })
+    if (response.status === 401) {
+        onUnauthorized()
+    }
+    const json = await response.json()
+    if (!json.data.repository) {
+        return 'repo-not-found'
+    }
+    if (!json.data.repository.object) {
+        return []
+    }
+    return json.data.repository.object.entries
+        .map(
+            (
+                entry:
+                    | { name: string; type: 'tree' }
+                    | {
+                          name: string
+                          type: 'blob'
+                          object: { byteSize: number }
+                      },
+            ): RepositoryObject => {
+                switch (entry.type) {
+                    case 'blob':
+                        return {
+                            type: 'file-ls',
+                            name: entry.name,
+                            size: entry.object.byteSize,
+                        }
+                    case 'tree':
+                        return { type: 'dir', name: entry.name }
+                    default:
+                        throw new Error(
+                            `what is repository object ${JSON.stringify(entry)}?`,
+                        )
+                }
+            },
+        )
+        .sort(sortRepositoryObjects)
+}
+
+export async function getViewerRepoDirListing(
     ghToken: string,
     repo: string,
     dirpath: string,
-): Promise<Array<RepoContent> | 'repo-does-not-exist'> {
+): Promise<Array<RepositoryObject> | 'repo-does-not-exist'> {
     const query = `query {
     viewer {
       repository(name: "${repo}") {
@@ -205,11 +307,11 @@ export async function getRepoDirListing(
                           type: 'blob'
                           object: { byteSize: number }
                       },
-            ): RepoContent => {
+            ): RepositoryObject => {
                 switch (entry.type) {
                     case 'blob':
                         return {
-                            type: 'file',
+                            type: 'file-ls',
                             name: entry.name,
                             size: entry.object.byteSize,
                         }
@@ -222,14 +324,14 @@ export async function getRepoDirListing(
                 }
             },
         )
-        .sort(sortRepoContents)
+        .sort(sortRepositoryObjects)
 }
 
 export async function getRepoDirContent(
     ghToken: string,
     repo: string,
     dirpath: string,
-): Promise<Array<RepoContent> | 'repo-does-not-exist'> {
+): Promise<Array<RepositoryObject> | 'repo-does-not-exist'> {
     const query = `query {
     viewer {
       repository(name: "${repo}") {
@@ -278,11 +380,11 @@ export async function getRepoDirContent(
                           type: 'blob'
                           object: { byteSize: number; text: string }
                       },
-            ): RepoContent => {
+            ): RepositoryObject => {
                 switch (entry.type) {
                     case 'blob':
                         return {
-                            type: 'content',
+                            type: 'file-cat',
                             name: entry.name,
                             size: entry.object.byteSize,
                             content: entry.object.text,
@@ -296,11 +398,41 @@ export async function getRepoDirContent(
                 }
             },
         )
-        .sort(sortRepoContents)
+        .sort(sortRepositoryObjects)
 }
 
 // cat of file at a given path in a repository, scoped to a user's personal repos
 export async function getRepoObjectContent(
+    ghToken: string,
+    repo: RepositoryId,
+    path: string,
+): Promise<string | null> {
+    const query = `query {
+      repository(owner: "${repo.owner}", name: "${repo.name}") {
+        object(expression: "HEAD:${path}") {
+          ... on Blob {
+            text
+          }
+        }
+      }
+  }`
+    const response = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        headers: {
+            Authorization: 'Bearer ' + ghToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+    })
+    if (response.status === 401) {
+        onUnauthorized()
+    }
+    const json = await response.json()
+    return json.data.repository?.object?.text || null
+}
+
+// cat of file at a given path in a repository, scoped to a user's personal repos
+export async function getViewerRepoObjectContent(
     ghToken: string,
     repo: string,
     path: string,
@@ -365,7 +497,10 @@ export async function searchRepoNames(
 }
 
 // sorts dirs on filename a-z, then files on filename a-z
-function sortRepoContents(rc1: RepoContent, rc2: RepoContent): -1 | 0 | 1 {
+function sortRepositoryObjects(
+    rc1: RepositoryObject,
+    rc2: RepositoryObject,
+): -1 | 0 | 1 {
     if (rc1.type === rc2.type) {
         const rc1n = rc1.name.toUpperCase()
         const rc2n = rc2.name.toUpperCase()

@@ -7,6 +7,7 @@
         "@eighty4/model-t": "0.0.5-2",
         "@sidelines/data": "workspace:*",
         "@sidelines/github": "workspace:*",
+        "@sidelines/model": "workspace:*",
         "monaco-editor": "^0.52.2",
         "react-dom": "^19.0.0",
         "rxjs": "^7.8.1",
@@ -23,10 +24,17 @@
       "name": "@sidelines/data",
       "dependencies": {
         "@sidelines/github": "workspace:*",
+        "@sidelines/model": "workspace:*",
       },
     },
     "packages/github": {
       "name": "@sidelines/github",
+      "dependencies": {
+        "@sidelines/model": "workspace:*",
+      },
+    },
+    "packages/model": {
+      "name": "@sidelines/model",
     },
   },
   "packages": {
@@ -35,6 +43,8 @@
     "@sidelines/data": ["@sidelines/data@workspace:packages/data"],
 
     "@sidelines/github": ["@sidelines/github@workspace:packages/github"],
+
+    "@sidelines/model": ["@sidelines/model@workspace:packages/model"],
 
     "@types/bun": ["@types/bun@1.2.2", "", { "dependencies": { "bun-types": "1.2.2" } }, "sha512-tr74gdku+AEDN5ergNiBnplr7hpDp3V1h7fqI2GcR/rsUaM39jpSeKH0TFibRvU0KwniRx5POgaYnaXbk0hU+w=="],
 
