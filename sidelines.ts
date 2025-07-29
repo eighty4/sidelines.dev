@@ -1,5 +1,5 @@
-import path from 'node:path/posix'
 import { GH_TOKEN, getCookie } from '@sidelines/data'
+import type { ServeFunctionOptions } from 'bun'
 import configurePage from './public/configure/configure.html'
 import homePage from './public/home/home.html'
 import projectPage from './public/project/project.html'
@@ -9,8 +9,10 @@ const PROD = Bun.env.PROD === 'true'
 console.log(`sidelines.dev is starting in ${PROD ? 'PROD' : 'DEV'} mode`)
 
 if (!process.env.WEBAPP_ADDRESS) {
-    throw new Error('WEBAPP_ADDRESS is required')
+    throw Error('WEBAPP_ADDRESS is required')
 }
+
+const { WEBAPP_ADDRESS } = process.env
 
 const workerBuilds = await Bun.build({
     entrypoints: [
@@ -38,140 +40,92 @@ const [
     tsWorker,
 ] = workerBuilds.outputs
 
-function resolveMonacoWorker(filename: string): Blob {
-    switch (filename) {
-        case 'main.js':
-            return mainWorker
-        case 'css.js':
-            return cssWorker
-        case 'html.js':
-            return htmlWorker
-        case 'json.js':
-            return jsonWorker
-        case 'ts.js':
-            return tsWorker
-        default:
-            throw new Error(filename + ' is not a prebuilt monaco module')
-    }
-}
-
-function resolveSidelinesWorker(path: string): Blob {
-    switch (path) {
-        case 'userData.js':
-            return userDataWorker
-        case 'callToActions/ghActions.js':
-            return ghActionsWorker
-        default:
-            throw new Error(path + ' is not a prebuilt sidelines module')
-    }
-}
-
-const MONACO_WORKER_PATH_PREFIX = '/lib/monaco/worker/'
-
-const SIDELINES_WORKER_PATH_PREFIX = '/lib/sidelines/worker/'
-
-const staticRoutes: Record<`/${string}`, Response> = {
+const routes: ServeFunctionOptions<any, any>['routes'] = {
     '/': homePage,
     '/configure': configurePage,
     '/project': projectPage,
+
+    '/installation/setup': {
+        GET(req: Request) {
+            const url = new URL(req.url)
+            if (
+                !url.searchParams.has('setup_action') ||
+                !url.searchParams.has('installation_id')
+            ) {
+                return new Response('Bad Request', { status: 400 })
+            }
+            console.debug(
+                'installation setup action:',
+                url.searchParams.get('setup_action'),
+                url.searchParams.get('installation_id'),
+            )
+            return loginAndRedirect(url)
+        },
+    },
+
+    '/login/authorized': {
+        GET: async (req: Request) => loginAndRedirect(new URL(req.url)),
+    },
+
+    '/login/redirect': {
+        async GET() {
+            const ghUrl = `https://github.com/login/oauth/authorize?prompt=select_account&client_id=${process.env.GH_CLIENT_ID}&state=abcdefg&redirect_uri=${encodeURIComponent(`${process.env.WEBAPP_ADDRESS}/login/authorized`)}`
+            console.debug('gh login authorize redirect', ghUrl)
+            return Response.redirect(ghUrl, 302)
+        },
+    },
+
+    '/logout': {
+        GET(req: Request) {
+            const headers: Record<string, string> = {
+                'Clear-Site-Data': '"storage"',
+                Location: WEBAPP_ADDRESS,
+            }
+            const cookie = req.headers.get('cookie')
+            if (cookie) {
+                const ghToken = getCookie(cookie, GH_TOKEN)
+                if (ghToken) {
+                    headers['Set-Cookie'] =
+                        `${GH_TOKEN}=${ghToken}; Secure; SameSite=Strict; Path=/; Max-Age=0`
+                }
+            }
+            return new Response('Found', {
+                status: 302,
+                headers,
+            })
+        },
+    },
+
+    '/lib/monaco/main.js': lib(mainWorker),
+    '/lib/monaco/css.js': lib(cssWorker),
+    '/lib/monaco/html.js': lib(htmlWorker),
+    '/lib/monaco/json.js': lib(jsonWorker),
+    '/lib/monaco/ts.js': lib(tsWorker),
+    '/lib/sidelines/userData.js': lib(userDataWorker),
+    '/lib/sidelines/callToActions/ghActions.js': lib(ghActionsWorker),
+}
+
+function lib(lib: Bun.BuildArtifact): Response {
+    return new Response(lib, {
+        headers: new Headers({ 'Content-Type': 'application/javascript' }),
+    })
 }
 
 if (!PROD) {
-    staticRoutes['/debug'] = (await import('./public/debug/Debug.html')).default
+    routes['/debug'] = (await import('./public/debug/Debug.html')).default
 }
 
 const server = Bun.serve({
     development: !PROD,
-    static: staticRoutes,
-    fetch(req) {
-        const url = new URL(req.url)
-        console.log(req.method, url.pathname)
-        if (url.pathname.startsWith(MONACO_WORKER_PATH_PREFIX)) {
-            return new Response(
-                resolveMonacoWorker(path.basename(url.pathname)),
-            )
-        }
-        if (url.pathname.startsWith(SIDELINES_WORKER_PATH_PREFIX)) {
-            return new Response(
-                resolveSidelinesWorker(
-                    url.pathname.substring(SIDELINES_WORKER_PATH_PREFIX.length),
-                ),
-            )
-        }
-        switch (url.pathname) {
-            case '/installation/setup':
-                return acceptInstallationRedirect(req, url)
-            case '/login/redirect':
-                return redirectToLogin(req)
-            case '/login/authorized':
-                return acceptLoginRedirect(req, url)
-            case '/logout':
-                return logoutRedirect(req)
-            default:
-                return new Response('Not Found', { status: 404 })
-        }
+    routes,
+    fetch() {
+        return new Response('Not Found', { status: 404 })
     },
 })
 
 console.log('sidelines.dev is running at http://127.0.0.1:' + server.port)
 
-function logoutRedirect(req: Request): Response {
-    const headers: Record<string, string> = {
-        'Clear-Site-Data': '"storage"',
-        Location: process.env.WEBAPP_ADDRESS!,
-    }
-    const cookie = req.headers.get('cookie')
-    if (cookie) {
-        const ghToken = getCookie(cookie, GH_TOKEN)
-        if (ghToken) {
-            headers['Set-Cookie'] =
-                `${GH_TOKEN}=${ghToken}; Secure; SameSite=Strict; Path=/; Max-Age=0`
-        }
-    }
-    return new Response('Found', {
-        status: 302,
-        headers,
-    })
-}
-
-async function redirectToLogin(req: Request): Promise<Response> {
-    if (req.method !== 'GET') {
-        return new Response('Method Not Allowed', { status: 405 })
-    }
-    const ghUrl = `https://github.com/login/oauth/authorize?prompt=select_account&client_id=${process.env.GH_CLIENT_ID}&state=abcdefg&redirect_uri=${encodeURIComponent(`${process.env.WEBAPP_ADDRESS}/login/authorized`)}`
-    console.debug('gh login authorize redirect', ghUrl)
-    return Response.redirect(ghUrl, 302)
-}
-
-async function acceptInstallationRedirect(
-    req: Request,
-    url: URL,
-): Promise<Response> {
-    if (req.method !== 'GET') {
-        return new Response('Method Not Allowed', { status: 405 })
-    }
-    if (
-        !url.searchParams.has('setup_action') ||
-        !url.searchParams.has('installation_id')
-    ) {
-        return new Response('Bad Request', { status: 400 })
-    }
-    console.debug(
-        'installation setup action:',
-        url.searchParams.get('setup_action'),
-        url.searchParams.get('installation_id'),
-    )
-    return loginAndRedirectToConfigurePage(url)
-}
-
-async function acceptLoginRedirect(req: Request, url: URL): Promise<Response> {
-    if (req.method !== 'GET') {
-        return new Response('Method Not Allowed', { status: 405 })
-    }
-    return loginAndRedirectToConfigurePage(url)
-}
-
-async function loginAndRedirectToConfigurePage(url: URL): Promise<Response> {
+async function loginAndRedirect(url: URL): Promise<Response> {
     const authorizationCode = url.searchParams.get('code')
     if (!authorizationCode) {
         return new Response('Bad Request', { status: 400 })
@@ -182,7 +136,7 @@ async function loginAndRedirectToConfigurePage(url: URL): Promise<Response> {
         return new Response('Found', {
             status: 302,
             headers: {
-                Location: `${process.env.WEBAPP_ADDRESS}/configure`,
+                Location: PROD ? `${WEBAPP_ADDRESS}/configure` : WEBAPP_ADDRESS,
                 'Set-Cookie': `ght=${token.access.value}; Secure; SameSite=Strict; Path=/; Max-Age=${token.access.expiresIn}`,
             },
         })

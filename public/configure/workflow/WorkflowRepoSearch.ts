@@ -11,7 +11,7 @@ import {
     searchForPackages,
 } from './searchForPackages.ts'
 
-const GH_ACTIONS_WORKER = '/lib/sidelines/worker/callToActions/ghActions.js'
+const GH_ACTIONS_WORKER = '/lib/sidelines/callToActions/ghActions.js'
 
 export type CallToAction =
     | {

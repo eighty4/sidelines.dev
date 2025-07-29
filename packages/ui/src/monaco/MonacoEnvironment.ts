@@ -2,7 +2,7 @@ import type { Environment } from 'monaco-editor'
 
 // todo use monaco-editor npm version in URL
 function getWorkerURL(name: string) {
-    return `/lib/monaco/worker/${name}.js`
+    return `/lib/monaco/${name}.js`
 }
 
 export const MonacoEnvironment: Environment = {
