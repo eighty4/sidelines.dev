@@ -112,7 +112,10 @@ function lib(lib: Bun.BuildArtifact): Response {
 }
 
 if (!PROD) {
-    routes['/debug'] = (await import('./public/debug/Debug.html')).default
+    routes['/_data'] = (await import('./public/_dev/data/Data.html')).default
+    routes['/_ui'] = (
+        await import('./public/_dev/components/Components.html')
+    ).default
 }
 
 const server = Bun.serve({
@@ -138,6 +141,19 @@ function isValidGitHubRepoUrl(url: URL): boolean {
 }
 
 console.log('sidelines.dev is running at http://127.0.0.1:' + server.port)
+
+if (!PROD) {
+    console.log()
+    console.log(
+        `    http://127.0.0.1:${server.port}/_data`,
+        `\u001b[90m${'for IndexedDB & OPFS'}\u001b[0m`,
+    )
+    console.log(
+        `    http://127.0.0.1:${server.port}/_ui`,
+        `\u001b[90m${'for UI components'}\u001b[0m`,
+    )
+    console.log()
+}
 
 async function loginAndRedirect(url: URL): Promise<Response> {
     const authorizationCode = url.searchParams.get('code')
