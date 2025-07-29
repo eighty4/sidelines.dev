@@ -118,10 +118,24 @@ if (!PROD) {
 const server = Bun.serve({
     development: !PROD,
     routes,
-    fetch() {
+    fetch(req) {
+        const url = new URL(req.url)
+        if (!PROD && isValidGitHubRepoUrl(url)) {
+            const [owner, name] = url.pathname.substring(1).split('/')
+            return Response.redirect(
+                `/project?owner=${owner}&name=${name}`,
+                302,
+            )
+        }
         return new Response('Not Found', { status: 404 })
     },
 })
+
+function isValidGitHubRepoUrl(url: URL): boolean {
+    return /\/[a-z\d][a-z\d-_]{0,37}[a-z\d]?\/[a-z\d._][a-z\d-._]{0,38}[a-z\d._]?/.test(
+        url.pathname,
+    )
+}
 
 console.log('sidelines.dev is running at http://127.0.0.1:' + server.port)
 

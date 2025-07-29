@@ -58,11 +58,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 })
 
 function getRepoFromLocation(ghLogin: string): RepositoryId {
-    const { searchParams } = new URL(location.href)
-    const owner = searchParams.get('owner')
-    const name = searchParams.get('name')
-    if (owner === null || name === null || owner !== ghLogin) {
-        throw new UnauthorizedError(`${owner} != ${ghLogin}`)
+    const url = new URL(location.href)
+    if (url.pathname === '/project') {
+        const owner = url.searchParams.get('owner')
+        const name = url.searchParams.get('name')
+        if (owner === null || name === null || owner !== ghLogin) {
+            throw new UnauthorizedError(`${owner} != ${ghLogin}`)
+        }
+        return { owner, name }
+    } else {
+        const [owner, name] = url.pathname.substring(1).split('/')
+        return { owner, name }
     }
-    return { owner, name }
 }
