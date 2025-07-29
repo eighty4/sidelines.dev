@@ -1,5 +1,5 @@
-import { getUserDataClient } from '../init.js'
-import { buildProjectUrl } from '../nav.js'
+import { getUserDataClient } from '../init.ts'
+import { buildProjectUrl } from '../nav.ts'
 
 const userData = await getUserDataClient()
 if (userData === null) {

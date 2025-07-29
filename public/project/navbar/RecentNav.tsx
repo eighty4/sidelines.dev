@@ -1,7 +1,7 @@
 import { createJsonCache, type UserDataClient } from '@sidelines/data/web'
 import type { RepositoryId } from '@sidelines/model'
 import { type FC, useState, useEffect, useMemo } from 'react'
-import { buildProjectUrl } from '../../nav.js'
+import { buildProjectUrl } from '../../nav.ts'
 
 interface RecentNavProps {
     currentPageProject: RepositoryId

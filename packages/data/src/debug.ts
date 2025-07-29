@@ -1,2 +1,2 @@
 export * from './database.ts'
-export * from './web.js'
+export * from './web.ts'

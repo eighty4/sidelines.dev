@@ -9,7 +9,7 @@ import {
     useState,
 } from 'react'
 import { ConfigureError } from '../ConfigureError.tsx'
-import { navToProject } from '../../nav.js'
+import { navToProject } from '../../nav.ts'
 
 export interface ChooseProjectProps {
     userData: UserDataClient

@@ -5,7 +5,7 @@ import {
     type RepoBranchReference,
 } from '@sidelines/github'
 import type { RepositoryId, RepositoryObject } from '@sidelines/model'
-import { connectToDb, DB_STORE_FILES } from '../database.js'
+import { connectToDb, DB_STORE_FILES } from '../database.ts'
 
 export type ReadRepoContent = {
     ghToken: string

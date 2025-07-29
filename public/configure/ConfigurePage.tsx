@@ -9,8 +9,8 @@ import { useEffect, useState, type FC } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MakeNotesRepo } from './MakeNotesRepo.tsx'
 import { ChooseWorkflow } from './workflow/ChooseWorkflow.tsx'
-import { expectGhLogin, expectGhToken } from '../init.js'
-import { logout } from '../nav.js'
+import { expectGhLogin, expectGhToken } from '../init.ts'
+import { logout } from '../nav.ts'
 
 // todo hard-coded value should be a build env variable or globalThis
 const GH_APP_ID = location.host === 'sidelines.dev' ? 1166711 : 1144785

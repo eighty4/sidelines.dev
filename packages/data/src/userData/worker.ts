@@ -5,7 +5,7 @@ import {
     readRepoContent,
     type ReadRepoListing,
     readRepoListing,
-} from './repoSources.js'
+} from './repoSources.ts'
 
 export type UserDataMessageBase<KIND> = {
     kind: KIND

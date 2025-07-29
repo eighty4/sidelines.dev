@@ -1,6 +1,6 @@
 import { type CSSProperties, type FC, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { DatabaseSvg, DownloadSvg, FileSvg, FolderSvg, KeySvg } from './Svgs.js'
+import { DatabaseSvg, DownloadSvg, FileSvg, FolderSvg, KeySvg } from './Svgs.ts'
 import {
     connectToDb,
     DB_STORE_FILES,
@@ -10,8 +10,8 @@ import {
     type FileEntry,
     lookupFileEntriesFromRoot,
     lookupFileFromRoot,
-} from './fs.js'
-import { getDbStoreData, type StoreData } from './db.js'
+} from './fs.ts'
+import { getDbStoreData, type StoreData } from './db.ts'
 
 type ViewState =
     | {
