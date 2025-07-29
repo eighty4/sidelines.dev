@@ -1,0 +1,93 @@
+html,
+body {
+    background: #f4f4f4;
+}
+
+#root {
+    display: flex;
+
+    & #debug-view {
+        flex: 1;
+        min-width: 0;
+        padding: 1rem;
+    }
+}
+
+#debug-index {
+    --open-color: #77efab;
+    width: 200px;
+    min-height: 100vh;
+    background: #f1f1f1;
+    font-size: 0.8rem;
+    overflow: hidden;
+
+    & .header {
+        --gap: 0.4rem;
+        display: flex;
+        align-items: center;
+        background: #e1e1e1;
+        height: 1.4rem;
+        padding-left: var(--gap);
+        gap: var(--gap);
+    }
+
+    & .db-store {
+        display: flex;
+        align-items: center;
+        color: #181818;
+        height: 1.4rem;
+        padding-left: 1rem;
+        cursor: pointer;
+
+        &.open {
+            background: var(--open-color);
+        }
+    }
+
+    & .files,
+    .no-files {
+        min-height: 3rem;
+    }
+
+    & .files {
+        --indent: 0;
+        & .ls-entry {
+            --gap: 4px;
+            display: flex;
+            align-items: center;
+            color: #181818;
+            height: 1.4rem;
+            gap: var(--gap);
+            padding-left: calc(var(--gap) + (4px * var(--indent)));
+
+            &.dir {
+                color: #777;
+            }
+
+            &.file {
+                cursor: pointer;
+
+                &.open {
+                    background: var(--open-color);
+                }
+            }
+
+            & svg {
+                transform: scale(75%);
+                transform-origin: 50%;
+            }
+        }
+    }
+
+    & .no-files {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: monospace;
+    }
+}
+
+table svg {
+    transform: scale(75%);
+    transform-origin: 50%;
+}

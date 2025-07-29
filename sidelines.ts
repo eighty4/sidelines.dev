@@ -70,13 +70,19 @@ const MONACO_WORKER_PATH_PREFIX = '/lib/monaco/worker/'
 
 const SIDELINES_WORKER_PATH_PREFIX = '/lib/sidelines/worker/'
 
+const staticRoutes: Record<`/${string}`, Response> = {
+    '/': homePage,
+    '/configure': configurePage,
+    '/project': projectPage,
+}
+
+if (!PROD) {
+    staticRoutes['/debug'] = (await import('./public/debug/Debug.html')).default
+}
+
 const server = Bun.serve({
     development: !PROD,
-    static: {
-        '/': homePage,
-        '/configure': configurePage,
-        '/project': projectPage,
-    },
+    static: staticRoutes,
     fetch(req) {
         const url = new URL(req.url)
         console.log(req.method, url.pathname)
