@@ -1,0 +1,13 @@
+{
+  "name": "@sidelines/ui",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./monaco": "./src/monaco/monaco.ts"
+  },
+  "peerDependencies": {
+    "monaco-editor": "^0.52.2",
+    "react-dom": "^19.0.0"
+  }
+}

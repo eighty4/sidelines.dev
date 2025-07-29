@@ -8,6 +8,7 @@
         "@sidelines/data": "workspace:*",
         "@sidelines/github": "workspace:*",
         "@sidelines/model": "workspace:*",
+        "@sidelines/ui": "workspace:*",
         "monaco-editor": "^0.52.2",
         "react-dom": "^19.0.0",
         "rxjs": "^7.8.1",
@@ -36,6 +37,13 @@
     "packages/model": {
       "name": "@sidelines/model",
     },
+    "packages/ui": {
+      "name": "@sidelines/ui",
+      "peerDependencies": {
+        "monaco-editor": "^0.52.2",
+        "react-dom": "^19.0.0",
+      },
+    },
   },
   "packages": {
     "@eighty4/model-t": ["@eighty4/model-t@0.0.5-2", "", { "dependencies": { "yaml": "^2.8.0" }, "bin": { "model-t": "lib_js/bin.js" } }, "sha512-FBK0XUMdc7dPSgO074o3Fi6/jnp4tvPBitGoT2tvqiNp9qhL+8PjAn1TnajhAovXOs6NKEr+msgwpupmDKuoVg=="],
@@ -45,6 +53,8 @@
     "@sidelines/github": ["@sidelines/github@workspace:packages/github"],
 
     "@sidelines/model": ["@sidelines/model@workspace:packages/model"],
+
+    "@sidelines/ui": ["@sidelines/ui@workspace:packages/ui"],
 
     "@types/bun": ["@types/bun@1.2.2", "", { "dependencies": { "bun-types": "1.2.2" } }, "sha512-tr74gdku+AEDN5ergNiBnplr7hpDp3V1h7fqI2GcR/rsUaM39jpSeKH0TFibRvU0KwniRx5POgaYnaXbk0hU+w=="],
 

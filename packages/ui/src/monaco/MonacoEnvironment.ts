@@ -1,9 +1,11 @@
-// todo use monaco-editor version in URL
+import type { Environment } from 'monaco-editor'
+
+// todo use monaco-editor npm version in URL
 function getWorkerURL(name: string) {
     return `/lib/monaco/worker/${name}.js`
 }
 
-window.MonacoEnvironment = {
+export const MonacoEnvironment: Environment = {
     // todo look into monaco-yaml npm package
     getWorkerUrl(moduleId: string, label: string) {
         switch (label) {

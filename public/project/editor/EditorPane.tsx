@@ -1,6 +1,6 @@
+import { MonacoEditor } from '@sidelines/ui/monaco'
 import { editor as Editor, Uri } from 'monaco-editor'
-import { useEffect, useRef, type FC } from 'react'
-import './initMonaco.ts'
+import { type FC, useEffect, useState } from 'react'
 import type { RepoFile } from '../RepoSources.ts'
 
 interface EditorPaneProps {
@@ -8,29 +8,15 @@ interface EditorPaneProps {
 }
 
 export const EditorPane: FC<EditorPaneProps> = ({ openFile }) => {
-    const editorElemRef = useRef<HTMLDivElement>(null)
-    const editorRef = useRef<Editor.IStandaloneCodeEditor>(null)
-
-    useEffect(() => () => editorRef.current?.dispose(), [])
-
-    useEffect(() => {
-        if (editorElemRef.current !== null && editorRef.current === null) {
-            editorRef.current = Editor.create(editorElemRef.current, {
-                automaticLayout: true,
-                minimap: {
-                    enabled: false,
-                },
-                model: null,
-                theme: 'vs-dark',
-            })
-        }
-    }, [editorElemRef.current])
+    const [editor, setEditor] = useState<Editor.IStandaloneCodeEditor | null>(
+        null,
+    )
 
     useEffect(() => {
-        if (editorRef.current !== null) {
-            setOpenFileModel(editorRef.current)
+        if (editor) {
+            setOpenFileModel(editor)
         }
-    }, [openFile])
+    }, [editor, openFile])
 
     function setOpenFileModel(editor: Editor.IStandaloneCodeEditor) {
         if (openFile.type === 'file-cat') {
@@ -50,7 +36,7 @@ export const EditorPane: FC<EditorPaneProps> = ({ openFile }) => {
         }
     }
 
-    return <div id="editor-pane" ref={editorElemRef}></div>
+    return <MonacoEditor id="editor-pane" onLoad={setEditor} />
 }
 
 // todo refactor RepoFile to a class instead of interface
