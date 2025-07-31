@@ -85,10 +85,7 @@ export class RepoSources {
         this.#state = new BehaviorSubject(
             createInitState(userData.ghLogin, repo),
         )
-        this.#cacheOpenFile = createJsonCache<RepoTreePath>(
-            localStorage,
-            `sld.project.${repo}.open`,
-        )
+        this.#cacheOpenFile = openFileCache(repo)
         this.#userData = userData
         this.#loadLastOpenFile().then().catch()
     }
@@ -324,4 +321,12 @@ function lsCacheRead(
 
 function lsCacheKey(repo: RepositoryId, dirpath: string): string {
     return `sld.ls ${repo.owner}/${repo.name}/${dirpath}`
+}
+
+function openFileCache(repo: RepositoryId): SessionCache<RepoTreePath> {
+    return createJsonCache<RepoTreePath>(localStorage, openFileCacheKey(repo))
+}
+
+function openFileCacheKey(repo: RepositoryId): string {
+    return `sld.open ${repo.owner}/${repo.name}`
 }
