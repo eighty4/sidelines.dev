@@ -1,36 +1,100 @@
-export type StoreData = {
+export type StoreMetadata = {
     store: string
-    // key path fields
+    // IDBObjectStore.keyPaths
     keys: Array<string>
-    // non key fields
+    // IDBIndex.keyPaths mapped by index names
+    indexKeys: Record<string, Array<string>>
+    indexNames: Array<string>
+    // non-key fields collected from all records
     fields: Array<string>
-    objects: Array<Record<string, any>>
 }
 
-export async function getDbStoreData(
+export async function getDbStoreMetadata(
     db: IDBDatabase,
     store: string,
-): Promise<StoreData> {
+): Promise<StoreMetadata> {
     return new Promise((res, rej) => {
-        const req: IDBRequest<Array<Record<string, any>>> = db
-            .transaction(store)
-            .objectStore(store)
-            .getAll()
-        req.onsuccess = () => {
-            const keyPath = (req.source as IDBObjectStore).keyPath
-            const keys = Array.isArray(keyPath) ? keyPath : [keyPath]
-            const fields = Array.from(
-                new Set(req.result.flatMap(object => Object.keys(object))),
-            )
-                .filter(field => !keys.includes(field))
-                .sort()
+        const tx = db.transaction(store)
+        const objectStore = tx.objectStore(store)
+        const keyPath = objectStore.keyPath
+        const keys = Array.isArray(keyPath) ? keyPath : [keyPath]
+        const indexNames = Array.from(objectStore.indexNames).sort()
+        const indexKeys: Record<string, Array<string>> = {}
+        indexNames
+            .map(index => objectStore.index(index))
+            .forEach(index => {
+                indexKeys[index.name] = Array.isArray(index.keyPath)
+                    ? index.keyPath
+                    : [index.keyPath]
+            })
+        const fields = new Set<string>()
+        const req: IDBRequest = objectStore.openCursor()
+        req.onsuccess = e => {
+            const cursor: IDBCursorWithValue | null = (e.target as any).result
+            if (cursor) {
+                Object.keys(cursor.value).forEach(field => fields.add(field))
+                cursor.continue()
+            }
+        }
+
+        req.onerror = rej
+
+        tx.oncomplete = () =>
             res({
                 store,
                 keys,
-                fields,
-                objects: req.result,
+                indexKeys,
+                indexNames,
+                fields: Array.from(fields)
+                    .filter(field => !keys.includes(field))
+                    .sort(),
             })
+    })
+}
+
+export async function queryDbStore(
+    db: IDBDatabase,
+    store: string,
+    direction: IDBCursorDirection = 'next',
+): Promise<Array<Record<string, any>>> {
+    const tx = db.transaction(store)
+    const req: IDBRequest<IDBCursorWithValue | null> = tx
+        .objectStore(store)
+        .openCursor(null, direction)
+    return await consumeObjectCursor(tx, req)
+}
+
+export async function queryDbStoreIndex(
+    db: IDBDatabase,
+    store: string,
+    index: string,
+    direction: IDBCursorDirection = 'next',
+): Promise<Array<Record<string, any>>> {
+    const tx = db.transaction(store)
+    const req: IDBRequest<IDBCursorWithValue | null> = tx
+        .objectStore(store)
+        .index(index)
+        .openCursor(null, direction)
+    return await consumeObjectCursor(tx, req)
+}
+
+function consumeObjectCursor(
+    tx: IDBTransaction,
+    req: IDBRequest<IDBCursorWithValue | null>,
+): Promise<Array<Record<string, any>>> {
+    return new Promise((res, rej) => {
+        const objects: Array<Record<string, any>> = []
+
+        req.onsuccess = () => {
+            const cursor: IDBCursorWithValue | null = req.result
+            if (cursor) {
+                objects.push(cursor.value)
+                cursor.continue()
+            }
         }
-        req.onerror = rej
+
+        tx.oncomplete = () => res(objects)
+
+        tx.onerror = rej
     })
 }

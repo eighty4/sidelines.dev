@@ -1,3 +1,7 @@
+:root {
+    --open-color: #77efab;
+}
+
 html,
 body {
     background: #f4f4f4;
@@ -9,12 +13,90 @@ body {
     & #debug-view {
         flex: 1;
         min-width: 0;
-        padding: 1rem;
+        padding: 2rem;
+
+        & h1 {
+            margin-bottom: 2rem;
+            user-select: none;
+            width: fit-content;
+
+            & .selectable {
+                user-select: text;
+            }
+        }
+    }
+}
+
+#cursor-direction {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+
+    & p {
+        user-select: none;
+        width: fit-content;
+
+        & .selectable {
+            user-select: text;
+        }
+    }
+
+    & p + p {
+        margin-top: 0.5rem;
+    }
+}
+
+#index-select {
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    user-select: none;
+    margin-bottom: 2rem;
+    width: fit-content;
+
+    & select {
+        display: inline-block;
+    }
+}
+
+#db-table {
+    & .key {
+        cursor: pointer;
+
+        &.index {
+            background: #eee;
+        }
+
+        &:hover {
+            background: #e9e9e9;
+            & .direction {
+                visibility: visible;
+            }
+        }
+
+        &:not(.index) {
+            & svg {
+                opacity: 0.5;
+            }
+
+            & .direction {
+                visibility: hidden;
+            }
+
+            &:hover {
+                & svg {
+                    opacity: 1;
+                }
+
+                & .direction {
+                    visibility: visible;
+                }
+            }
+        }
     }
 }
 
 #debug-index {
-    --open-color: #77efab;
     width: 200px;
     min-height: 100vh;
     background: #f1f1f1;

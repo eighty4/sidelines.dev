@@ -1,11 +1,22 @@
-import { type CSSProperties, type FC, useEffect, useState } from 'react'
-import { createRoot } from 'react-dom/client'
 import {
     connectToDb,
     DB_STORE_FILES,
     DB_STORE_NAV,
 } from '@sidelines/data/debug'
-import { getDbStoreData, type StoreData } from './db.ts'
+import {
+    type ChangeEvent,
+    type CSSProperties,
+    type FC,
+    useEffect,
+    useState,
+} from 'react'
+import { createRoot } from 'react-dom/client'
+import {
+    getDbStoreMetadata,
+    queryDbStore,
+    queryDbStoreIndex,
+    type StoreMetadata,
+} from './db.ts'
 import {
     type FileEntry,
     lookupFileEntriesFromRoot,
@@ -17,6 +28,8 @@ import {
     FileSvg,
     FolderSvg,
     KeySvg,
+    SortAscSvg,
+    SortDescSvg,
 } from './Svgs.tsx'
 
 type ViewState =
@@ -30,7 +43,7 @@ type ViewState =
           path: string
       }
 
-const DebugPage: FC = () => {
+const DataPage: FC = () => {
     const [db, setDb] = useState<IDBDatabase | 'connecting'>('connecting')
     const [view, setView] = useState<ViewState | null>(null)
 
@@ -39,13 +52,8 @@ const DebugPage: FC = () => {
     }, [])
 
     let main
-    if (view?.kind === 'db') {
-        main = (
-            <StoreView
-                db={db === 'connecting' ? null : db}
-                store={view.table}
-            />
-        )
+    if (view?.kind === 'db' && db !== 'connecting') {
+        main = <StoreView db={db} storeName={view.table} />
     } else if (view?.kind === 'fs') {
         main = <FileView path={view.path} />
     }
@@ -172,7 +180,6 @@ const FileView: FC<{ path: string }> = ({ path }) => {
     const [content, setContent] = useState<string | 'loading'>('loading')
 
     useEffect(() => {
-        console.log(path)
         lookupFileFromRoot(path.substring(1).split('/'))
             .then(f => f.getFile())
             .then(f => f.text())
@@ -187,61 +194,186 @@ const FileView: FC<{ path: string }> = ({ path }) => {
     }
 }
 
-const StoreView: FC<{ db: IDBDatabase | null; store: string }> = ({
+const StoreView: FC<{ db: IDBDatabase; storeName: string }> = ({
     db,
-    store,
+    storeName,
 }) => {
-    const [data, setData] = useState<StoreData | 'loading'>('loading')
+    const [store, setStore] = useState<StoreMetadata | 'loading'>('loading')
+    const [indexed, setIndexed] = useState<string | false | null>(null)
+    const [direction, setDirection] = useState<IDBCursorDirection>('next')
+    const [objects, setObjects] = useState<
+        Array<Record<string, any>> | 'loading'
+    >('loading')
 
     useEffect(() => {
-        if (data !== 'loading') {
-            setData('loading')
-        }
-        if (db !== null) {
-            getDbStoreData(db, store).then(setData).catch(console.error)
-        }
-    }, [db, store])
+        if (store !== 'loading') setStore('loading')
+        if (indexed) setIndexed(null)
+        if (direction === 'prev') setDirection('next')
+        else if (direction === 'prevunique') setDirection('nextunique')
+        getDbStoreMetadata(db, storeName).then(setStore).catch(console.error)
+    }, [storeName])
 
-    if (db === null || data === 'loading') {
+    useEffect(() => {
+        if (objects !== 'loading') setObjects('loading')
+        if (indexed) {
+            queryDbStoreIndex(db, storeName, indexed, direction).then(
+                setObjects,
+            )
+        } else {
+            queryDbStore(db, storeName, direction).then(setObjects)
+        }
+    }, [store, indexed, direction])
+
+    if (!db || store === 'loading') {
         return
     }
 
-    const { keys, fields, objects } = data
+    const { keys, fields, indexKeys, indexNames } = store
+
+    function onIndexToggle() {
+        if (!indexed) {
+            setIndexed(indexNames.sort()[0])
+        } else {
+            setIndexed(false)
+        }
+    }
+
+    function onIndexChange(e: ChangeEvent<HTMLSelectElement>) {
+        setIndexed(e.target.value || false)
+    }
+
+    function onDirectionToggle() {
+        if (direction.endsWith('unique')) {
+            setDirection(
+                direction === 'nextunique' ? 'prevunique' : 'nextunique',
+            )
+        } else {
+            setDirection(direction === 'next' ? 'prev' : 'next')
+        }
+    }
+
+    function onUniqueToggle() {
+        if (direction.endsWith('unique')) {
+            setDirection(direction === 'nextunique' ? 'next' : 'prev')
+        } else {
+            setDirection(direction === 'next' ? 'nextunique' : 'prevunique')
+        }
+    }
+
+    // whether cursor direction has unique toggled
+    const viewCursorUnique = direction.endsWith('unique')
+
+    // assign keys of view whether keys of store or index
+    const viewIndexing = indexed ? indexKeys[indexed] : keys
+
+    // append index keys after object store keys
+    const viewKeys = [...keys]
+    if (indexed) {
+        for (const indexKey of indexKeys[indexed]) {
+            viewKeys.push(indexKey)
+        }
+    }
+
+    // filter out index keys from fields
+    const viewFields = indexed
+        ? fields.filter(field => !indexKeys[indexed].includes(field))
+        : fields
 
     return (
-        <table>
-            <thead>
-                <tr>
-                    {keys.map(key => (
-                        <th key={key}>
-                            <KeySvg /> {key}
-                        </th>
-                    ))}
-                    {fields.map(field => (
-                        <th key={field}>{field}</th>
-                    ))}
-                </tr>
-            </thead>
-            <tbody>
-                {objects.map((object, i) => {
-                    console.log(object)
-                    return (
-                        <tr key={i}>
-                            {keys.map(key => (
-                                <td key={key}>
-                                    {toStringForTable(object[key])}
-                                </td>
-                            ))}
-                            {fields.map(field => (
-                                <td key={field}>
-                                    {toStringForTable(object[field])}
-                                </td>
-                            ))}
-                        </tr>
-                    )
-                })}
-            </tbody>
-        </table>
+        <>
+            <h1>
+                Object store `<span className="selectable">{storeName}</span>`
+            </h1>
+            {!!indexNames.length && (
+                <div id="index-select">
+                    <input
+                        type="checkbox"
+                        id="index-toggle"
+                        onChange={onIndexToggle}
+                        checked={!!indexed}
+                    />
+                    <label htmlFor="index-toggle">View by index</label>
+                    {indexed !== null && (
+                        <select onChange={onIndexChange} value={indexed || ''}>
+                            <option></option>
+                            {indexNames.map(indexName => {
+                                return (
+                                    <option key={indexName}>{indexName}</option>
+                                )
+                            }) || false}
+                        </select>
+                    )}
+                </div>
+            )}
+            <div id="cursor-direction">
+                <p>
+                    Cursor direction is `
+                    <span className="selectable">{direction}</span>`
+                </p>
+                <p>
+                    <input
+                        type="checkbox"
+                        id="unique-toggle"
+                        onChange={onUniqueToggle}
+                        checked={viewCursorUnique}
+                    />{' '}
+                    <label htmlFor="unique-toggle">Unique cursor</label>
+                </p>
+            </div>
+            <table id="db-table">
+                <thead>
+                    <tr>
+                        {viewKeys.map(key =>
+                            viewIndexing.includes(key) ? (
+                                <th
+                                    key={key}
+                                    className="key index"
+                                    onClick={onDirectionToggle}
+                                >
+                                    <KeySvg /> {key}{' '}
+                                    {direction.startsWith('next') ? (
+                                        <SortAscSvg className="direction" />
+                                    ) : (
+                                        <SortDescSvg className="direction" />
+                                    )}
+                                </th>
+                            ) : (
+                                <th
+                                    key={key}
+                                    className="key"
+                                    onClick={onIndexToggle}
+                                >
+                                    <KeySvg /> {key}{' '}
+                                    <SortAscSvg className="direction" />
+                                </th>
+                            ),
+                        )}
+                        {viewFields.map(field => (
+                            <th key={field}>{field}</th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {objects !== 'loading' &&
+                        objects.map((object, i) => {
+                            return (
+                                <tr key={i}>
+                                    {viewKeys.map(key => (
+                                        <td key={key}>
+                                            {toStringForTable(object[key])}
+                                        </td>
+                                    ))}
+                                    {viewFields.map(field => (
+                                        <td key={field}>
+                                            {toStringForTable(object[field])}
+                                        </td>
+                                    ))}
+                                </tr>
+                            )
+                        })}
+                </tbody>
+            </table>
+        </>
     )
 }
 
@@ -256,5 +388,5 @@ function toStringForTable(datum: unknown): string {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    createRoot(document.getElementById('root')!).render(<DebugPage />)
+    createRoot(document.getElementById('root')!).render(<DataPage />)
 })
