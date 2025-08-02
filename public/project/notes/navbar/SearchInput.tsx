@@ -1,7 +1,7 @@
 import { searchRepoNames, type SearchRepoNamesResult } from '@sidelines/github'
 import type { RepositoryId } from '@sidelines/model'
 import { useEffect, useMemo, useRef, useState, type FC } from 'react'
-import { navToProject } from '../../nav.ts'
+import { navToProject } from '../../../nav.ts'
 
 interface SearchInputProps {
     currentPageProject: RepositoryId

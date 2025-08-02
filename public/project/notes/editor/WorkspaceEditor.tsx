@@ -3,7 +3,7 @@ import type { RepositoryId } from '@sidelines/model'
 import { type FC, useEffect, useState } from 'react'
 import { EditorPane } from './EditorPane.tsx'
 import type { RepoFile, RepoSources } from '../RepoSources.ts'
-import { MakeNotesRepo } from '../../configure/MakeNotesRepo.tsx'
+import { MakeNotesRepo } from '../../../configure/MakeNotesRepo.tsx'
 
 export interface WorkspaceEditorProps {
     ghToken: string

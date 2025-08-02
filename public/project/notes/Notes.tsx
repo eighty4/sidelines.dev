@@ -7,15 +7,15 @@ import { FileExplorer } from './FileExplorer.tsx'
 import { RepoSources } from './RepoSources.ts'
 import { WorkspaceEditor } from './editor/WorkspaceEditor.tsx'
 import { ProjectNavbar } from './navbar/ProjectNavbar.tsx'
-import { expectUserDataClient } from '../init.ts'
-import { logout } from '../nav.ts'
+import { expectUserDataClient } from '../../init.ts'
+import { expectRepoFromLocation, logout } from '../../nav.ts'
 
 type ProjectPageProps = {
     repo: RepositoryId
     userData: UserDataClient
 }
 
-const ProjectPage: FC<ProjectPageProps> = ({ repo, userData }) => {
+const Notes: FC<ProjectPageProps> = ({ repo, userData }) => {
     const sources = useMemo(() => new RepoSources(repo, userData), [])
     return (
         <div id="project">
@@ -42,10 +42,10 @@ const ProjectPage: FC<ProjectPageProps> = ({ repo, userData }) => {
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const userData = await expectUserDataClient()
-        const repo = getRepoFromLocation(userData.ghLogin)
+        const repo = expectRepoFromLocation(userData.ghLogin)
         userData.navVisit(repo)
         createRoot(document.getElementById('root')!).render(
-            <ProjectPage repo={repo} userData={userData} />,
+            <Notes repo={repo} userData={userData} />,
         )
     } catch (e) {
         if (e instanceof UnauthorizedError) {
@@ -56,18 +56,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 })
-
-function getRepoFromLocation(ghLogin: string): RepositoryId {
-    const url = new URL(location.href)
-    if (url.pathname === '/project') {
-        const owner = url.searchParams.get('owner')
-        const name = url.searchParams.get('name')
-        if (owner === null || name === null || owner !== ghLogin) {
-            throw new UnauthorizedError(`${owner} != ${ghLogin}`)
-        }
-        return { owner, name }
-    } else {
-        const [owner, name] = url.pathname.substring(1).split('/')
-        return { owner, name }
-    }
-}

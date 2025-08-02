@@ -30,7 +30,7 @@ interface ConfigurePageProps {
 
 // todo provide alternatives to repositorySelection === all
 //  `gh repo create --template eighty4/.sidelines.templates` with .sidelines as an installed repository
-const ConfigurePage: FC<ConfigurePageProps> = ({ ghToken, ghLogin }) => {
+const Configure: FC<ConfigurePageProps> = ({ ghToken, ghLogin }) => {
     const [installationId, setInstallationId] = useState<number | undefined>()
     const [appState, setAppState] = useState<AppState>('loading')
     useEffect(() => {
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const ghToken = expectGhToken()
         const ghLogin = await expectGhLogin(ghToken)
         createRoot(document.getElementById('root')!).render(
-            <ConfigurePage ghToken={ghToken} ghLogin={ghLogin} />,
+            <Configure ghToken={ghToken} ghLogin={ghLogin} />,
         )
     } catch (e) {
         if (e instanceof UnauthorizedError) {

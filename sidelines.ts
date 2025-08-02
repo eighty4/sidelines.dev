@@ -1,8 +1,9 @@
 import { GH_TOKEN, getCookie } from '@sidelines/data'
 import type { ServeFunctionOptions } from 'bun'
-import configurePage from './public/configure/configure.html'
-import homePage from './public/home/home.html'
-import projectPage from './public/project/project.html'
+import configurePage from './public/configure/Configure.html'
+import homePage from './public/home/Home.html'
+import projectPage from './public/project/Project.html'
+import notesPage from './public/project/notes/Notes.html'
 
 const PROD = Bun.env.PROD === 'true'
 
@@ -43,6 +44,7 @@ const [
 const routes: ServeFunctionOptions<any, any>['routes'] = {
     '/': homePage,
     '/configure': configurePage,
+    '/notes': notesPage,
     '/project': projectPage,
 
     '/installation/setup': {
