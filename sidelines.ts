@@ -1,9 +1,9 @@
 import { GH_TOKEN, getCookie } from '@sidelines/data'
 import type { ServeFunctionOptions } from 'bun'
-import configurePage from './public/configure/Configure.html'
-import homePage from './public/home/Home.html'
-import projectPage from './public/project/Project.html'
-import notesPage from './public/project/notes/Notes.html'
+import configurePage from './pages/configure/Configure.html'
+import homePage from './pages/home/Home.html'
+import projectPage from './pages/project/Project.html'
+import notesPage from './pages/project/notes/Notes.html'
 
 const PROD = Bun.env.PROD === 'true'
 
@@ -114,9 +114,9 @@ function lib(lib: Bun.BuildArtifact): Response {
 }
 
 if (!PROD) {
-    routes['/_data'] = (await import('./public/_dev/data/Data.html')).default
+    routes['/_data'] = (await import('./pages/_dev/data/Data.html')).default
     routes['/_ui'] = (
-        await import('./public/_dev/components/Components.html')
+        await import('./pages/_dev/components/Components.html')
     ).default
 }
 
