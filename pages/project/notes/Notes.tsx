@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         )
     } catch (e) {
         if (e instanceof UnauthorizedError) {
+            console.error(e)
             logout()
             return
         } else {

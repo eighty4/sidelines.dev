@@ -1,9 +1,9 @@
 import { getUserDataClient } from '../init.ts'
-import { buildProjectUrl } from '../nav.ts'
+import { buildProjectUrl, loginRedirectUrl } from '../nav.ts'
 
 const userData = await getUserDataClient()
 if (userData === null) {
-    createLink('/login/redirect', 'Login')
+    createLink(loginRedirectUrl, 'Login')
 } else {
     createLink('/configure', 'Configure')
     for (const repo of await userData.navHistory()) {

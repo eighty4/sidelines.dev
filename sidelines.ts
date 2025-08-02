@@ -4,6 +4,7 @@ import configurePage from './pages/configure/Configure.html'
 import homePage from './pages/home/Home.html'
 import projectPage from './pages/project/Project.html'
 import notesPage from './pages/project/notes/Notes.html'
+import { loginRedirectUrl, logoutRedirectUrl } from './pages/nav.js'
 
 const PROD = Bun.env.PROD === 'true'
 
@@ -41,13 +42,18 @@ const [
     tsWorker,
 ] = workerBuilds.outputs
 
+// these redirect URLs are GitHub App configs
+const userLoginRedirectFromGitHub = '/github/redirect/user/authorized'
+// todo app install currently redirects to /configure and this endpoint is not used
+const appInstallRedirectFromGitHub = '/github/redirect/app/installation'
+
 const routes: ServeFunctionOptions<any, any>['routes'] = {
     '/': homePage,
     '/configure': configurePage,
-    '/notes': notesPage,
+    '/project/notes': notesPage,
     '/project': projectPage,
 
-    '/installation/setup': {
+    [appInstallRedirectFromGitHub]: {
         GET(req: Request) {
             const url = new URL(req.url)
             if (
@@ -65,19 +71,24 @@ const routes: ServeFunctionOptions<any, any>['routes'] = {
         },
     },
 
-    '/login/authorized': {
+    [userLoginRedirectFromGitHub]: {
         GET: async (req: Request) => loginAndRedirect(new URL(req.url)),
     },
 
-    '/login/redirect': {
+    [loginRedirectUrl]: {
         async GET() {
-            const ghUrl = `https://github.com/login/oauth/authorize?prompt=select_account&client_id=${process.env.GH_CLIENT_ID}&state=abcdefg&redirect_uri=${encodeURIComponent(`${process.env.WEBAPP_ADDRESS}/login/authorized`)}`
+            // todo support login redirects with ?state=
+            const state = 'abcdefg'
+            const redirectURI = encodeURIComponent(
+                `${process.env.WEBAPP_ADDRESS}${userLoginRedirectFromGitHub}`,
+            )
+            const ghUrl = `https://github.com/login/oauth/authorize?prompt=select_account&client_id=${process.env.GH_CLIENT_ID}&state=${state}&redirect_uri=${redirectURI}`
             console.debug('gh login authorize redirect', ghUrl)
             return Response.redirect(ghUrl, 302)
         },
     },
 
-    '/logout': {
+    [logoutRedirectUrl]: {
         GET(req: Request) {
             const headers: Record<string, string> = {
                 'Clear-Site-Data': '"storage"',
@@ -123,21 +134,25 @@ if (!PROD) {
 const server = Bun.serve({
     development: !PROD,
     routes,
-    fetch(req) {
-        const url = new URL(req.url)
-        if (!PROD && isValidGitHubRepoUrl(url)) {
-            const [owner, name] = url.pathname.substring(1).split('/')
-            return Response.redirect(
-                `/project?owner=${owner}&name=${name}`,
-                302,
-            )
-        }
-        return new Response('Not Found', { status: 404 })
-    },
+    fetch: PROD
+        ? () => new Response('Not Found', { status: 404 })
+        : (req: Request) => {
+              const url = new URL(req.url)
+              if (!PROD && isValidGitHubRepoUrl(url)) {
+                  const urlParts = url.pathname.substring(1).split('/')
+                  const [owner, name] = urlParts
+                  const redirectUrl =
+                      urlParts.length > 2 && urlParts[2] === 'notes'
+                          ? `/project/notes?owner=${owner}&name=${name}`
+                          : `/project?owner=${owner}&name=${name}`
+                  return Response.redirect(redirectUrl, 302)
+              }
+              return new Response('Not Found', { status: 404 })
+          },
 })
 
 function isValidGitHubRepoUrl(url: URL): boolean {
-    return /\/[a-z\d][a-z\d-_]{0,37}[a-z\d]?\/[a-z\d._][a-z\d-._]{0,38}[a-z\d._]?/.test(
+    return /^\/[a-z\d][a-z\d-_]{0,37}[a-z\d]?\/[a-z\d._][a-z\d-._]{0,38}[a-z\d._]?(?:\/notes)?/.test(
         url.pathname,
     )
 }

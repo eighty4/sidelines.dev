@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         userData = await getUserDataClient()
     } catch (e) {
         if (e instanceof UnauthorizedError) {
+            console.log(e)
         } else {
             throw e
         }

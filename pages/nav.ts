@@ -5,8 +5,12 @@ export function buildProjectUrl(repo: RepositoryId): string {
     return `/${repo.owner}/${repo.name}`
 }
 
+export const loginRedirectUrl = '/github/redirect/user/login'
+
+export const logoutRedirectUrl = '/logout'
+
 export function logout() {
-    location.assign('/logout')
+    location.assign(logoutRedirectUrl)
 }
 
 export function navToProject(repo: RepositoryId) {
@@ -17,8 +21,8 @@ export function expectRepoFromLocation(expectGhLogin?: string): RepositoryId {
     let useSearchParams = false
     const url = new URL(location.href)
     switch (url.pathname) {
-        case '/notes':
         case '/project':
+        case '/project/notes':
             useSearchParams = true
     }
     const repo = useSearchParams
