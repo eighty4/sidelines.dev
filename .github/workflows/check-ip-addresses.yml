@@ -1,0 +1,55 @@
+name: Cloudflare and GitHub IPs
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-cloudflare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/cache@v4
+        with:
+          path: github-ip-ranges
+          key: github-ip-range-cache
+      - run: |
+          curl -s https://api.github.com/meta | jq -r ".hooks[]" > from_api
+          if [ -f "github-ip-ranges" ]; then
+            echo "diffing api and cached ip ranges"
+            diff -u "github-ip-ranges" "from_api"
+            if [ $? -eq 0 ]; then
+              echo "✓ cache is up to date with api"
+            else
+              echo "✗ cache is out of sync with api"
+              exit 1
+            fi
+          else
+            echo "ip ranges not fetched from cache"
+            echo "moving new ip ranges to cache path"
+            mv from_api github-ip-ranges
+          fi
+
+  check-github:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/cache@v4
+        with:
+          path: cloudflare-ip-ranges
+          key: cloudflare-ip-range-cache
+      - run: |
+          curl -s https://api.cloudflare.com/client/v4/ips | jq -r ".result.etag" > from_api
+          if [ -f "cloudflare-ip-ranges" ]; then
+            echo "diffing api and cached ip ranges"
+            diff -u "cloudflare-ip-ranges" "from_api"
+            if [ $? -eq 0 ]; then
+              echo "✓ cache is up to date with api"
+            else
+              echo "✗ cache is out of sync with api"
+              exit 1
+            fi
+          else
+            echo "ip ranges not fetched from cache"
+            echo "moving new ip ranges to cache path"
+            mv from_api cloudflare-ip-ranges
+          fi

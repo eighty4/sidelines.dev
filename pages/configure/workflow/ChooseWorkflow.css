@@ -1,0 +1,30 @@
+#choose-workflow {
+    display: flex;
+    & .tl,
+    .br {
+        display: flex;
+        flex: 1;
+    }
+}
+
+@media (orientation: landscape) {
+    #choose-workflow {
+        flex-direction: row;
+
+        & .tl,
+        .br {
+            flex-direction: column;
+        }
+    }
+}
+
+@media (orientation: portrait) {
+    #choose-workflow {
+        flex-direction: column;
+
+        & .tl,
+        .br {
+            flex-direction: row;
+        }
+    }
+}

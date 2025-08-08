@@ -1,0 +1,8 @@
+{
+  "name": "@sidelines/model",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./model.ts"
+  }
+}

@@ -1,0 +1,8 @@
+name: CI
+run-name: 'CI: ${{ github.event.head_commit.message || github.event.name }}'
+on:
+  push:
+    branches: [main]
+jobs:
+  verify:
+    uses: ./.github/workflows/verify.yml

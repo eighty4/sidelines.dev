@@ -1,0 +1,17 @@
+name: Verify
+run-name: Verify ${{ github.ref }}
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun i
+      - run: bun test
+      - run: bunx --bun tsc --noEmit
+      - run: bunx --bun prettier --check .
+      - run: echo 'Look what hell made'
