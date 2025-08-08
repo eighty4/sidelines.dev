@@ -1,0 +1,135 @@
+html,
+body {
+    background: rgb(26, 26, 26);
+}
+
+#project {
+    --project-nav-height: 3rem;
+    color: #eee;
+
+    & #project-nav {
+        background: rgb(22, 22, 25);
+        display: flex;
+        flex-direction: row;
+        height: var(--project-nav-height);
+
+        & #project-nav-dashboard {
+            color: azure;
+            display: flex;
+            align-items: center;
+            padding-left: 1rem;
+            box-sizing: border-box;
+            width: calc(max(20vw, 250px));
+            font-size: 0.95rem;
+        }
+
+        & #project-nav-recent {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            font-size: 0.8rem;
+            gap: 1rem;
+
+            & a {
+                color: aqua;
+                padding: 0.25rem;
+                margin: 0.25rem;
+            }
+        }
+
+        & #project-nav-search {
+            --input-size: 10rem;
+            width: 11rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            input {
+                width: var(--input-size);
+                anchor-name: --search-input;
+                box-sizing: border-box;
+            }
+
+            & #project-nav-suggestions {
+                z-index: 5;
+                position: fixed;
+                position-anchor: --search-input;
+                left: anchor(--search-input left);
+                top: anchor(--search-input bottom);
+                margin-top: 0.5rem;
+
+                width: var(--input-size);
+                background: #222;
+                border: 1px solid #456;
+                border-radius: 5px;
+                padding: 8px;
+                box-sizing: border-box;
+
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+
+                & .suggestion {
+                    cursor: pointer;
+                    border-radius: 5px;
+                    padding: 8px;
+                    box-sizing: content-box;
+
+                    &:hover {
+                        background: #333;
+                    }
+
+                    &.highlight {
+                        background: #456;
+                    }
+
+                    &.highlight:hover {
+                        background: #567;
+                    }
+                }
+            }
+        }
+    }
+
+    & #project-workspace {
+        --file-ls-width: calc(max(20vw, 250px));
+        --file-editor-width: calc(100vw - var(--file-ls-width));
+        display: flex;
+        flex-direction: row;
+
+        & #project-files {
+            height: 100vh;
+            width: var(--file-ls-width);
+
+            .file-explorer-header {
+                background: rgb(22, 22, 25);
+                letter-spacing: 0.01rem;
+                font-size: 0.7rem;
+                font-weight: 500;
+                text-transform: uppercase;
+                padding: 0.4rem 1rem;
+                user-select: none;
+            }
+
+            & .file {
+                padding: 0.2rem 1rem;
+                font-size: 0.85rem;
+                user-select: none;
+                cursor: pointer;
+
+                &.open {
+                    background: rgb(46, 46, 62);
+                }
+            }
+        }
+
+        & #editor-pane {
+            height: calc(100vh - var(--project-nav-height));
+            width: var(--file-editor-width);
+
+            & #editor-status-bar {
+                height: 1rem;
+            }
+        }
+    }
+}

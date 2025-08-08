@@ -1,0 +1,15 @@
+html,
+body {
+    background: #eee;
+}
+
+#choose-workflow {
+    #search-pane {
+        background: #f8f8f8;
+        border-radius: 20px;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        right: 0;
+    }
+}

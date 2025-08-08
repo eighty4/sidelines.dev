@@ -1,0 +1,102 @@
+query RepoDirContent($owner: String!, $name: String!, $objExpr: String!) {
+    repository(owner: $owner, name: $name) {
+        object(expression: $objExpr) {
+            ... on Tree {
+                entries {
+                    name
+                    type
+                    object {
+                        ... on Blob {
+                            byteSize
+                            text
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+query RepoDirListing($owner: String!, $name: String!, $objExpr: String!) {
+    repository(owner: $owner, name: $name) {
+        object(expression: $objExpr) {
+            ... on Tree {
+                entries {
+                    name
+                    type
+                    object {
+                        ... on Blob {
+                            byteSize
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+query RepoObjectHistory(
+    $owner: String!
+    $name: String!
+    $branch: String!
+    $pageSize: Int!
+    $path: String!
+    $cursor: String
+) {
+    repository(owner: $owner, name: $name) {
+        ref(qualifiedName: $branch) {
+            target {
+                ... on Commit {
+                    history(first: $pageSize, path: $path, after: $cursor) {
+                        nodes {
+                            oid
+                            author {
+                                name
+                            }
+                            message
+                            authoredDate
+                        }
+                        pageInfo {
+                            hasNextPage
+                            endCursor
+                        }
+                        totalCount
+                    }
+                }
+            }
+        }
+    }
+}
+
+query RepoObjectContent($owner: String!, $name: String!, $objExpr: String!) {
+    repository(owner: $owner, name: $name) {
+        object(expression: $objExpr) {
+            ... on Blob {
+                text
+            }
+        }
+    }
+}
+
+query ViewerRepoDefaultBranchHeadSha($repo: String!) {
+    viewer {
+        repository(name: $repo) {
+            defaultBranchRef {
+                name
+                target {
+                    ... on Commit {
+                        history(first: 1) {
+                            edges {
+                                node {
+                                    ... on Commit {
+                                        oid
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
