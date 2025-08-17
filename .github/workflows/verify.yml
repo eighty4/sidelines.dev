@@ -12,6 +12,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun i
       - run: bun test
+      - run: bun run build
       - run: bunx --bun tsc --noEmit
       - run: bunx --bun prettier --check .
       - run: echo 'Look what hell made'

@@ -4,7 +4,8 @@ import type { RepositoryId, RepositoryPackage } from '@sidelines/model'
 import { type FC, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { getUserDataClient } from '../init.ts'
-import { expectRepoFromLocation, loginRedirectUrl } from '../nav.ts'
+import { loginRedirectUrl } from '../nav.ts'
+import { expectRepoFromLocation } from '../repoFromLocation.ts'
 
 type ProjectPageProps = {
     repo: RepositoryId

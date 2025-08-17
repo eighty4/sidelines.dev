@@ -6,6 +6,8 @@
     "libs/*"
   ],
   "scripts": {
+    "build": "bun dev/build.ts",
+    "dev": "bun dev/serve.ts",
     "fmt": "prettier --write .",
     "fmtcheck": "prettier --check .",
     "graphql": "bun -F @sidelines/github graphql"

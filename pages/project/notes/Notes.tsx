@@ -8,7 +8,8 @@ import { RepoSources } from './RepoSources.ts'
 import { WorkspaceEditor } from './editor/WorkspaceEditor.tsx'
 import { ProjectNavbar } from './navbar/ProjectNavbar.tsx'
 import { expectUserDataClient } from '../../init.ts'
-import { expectRepoFromLocation, logout } from '../../nav.ts'
+import { logout } from '../../nav.ts'
+import { expectRepoFromLocation } from '../../repoFromLocation.ts'
 
 type ProjectPageProps = {
     repo: RepositoryId

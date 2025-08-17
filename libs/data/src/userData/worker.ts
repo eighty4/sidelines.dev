@@ -12,6 +12,8 @@ import {
     readRepoListing,
 } from './repoSources.ts'
 
+declare const self: DedicatedWorkerGlobalScope
+
 export type UserDataMessageBase<KIND> = {
     kind: KIND
 }
@@ -134,14 +136,15 @@ function isRpcRequest(
     return false
 }
 
-onmessage = async (e: MessageEvent<UserDataRequest>) => {
+self.onmessage = async (e: MessageEvent<UserDataRequest>) => {
     if (!isMessage(e.data)) {
         console.error('workers/userData.js onmessage bad input', e.data)
+        self.close()
     } else {
         const req = e.data
         try {
             if (isRpcRequest(req)) {
-                postMessage(await processRpcRequest(req))
+                self.postMessage(await processRpcRequest(req))
             } else {
                 await processAsyncRequest(req)
             }
@@ -151,4 +154,4 @@ onmessage = async (e: MessageEvent<UserDataRequest>) => {
     }
 }
 
-onmessageerror = e => console.error('workers/userData.js onmessageerror', e)
+self.onmessageerror = e => console.error('worker userData.js onmessageerror', e)

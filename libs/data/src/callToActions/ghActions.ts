@@ -6,6 +6,8 @@ import {
 import { getRepoDirContent, isWorkflowPassing } from '@sidelines/github'
 import type { RepositoryObject } from '@sidelines/model'
 
+declare const self: DedicatedWorkerGlobalScope
+
 export type CicdCallToAction = {
     // no CICD checks on push or pull_request
     type: 'cicd-missing'
@@ -55,7 +57,8 @@ export type ActionsCallToActionsUpdate =
           message: string
       }
 
-const sendUpdate = (update: ActionsCallToActionsUpdate) => postMessage(update)
+const sendUpdate = (update: ActionsCallToActionsUpdate) =>
+    self.postMessage(update)
 
 function isValidMessage(msg: unknown): msg is ActionsCallToActionsRequest {
     return (
@@ -72,7 +75,7 @@ function isValidMessage(msg: unknown): msg is ActionsCallToActionsRequest {
     )
 }
 
-onmessage = async e => {
+self.onmessage = async e => {
     if (!isValidMessage(e.data)) {
         console.error(
             'ghActions.ts web worker message payload must be a valid ActionsCallToActionsRequest',
@@ -82,6 +85,9 @@ onmessage = async e => {
         await checkRepoWorkflows(ghToken, ghLogin, repo)
     }
 }
+
+self.onmessageerror = e =>
+    console.error('worker ghActions.js onmessageerror', e)
 
 async function checkRepoWorkflows(
     ghToken: string,

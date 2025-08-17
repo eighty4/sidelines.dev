@@ -14,4 +14,34 @@
         <h1>Sidelines.dev</h1>
     </body>
     <script type="module" src="./Home.ts"></script>
+    <script type="module">
+        if (location.port === '4000' && 'serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    // scope is implicitly /
+                    // applies to all pages once installed from /
+                    // recent chrome versions do not HTTP cache service workers
+                    //  unless explicitly done so with Cache-Control
+                    // for previous chrome versions or user agents, use a header
+                    //  to disable HTTP caching of the service worker
+                    await navigator.serviceWorker.register('/sidelines.sw.js')
+                } catch (e) {
+                    return
+                }
+                const registration = await navigator.serviceWorker.ready
+                registration.onupdatefound = () => {
+                    console.log('update found')
+                    registration
+                        .update()
+                        .then(() => console.log('updated'))
+                        .catch(e =>
+                            console.error(
+                                'service worker registration update error',
+                                e,
+                            ),
+                        )
+                }
+            })
+        }
+    </script>
 </html>

@@ -12,6 +12,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "strict": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+
+    /* :( only for build.ts, MonacoEnvironment.ts and sw.ts :( */
+    "resolveJsonModule": true,
+    "esModuleInterop": true
   }
 }

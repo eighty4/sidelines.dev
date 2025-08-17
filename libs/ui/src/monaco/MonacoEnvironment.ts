@@ -1,8 +1,10 @@
 import type { Environment } from 'monaco-editor'
+import sidelinesBuildDefinitions from '../../../../build/definitions.json' with { type: 'json' }
 
-// todo use monaco-editor npm version in URL
+const monacoVersion = sidelinesBuildDefinitions.MONACO_VERSION
+
 function getWorkerURL(name: string) {
-    return `/lib/monaco/${name}.js`
+    return `/lib/monaco/${name}-${monacoVersion}.js`
 }
 
 export const MonacoEnvironment: Environment = {

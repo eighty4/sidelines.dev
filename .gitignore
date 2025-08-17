@@ -1,3 +1,6 @@
 .DS_Store
 .env.local
+build
+dev/certificate.crt
+dev/private.key
 node_modules
