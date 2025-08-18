@@ -13,7 +13,7 @@
     "graphql": "bun -F @sidelines/github graphql"
   },
   "dependencies": {
-    "@eighty4/model-t": "0.0.5-2",
+    "@eighty4/model-t": "0.0.5-3",
     "@sidelines/data": "workspace:*",
     "@sidelines/github": "workspace:*",
     "@sidelines/model": "workspace:*",
@@ -26,6 +26,7 @@
     "@types/bun": "^1.2.18",
     "@types/node": "^22.13.4",
     "@types/react-dom": "^19.0.3",
+    "esbuild": "0.25.9",
     "prettier": "^3.5.3",
     "typescript": "^5.8.2"
   }

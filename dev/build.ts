@@ -1,7 +1,12 @@
 import { mkdir, rename, rm } from 'node:fs/promises'
 import { basename, dirname } from 'node:path'
 import { join } from 'node:path/posix'
-import { $, type BuildConfig } from 'bun'
+import { $ } from 'bun'
+import esbuild, {
+    type BuildOptions,
+    type BuildResult,
+    type Message,
+} from 'esbuild'
 import monacoPackageJson from '../node_modules/monaco-editor/package.json' with { type: 'json' }
 import { paths as apiRoutes } from '../server/routes.ts'
 
@@ -41,20 +46,47 @@ async function createBuildTag(): Promise<string> {
     }
 }
 
-function bunBuildOpts(): Omit<BuildConfig, 'entrypoints'> {
+function esbuildBuildOpts(): BuildOptions & { write: false } {
     return {
+        bundle: true,
+        format: 'iife',
         minify,
-        outdir: 'build/dist',
+        platform: 'browser',
+        treeShaking: true,
+        // esbuild does not return filenames or hashes
+        // if it writes to disk :(
+        write: false,
     }
 }
 
-function bunBuildJavaScriptOpts(): Omit<BuildConfig, 'entrypoints'> {
-    return {
-        ...bunBuildOpts(),
-        format: 'iife',
-        splitting: false,
-        target: 'browser',
+function esbuildResultChecks(buildResult: BuildResult, path: string) {
+    if ((buildResult.outputFiles?.length || 0) > 1) {
+        throw Error('wtf')
     }
+    if (buildResult.errors.length) {
+        buildResult.errors.forEach(msg =>
+            esbuildPrintMessage(msg, 'warning', path),
+        )
+        process.exit(1)
+    }
+    if (buildResult.warnings.length) {
+        buildResult.warnings.forEach(msg =>
+            esbuildPrintMessage(msg, 'warning', path),
+        )
+    }
+}
+
+function esbuildPrintMessage(
+    msg: Message,
+    cat: 'error' | 'warning',
+    p: string,
+) {
+    console.error(`esbuild ${cat} (${p}):`, msg.text)
+    if (msg.location) console.error(' ', msg.location)
+    msg.notes.forEach(note => {
+        console.error('  ', note.text)
+        if (note.location) console.error('   ', note.location)
+    })
 }
 
 export const webpages: Record<WebappPath, string> = {
@@ -92,7 +124,7 @@ async function buildWebpage(
 ): Promise<Array<WebappPath>> {
     // Bun.build automagically creates an HTMLBundle of all of a webpage's CSS and JS
     const buildOutput = await Bun.build({
-        ...bunBuildOpts(),
+        minify,
         entrypoints: [src],
         outdir: join('build', 'tmp', out),
     })
@@ -126,24 +158,35 @@ async function buildWorker(out: WebappPath, src: string): Promise<WebappPath> {
     const versioning = out.startsWith('/lib/monaco/')
         ? monacoPackageJson.version
         : '[hash]'
-    const naming = out.substring(1).replace('.js', `-${versioning}.[ext]`)
-    const buildOutput = await Bun.build({
-        ...bunBuildJavaScriptOpts(),
-        entrypoints: [src],
-        naming,
+    const naming = out.substring(1).replace('.js', `-${versioning}`)
+    const buildResult = await esbuild.build({
+        ...esbuildBuildOpts(),
+        entryPoints: [src],
+        entryNames: naming,
     })
-    return `${join(dirname(out), basename(buildOutput.outputs[0].path))}` as WebappPath
+    esbuildResultChecks(buildResult, out)
+    const hash = buildResult.outputFiles[0].hash.toLowerCase()
+    const path =
+        `${dirname(out)}/${basename(out.replace('.js', `-${versioning.replace('[hash]', hash)}.js`))}` as WebappPath
+    await Bun.write(
+        join('build/dist', path),
+        buildResult.outputFiles[0].contents,
+    )
+    return path
 }
 
 async function buildServiceWorker(
     files: Array<WebappPath>,
 ): Promise<WebappPath> {
     await writeCacheManifest(files)
-    await Bun.build({
-        ...bunBuildJavaScriptOpts(),
-        entrypoints: ['./workers/serviceWorker.ts'],
-        naming: 'sidelines.sw.js',
+    const buildResult = await esbuild.build({
+        ...esbuildBuildOpts(),
+        entryPoints: ['./workers/serviceWorker.ts'],
+        entryNames: 'sidelines.sw',
+        outdir: 'build/dist',
+        write: true,
     })
+    esbuildResultChecks(buildResult, '/sidelines.sw.js')
     return '/sidelines.sw.js'
 }
 
