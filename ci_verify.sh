@@ -55,8 +55,7 @@ fi
 
 # run through all the checks done for ci
 
-bun test
-bun run build
-bunx --bun tsc --noEmit
-bunx --bun prettier --check .
-bunx playwright test
+pnpm test
+pnpm build
+bunx typecheck
+pnpm fmtcheck

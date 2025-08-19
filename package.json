@@ -2,6 +2,7 @@
   "name": "@sidelines/webapp",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.15.0",
   "workspaces": [
     "libs/*"
   ],
@@ -10,7 +11,11 @@
     "dev": "bun dev/serve.ts",
     "fmt": "prettier --write .",
     "fmtcheck": "prettier --check .",
-    "graphql": "bun -F @sidelines/github graphql"
+    "graphql": "bun -F @sidelines/github graphql",
+    "test": "pnpm test:unit && pnpm test:e2e",
+    "test:unit": "bun test",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@eighty4/model-t": "0.0.5-3",
@@ -19,15 +24,18 @@
     "@sidelines/model": "workspace:*",
     "@sidelines/ui": "workspace:*",
     "monaco-editor": "^0.52.2",
-    "react-dom": "^19.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.2",
     "@types/bun": "^1.2.18",
     "@types/node": "^22.13.4",
+    "@types/react": "^19.1.10",
     "@types/react-dom": "^19.0.3",
     "esbuild": "0.25.9",
+    "graphql": "^16.11.0",
     "prettier": "^3.5.3",
     "typescript": "^5.8.2"
   }

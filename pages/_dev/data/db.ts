@@ -16,7 +16,7 @@ export async function getDbStoreMetadata(
     return new Promise((res, rej) => {
         const tx = db.transaction(store)
         const objectStore = tx.objectStore(store)
-        const keyPath = objectStore.keyPath
+        const keyPath = objectStore.keyPath!
         const keys = Array.isArray(keyPath) ? keyPath : [keyPath]
         const indexNames = Array.from(objectStore.indexNames).sort()
         const indexKeys: Record<string, Array<string>> = {}

@@ -9,12 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
       - uses: oven-sh/setup-bun@v2
-      - run: bun i
-      - run: bun test
-      - run: bun run build
-      - run: bunx --bun tsc --noEmit
-      - run: bunx playwright install --with-deps
-      - run: bunx playwright test
-      - run: bunx --bun prettier --check .
+      - run: pnpm i
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm exec playwright install --with-deps
+      - run: pnpm test
+      - run: pnpm fmtcheck
       - run: echo 'Look what hell made'
