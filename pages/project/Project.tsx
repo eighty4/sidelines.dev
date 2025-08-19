@@ -1,4 +1,3 @@
-import { UserDataClient } from '@sidelines/data/web'
 import { UnauthorizedError } from '@sidelines/github'
 import type { RepositoryId, RepositoryPackage } from '@sidelines/model'
 import { type FC, useEffect, useState } from 'react'
@@ -6,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 import { getUserDataClient } from '../init.ts'
 import { loginRedirectUrl } from '../nav.ts'
 import { expectRepoFromLocation } from '../repoFromLocation.ts'
+import { UserDataClient } from '../../workers/UserDataClient.ts'
 
 type ProjectPageProps = {
     repo: RepositoryId

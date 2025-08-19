@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 
-export const ConfigureError: FC<{ msg: string }> = ({ msg }) => {
+export const InitializingError: FC<{ msg: string }> = ({ msg }) => {
     return (
         <div>
             <p>{msg}</p>

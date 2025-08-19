@@ -1,0 +1,30 @@
+query ViewerRepoExists($repo: String!) {
+    viewer {
+        repository(name: $repo) {
+            nameWithOwner
+        }
+    }
+}
+
+query _ViewerRepoDefaultBranchHeadSha($repo: String!) {
+    viewer {
+        repository(name: $repo) {
+            defaultBranchRef {
+                name
+                target {
+                    ... on Commit {
+                        history(first: 1) {
+                            edges {
+                                node {
+                                    ... on Commit {
+                                        oid
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

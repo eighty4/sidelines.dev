@@ -1,5 +1,6 @@
 .DS_Store
 .env.local
+.playwright
 build
 dev/certificate.crt
 dev/private.key

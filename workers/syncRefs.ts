@@ -1,5 +1,5 @@
 /// <reference lib="WebWorker" />
-import { getTimeSinceLastSync, updateSyncing } from '@sidelines/data'
+import { getTimeSinceLastSync, updateSyncing } from '@sidelines/data/web'
 import type { RepositoryId } from '@sidelines/model'
 
 declare let self: SharedWorkerGlobalScope

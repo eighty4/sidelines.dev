@@ -1,9 +1,9 @@
-import { doesSidelinesRepoExist } from '@sidelines/github'
+import { checkSidelinesRepo } from '@sidelines/github'
 import type { RepositoryId } from '@sidelines/model'
 import { type FC, useEffect, useState } from 'react'
 import { EditorPane } from './EditorPane.tsx'
 import type { RepoFile, RepoSources } from '../RepoSources.ts'
-import { MakeNotesRepo } from '../../../configure/MakeNotesRepo.tsx'
+import { MakeSidelinesRepo } from '../../../configure/MakeSidelinesRepo.tsx'
 
 export interface WorkspaceEditorProps {
     ghToken: string
@@ -19,11 +19,11 @@ export const WorkspaceEditor: FC<WorkspaceEditorProps> = ({
     sources,
 }) => {
     const [openFile, setOpenFile] = useState<RepoFile | null>()
-    const [notesRepoExists, setNotesRepoExists] =
-        useState<Awaited<ReturnType<typeof doesSidelinesRepoExist>>>()
+    const [sidelinesRepo, setSidelinesRepo] =
+        useState<Awaited<ReturnType<typeof checkSidelinesRepo>>>()
 
     useEffect(() => {
-        doesSidelinesRepoExist(ghToken, repo.name).then(setNotesRepoExists)
+        checkSidelinesRepo(ghToken).then(setSidelinesRepo)
     }, [])
 
     useEffect(() => {
@@ -31,59 +31,37 @@ export const WorkspaceEditor: FC<WorkspaceEditorProps> = ({
         return () => subscription.unsubscribe()
     }, [])
 
-    if (typeof notesRepoExists === 'undefined') {
+    if (typeof sidelinesRepo === 'undefined') {
         return
     }
 
-    if (notesRepoExists === 'misconfigured') {
+    if (sidelinesRepo === false) {
+        return (
+            <MakeSidelinesRepo
+                ghToken={ghToken}
+                ghLogin={ghLogin}
+                repo={repo}
+                onRepoMade={() => setSidelinesRepo(true)}
+            />
+        )
+    }
+
+    if (sidelinesRepo !== true) {
         return (
             <div>
                 <p>
-                    Your{' '}
-                    <a href={`https://github.com/${ghLogin}/.sidelines`}>
-                        {ghLogin}/.sidelines
-                    </a>{' '}
-                    repository might not be correct for management by
-                    Sidelines.dev. Set the repository's homepage URL to
-                    https://sidelines.dev if the repository can be managed by
-                    this app.
+                    Your .sidelines repository might not be correctly configured
+                    for Sidelines.dev.
+                </p>
+                <p>
+                    Head to the <a href="/configure">configure page</a>
+                    for more details!
                 </p>
             </div>
         )
     }
 
-    if (notesRepoExists === false) {
-        return (
-            <MakeNotesRepo
-                ghToken={ghToken}
-                ghLogin={ghLogin}
-                repo={repo}
-                onRepoMade={() => setNotesRepoExists(true)}
-            />
-        )
-    }
-
     if (openFile) {
         return <EditorPane openFile={openFile} />
-    } else {
-        if (notesRepoExists === 'project-readme-missing') {
-            return (
-                <div>
-                    <p>
-                        Your .sidelines repository does not have a notes
-                        README.md for your {repo.name} project.
-                    </p>
-                    <p>
-                        The missing file is {repo.name}/README.md in{' '}
-                        {repo.owner}/{repo.name}.
-                    </p>
-                    <p>
-                        <button>Click here to create it</button>
-                    </p>
-                </div>
-            )
-        } else {
-            return
-        }
     }
 }

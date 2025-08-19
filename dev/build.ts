@@ -21,7 +21,7 @@ if (
     process.exit(0)
 }
 
-type WebappPath = `/${string}`
+export type WebappPath = `/${string}`
 
 const production =
     Bun.env.PRODUCTION === 'true' || Bun.argv.includes('--production')
@@ -92,6 +92,7 @@ function esbuildPrintMessage(
 export const webpages: Record<WebappPath, string> = {
     '/': './pages/home/Home.html',
     '/configure': './pages/configure/Configure.html',
+    '/gameplan': './pages/gameplan/Gameplan.html',
     '/project': './pages/project/Project.html',
     '/notes': './pages/project/notes/Notes.html',
 }
@@ -102,9 +103,8 @@ export const webpages: Record<WebappPath, string> = {
 // sidelines is versioned by build hash
 export const workers: Record<WebappPath, string> = {
     '/lib/sidelines/syncRefs.js': './workers/syncRefs.ts',
-    '/lib/sidelines/userData.js': './libs/data/src/userData/worker.ts',
-    '/lib/sidelines/callToActions/ghActions.js':
-        './libs/data/src/callToActions/ghActions.ts',
+    '/lib/sidelines/userData.js': './workers/userData.ts',
+    '/lib/sidelines/ghActions.js': './workers/ghActions.ts',
     '/lib/monaco/main.js':
         './node_modules/monaco-editor/esm/vs/editor/editor.worker.js',
     '/lib/monaco/css.js':
@@ -205,23 +205,23 @@ async function writeDefinitionsManifest() {
     })
 }
 
-async function writeCacheManifest(files: Array<string>) {
-    const stripIndexHtmlLength = '/index.html'.length
+async function writeCacheManifest(files: Array<WebappPath>) {
     await writeJsonToBuildDir('cache.json', {
         apiRoutes,
         buildTag,
-        files: files.map(file => {
-            if (file.endsWith('.html')) {
-                if (file === '/index.html') {
-                    return '/'
-                } else {
-                    return file.substring(0, file.length - stripIndexHtmlLength)
-                }
-            } else {
-                return file
-            }
-        }),
+        files: files.map(filenameToWebappPath),
     })
+}
+
+// drops index.html from path
+export function filenameToWebappPath(p: WebappPath): WebappPath {
+    if (p === '/index.html') {
+        return '/'
+    } else if (p.endsWith('/index.html')) {
+        return p.substring(0, p.length - '/index.html'.length) as `/${string}`
+    } else {
+        return p
+    }
 }
 
 async function writeBuildManifest(files: Array<string>) {

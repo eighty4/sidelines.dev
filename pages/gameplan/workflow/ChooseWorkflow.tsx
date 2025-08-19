@@ -1,8 +1,8 @@
-import { UserDataClient } from '@sidelines/data/web'
 import { type FC, useMemo } from 'react'
 import { ChooseCallToAction } from './ChooseCallToAction.tsx'
 import { ChooseProject } from './ChooseProject.tsx'
 import { WorkflowRepoSearch } from './WorkflowRepoSearch.ts'
+import { UserDataClient } from '../../../workers/UserDataClient.ts'
 
 export interface ChooseWorkflowProps {
     ghToken: string

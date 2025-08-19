@@ -1,10 +1,6 @@
-import {
-    createCache,
-    getCookie,
-    GH_TOKEN,
-    UserDataClient,
-} from '@sidelines/data/web'
+import { createCache, getCookie, GH_TOKEN } from '@sidelines/data/web'
 import { getUserLogin, UnauthorizedError } from '@sidelines/github'
+import { UserDataClient } from '../workers/UserDataClient.ts'
 
 const ghLoginCache = createCache(sessionStorage, 'sld.user.gh.login')
 

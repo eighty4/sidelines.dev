@@ -1,9 +1,9 @@
 import { createSidelinesRepo } from '@sidelines/github'
 import type { RepositoryId } from '@sidelines/model'
+import { InitializingError } from '@sidelines/ui'
 import { type FC, useState } from 'react'
-import { ConfigureError } from './ConfigureError.tsx'
 
-export interface MakeNotesRepoProps {
+export interface MakeSidelinesRepoProps {
     ghToken: string
     ghLogin: string
     // optionally provide name of project repo to init sidelines repo with
@@ -11,7 +11,7 @@ export interface MakeNotesRepoProps {
     onRepoMade: () => void
 }
 
-export const MakeNotesRepo: FC<MakeNotesRepoProps> = ({
+export const MakeSidelinesRepo: FC<MakeSidelinesRepoProps> = ({
     ghToken,
     ghLogin,
     repo,
@@ -33,7 +33,7 @@ export const MakeNotesRepo: FC<MakeNotesRepoProps> = ({
 
     if (error) {
         return (
-            <ConfigureError msg="An unexpected error occured creating the .sidelines repo under your GitHub account." />
+            <InitializingError msg="An unexpected error occured creating the .sidelines repo under your GitHub account." />
         )
     }
 

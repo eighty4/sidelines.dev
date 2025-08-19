@@ -1,17 +1,17 @@
 import { type Observable, Subject } from 'rxjs'
-import type {
-    ActionsCallToActionsRequest,
-    ActionsCallToActionsUpdate,
-    CicdCallToAction,
-    WorkflowCallToAction,
-} from '@sidelines/data/web'
 import { type Language, type Repository } from '@sidelines/model'
 import {
     type PackageSearchResult,
     searchForPackages,
 } from './searchForPackages.ts'
+import type {
+    ActionsCallToActionsRequest,
+    ActionsCallToActionsUpdate,
+    CicdCallToAction,
+    WorkflowCallToAction,
+} from '../../../workers/ghActions.ts'
 
-const GH_ACTIONS_WORKER = '/lib/sidelines/callToActions/ghActions.js'
+const GH_ACTIONS_WORKER = '/lib/sidelines/ghActions.js'
 
 export type CallToAction =
     | {

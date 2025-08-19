@@ -13,7 +13,7 @@ import type {
     UserDataRpcMessageBase,
     UserDataRpcRequest,
     UserDataRpcResponse,
-} from './worker.ts'
+} from './userData.ts'
 
 export class UserDataClient {
     readonly ghToken: string

@@ -6,20 +6,26 @@ export async function loginAndRedirect(url: URL): Promise<Response> {
         return new Response('Bad Request', { status: 400 })
     }
     try {
-        const token =
+        const tokens =
             await exchangeAuthorizationCodeForAccessToken(authorizationCode)
-        return new Response('Found', {
-            status: 302,
-            headers: {
-                Location: Bun.env.WEBAPP_ADDRESS + '/configure',
-                'Set-Cookie': `ght=${token.access.value}; Secure; SameSite=Strict; Path=/; Max-Age=${token.access.expiresIn}`,
-            },
-        })
+        return authedRedirectResponse(tokens)
     } catch (e) {
         console.error(e)
         return new Response('Internal Server Error', { status: 500 })
     }
 }
+
+export function authedRedirectResponse(tokens: GHAuthedTokens): Response {
+    return new Response('Found', {
+        status: 302,
+        headers: {
+            Location: Bun.env.WEBAPP_ADDRESS + '/configure',
+            'Set-Cookie': `ght=${tokens.access.value}; Secure; SameSite=Strict; Path=/; Max-Age=${tokens.access.expiresIn}`,
+        },
+    })
+}
+
+type GHAuthedTokens = { access: GHAccessToken; refresh: GHAccessToken }
 
 type GHAccessToken = {
     value: string
@@ -28,7 +34,7 @@ type GHAccessToken = {
 
 async function exchangeAuthorizationCodeForAccessToken(
     code: string,
-): Promise<{ access: GHAccessToken; refresh: GHAccessToken }> {
+): Promise<GHAuthedTokens> {
     const response = await fetch(
         'https://github.com/login/oauth/access_token',
         {

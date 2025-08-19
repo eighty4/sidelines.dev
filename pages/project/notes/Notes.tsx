@@ -1,4 +1,3 @@
-import { UserDataClient } from '@sidelines/data/web'
 import { UnauthorizedError } from '@sidelines/github'
 import type { RepositoryId } from '@sidelines/model'
 import { type FC, useMemo } from 'react'
@@ -10,6 +9,7 @@ import { ProjectNavbar } from './navbar/ProjectNavbar.tsx'
 import { expectUserDataClient } from '../../init.ts'
 import { logout } from '../../nav.ts'
 import { expectRepoFromLocation } from '../../repoFromLocation.ts'
+import { UserDataClient } from '../../../workers/UserDataClient.ts'
 
 type ProjectPageProps = {
     repo: RepositoryId

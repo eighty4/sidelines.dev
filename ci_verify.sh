@@ -59,3 +59,4 @@ bun test
 bun run build
 bunx --bun tsc --noEmit
 bunx --bun prettier --check .
+bunx playwright test

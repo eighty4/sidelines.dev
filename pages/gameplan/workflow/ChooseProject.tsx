@@ -1,6 +1,6 @@
-import type { UserDataClient } from '@sidelines/data/web'
-import { doesRepoExist } from '@sidelines/github'
+import { doesViewerRepoExist } from '@sidelines/github'
 import type { RepositoryId } from '@sidelines/model'
+import { InitializingError } from '@sidelines/ui'
 import {
     type ChangeEvent,
     type FC,
@@ -8,8 +8,8 @@ import {
     useEffect,
     useState,
 } from 'react'
-import { ConfigureError } from '../ConfigureError.tsx'
 import { navToProject } from '../../nav.ts'
+import type { UserDataClient } from '../../../workers/UserDataClient.ts'
 
 export interface ChooseProjectProps {
     userData: UserDataClient
@@ -31,7 +31,7 @@ export const ChooseProject: FC<ChooseProjectProps> = ({ userData }) => {
 
     if (error === 'server') {
         return (
-            <ConfigureError
+            <InitializingError
                 msg={`An unexpected error occurred verifying if the repo ${repo} exists.`}
             />
         )
@@ -52,7 +52,7 @@ export const ChooseProject: FC<ChooseProjectProps> = ({ userData }) => {
 
     async function onButtonClick(): Promise<void> {
         try {
-            if (await doesRepoExist(userData.ghToken, repo)) {
+            if (await doesViewerRepoExist(userData.ghToken, repo)) {
                 navToProject({ owner: userData.ghLogin, name: repo })
             } else {
                 setClicked(false)

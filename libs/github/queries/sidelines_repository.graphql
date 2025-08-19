@@ -1,0 +1,9 @@
+query CheckSidelinesRepo {
+    viewer {
+        repository(name: ".sidelines") {
+            homepageUrl
+            isPrivate
+            nameWithOwner
+        }
+    }
+}

@@ -77,26 +77,3 @@ query RepoObjectContent($owner: String!, $name: String!, $objExpr: String!) {
         }
     }
 }
-
-query ViewerRepoDefaultBranchHeadSha($repo: String!) {
-    viewer {
-        repository(name: $repo) {
-            defaultBranchRef {
-                name
-                target {
-                    ... on Commit {
-                        history(first: 1) {
-                            edges {
-                                node {
-                                    ... on Commit {
-                                        oid
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}

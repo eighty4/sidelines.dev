@@ -1,8 +1,10 @@
 import { join } from 'node:path'
 import type { ServeFunctionOptions, Server, TLSOptions } from 'bun'
 import {
+    filenameToWebappPath,
     performBuild,
     prepareBuildDirForBundler,
+    type WebappPath,
     webpages,
     workers,
 } from './build.ts'
@@ -47,9 +49,7 @@ if (Bun.env.TLS === 'true' || Bun.argv.includes('--tls')) {
     }
 }
 
-async function frontendBundleOnRequestRoutes(): Promise<
-    BunServeOpts['routes']
-> {
+async function routesForBundleOnRequest(): Promise<BunServeOpts['routes']> {
     // ensure ./build/definitions.json is in place during dev bundling
     await prepareBuildDirForBundler()
     const routes: BunServeOpts['routes'] = {
@@ -80,11 +80,10 @@ async function frontendBundleOnRequestRoutes(): Promise<
     return routes
 }
 
-async function frontendPreBundledRoutes(): Promise<BunServeOpts['routes']> {
-    const files = await performBuild()
-    const routes = {
-        ...routesForDevPages(),
-    }
+export function routesFromBundledFiles(
+    files: Array<WebappPath>,
+): BunServeOpts['routes'] {
+    const routes: BunServeOpts['routes'] = {}
     for (const file of files) {
         if (file === '/sidelines.sw.js') {
             const headers = new Headers()
@@ -96,17 +95,9 @@ async function frontendPreBundledRoutes(): Promise<BunServeOpts['routes']> {
                 headers,
             })
         } else {
-            // todo this mapping is duplicated in ./dev/build.ts to create ./build/cache.json
-            let urlPath = file
-            if (file === '/index.html') {
-                urlPath = '/'
-            } else if (file.endsWith('/index.html')) {
-                urlPath = urlPath.substring(
-                    0,
-                    urlPath.length - '/index.html'.length,
-                ) as `/${string}`
-            }
-            routes[urlPath] = Bun.file(join('build/dist', file))
+            routes[filenameToWebappPath(file)] = Bun.file(
+                join('build/dist', file),
+            )
         }
     }
     return routes
@@ -121,8 +112,11 @@ function routesForDevPages(): BunServeOpts['routes'] {
 
 async function routes(): Promise<BunServeOpts['routes']> {
     const frontendRoutes: BunServeOpts['routes'] = isPreview
-        ? await frontendPreBundledRoutes()
-        : await frontendBundleOnRequestRoutes()
+        ? {
+              ...routesFromBundledFiles(await performBuild()),
+              ...routesForDevPages(),
+          }
+        : await routesForBundleOnRequest()
     return {
         ...frontendRoutes,
         ...apiRoutes,
@@ -146,23 +140,32 @@ function fetch(req: Request, _server: Server) {
     return new Response('Not Found', { status: 404 })
 }
 
-const port = isPreview ? 4000 : 3000
+async function startServer() {
+    const port = isPreview ? 4000 : 3000
 
-Bun.serve({
-    development: true,
-    routes: await routes(),
-    tls,
-    fetch,
-    port,
-})
+    Bun.serve({
+        development: true,
+        routes: await routes(),
+        tls,
+        fetch,
+        port,
+    })
 
-const protocol = tls ? 'https' : 'http'
-const address = `${protocol}://127.0.0.1:${port}`
-console.log(`sidelines.dev is running at ${address}`)
-console.log()
-console.log(
-    `    ${address}/_data`,
-    `\u001b[90m${'for IndexedDB & OPFS'}\u001b[0m`,
-)
-console.log(`    ${address}/_ui`, `\u001b[90m${'for UI components'}\u001b[0m`)
-console.log()
+    const protocol = tls ? 'https' : 'http'
+    const address = `${protocol}://127.0.0.1:${port}`
+    console.log(`sidelines.dev is running at ${address}`)
+    console.log()
+    console.log(
+        `    ${address}/_data`,
+        `\u001b[90m${'for IndexedDB & OPFS'}\u001b[0m`,
+    )
+    console.log(
+        `    ${address}/_ui`,
+        `\u001b[90m${'for UI components'}\u001b[0m`,
+    )
+    console.log()
+}
+
+if (import.meta.main) {
+    await startServer()
+}

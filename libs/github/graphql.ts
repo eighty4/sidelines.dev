@@ -1,69 +1,117 @@
+import { readdir } from 'node:fs/promises'
+import { join } from 'node:path'
 import {
     buildSchema,
     type DocumentNode,
+    GraphQLError,
     type GraphQLSchema,
     parse,
     validate,
     type VariableDefinitionNode,
 } from 'graphql'
 
-const graphqlPath = (filename: string) => `./queries/${filename}.graphql`
-const jsPath = (filename: string) => `./src/queries/gql/${filename}.ts`
-const varsPath = (filename: string) => `./src/queries/vars/${filename}.ts`
+const GRAPHQL_DIR = './queries'
+const GITHUB_SCHEMA = 'github.graphql'
+const GRAPHQL_IGNORE = [GITHUB_SCHEMA, 'README.md']
+
+// GitHub GraphQL schema to validate against
 const schema: GraphQLSchema = buildSchema(
-    await Bun.file(graphqlPath('github')).text(),
+    await Bun.file(join(GRAPHQL_DIR, GITHUB_SCHEMA)).text(),
 )
 
-const documents: Record<string, DocumentNode> = {}
-for (const filename of ['repos']) {
-    const src = await Bun.file(graphqlPath(filename)).text()
-    documents[filename] = parse(src)
+const graphqlFiles = (await readdir(GRAPHQL_DIR)).filter(
+    (f: string) => !GRAPHQL_IGNORE.includes(f) && !f.startsWith('_'),
+)
+
+console.log('found', graphqlFiles.length, '.graphql files')
+
+// error exit before codegen if syntax or schema errors
+let abort = false
+
+// keep track of longest filename for result output
+let maxGraphqlFilename = 0
+
+function printGraphqlError(filename: string, e: GraphQLError) {
+    abort = true
+    console.error(filename, e.message)
+    e.locations?.forEach(location =>
+        console.error(`    at ${location.line}:${location.column}`),
+    )
 }
 
-let invalid = false
-for (const [filename, ast] of Object.entries(documents)) {
-    const errors = validate(schema, ast)
-    if (errors.length) {
-        invalid = true
-        errors.forEach(e => console.error(`${filename}.graphql`, e))
+// parse and verify graphql syntax
+const documents: Record<string, DocumentNode> = {}
+for (const filename of graphqlFiles) {
+    maxGraphqlFilename = Math.max(maxGraphqlFilename, filename.length)
+    const src = await Bun.file(join(GRAPHQL_DIR, filename)).text()
+    try {
+        documents[filename] = parse(src)
+    } catch (e) {
+        if (e instanceof GraphQLError) {
+            printGraphqlError(filename, e)
+        } else {
+            throw e
+        }
     }
 }
 
-if (invalid) {
-    process.exit(1)
-} else {
-    await Promise.all(
-        Object.entries(documents).map(async ([filename, ast]) => {
-            const queries: Array<string> = []
-            const variables: Array<string> = []
-            for (const definition of ast.definitions) {
-                if (definition.kind !== 'OperationDefinition') throw Error()
-                if (definition.operation !== 'query') throw Error()
-                if (!definition.name) throw Error('missing name')
-                if (!definition.loc) throw Error('missing loc')
+// validate schema against github.graphql
+for (const [filename, ast] of Object.entries(documents)) {
+    const errors = validate(schema, ast)
+    errors.forEach(e => printGraphqlError(filename, e))
+}
 
-                const queryName = definition.name.value
-                if (definition.variableDefinitions?.length) {
-                    variables.push(
-                        collectVariablesType(
-                            queryName,
-                            definition.variableDefinitions,
-                        ),
-                    )
-                }
-                const query = minify(
-                    definition.loc.source.body.substring(
-                        definition.loc.start,
-                        definition.loc.end,
+if (abort) {
+    process.exit(1)
+}
+
+const output: Record<string, string> = {}
+await Promise.all(
+    Object.entries(documents).map(async ([filename, ast]) => {
+        const gqlOut: Array<string> = []
+        for (const definition of ast.definitions) {
+            if (definition.kind !== 'OperationDefinition')
+                throw Error('!operation')
+            if (definition.operation !== 'query')
+                throw Error('operation !query')
+            if (!definition.name) throw Error('missing name')
+            if (!definition.loc) throw Error('missing loc')
+
+            const queryName = definition.name.value
+            if (queryName.startsWith('_')) continue
+
+            if (definition.variableDefinitions?.length) {
+                gqlOut.push(
+                    collectVariablesType(
+                        queryName,
+                        definition.variableDefinitions,
                     ),
                 )
-                queries.push(`export const ${queryName}: string = '${query}'`)
             }
-            await Bun.write(jsPath(filename), queries.join('\n\n'))
-            if (variables.length) {
-                await Bun.write(varsPath(filename), variables.join('\n\n'))
-            }
-        }),
+            const query = minify(
+                definition.loc.source.body.substring(
+                    definition.loc.start,
+                    definition.loc.end,
+                ),
+            )
+            gqlOut.push(`export const ${queryName}: string = '${query}'`)
+        }
+        const dest = join(
+            'src',
+            ...filename.substring(0, filename.indexOf('.')).split('_'),
+            'gql.ts',
+        )
+        await Bun.write(dest, gqlOut.join('\n\n'))
+        output[filename] = dest
+    }),
+)
+
+console.log('codegen successful:')
+for (const filename of Object.keys(output).sort()) {
+    console.log(
+        filename.padStart(maxGraphqlFilename + 1, ' '),
+        '->',
+        output[filename],
     )
 }
 
@@ -71,7 +119,7 @@ function collectVariablesType(
     queryName: string,
     definitions: ReadonlyArray<VariableDefinitionNode>,
 ): string {
-    const vars: Array<string> = [`export type ${queryName}Variables = {`]
+    const vars: Array<string> = [`export type ${queryName}Vars = {`]
     for (const definition of definitions) {
         const varName = definition.variable.name.value
         if (definition.type.kind === 'NonNullType') {

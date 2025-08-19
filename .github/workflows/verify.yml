@@ -14,5 +14,7 @@ jobs:
       - run: bun test
       - run: bun run build
       - run: bunx --bun tsc --noEmit
+      - run: bunx playwright install --with-deps
+      - run: bunx playwright test
       - run: bunx --bun prettier --check .
       - run: echo 'Look what hell made'

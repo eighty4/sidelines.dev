@@ -1,16 +1,17 @@
+import {
+    readRecentNav,
+    writeNavVisit,
+    readRepoPackages,
+    type ReadRepoContent,
+    readRepoContent,
+    type ReadRepoListing,
+    readRepoListing,
+} from '@sidelines/data/web'
 import type {
     RepositoryId,
     RepositoryObject,
     RepositoryPackage,
 } from '@sidelines/model'
-import { readRecentNav, writeNavVisit } from './navHistory.ts'
-import { readRepoPackages } from './packages.ts'
-import {
-    type ReadRepoContent,
-    readRepoContent,
-    type ReadRepoListing,
-    readRepoListing,
-} from './repoSources.ts'
 
 declare const self: DedicatedWorkerGlobalScope
 

@@ -9,7 +9,11 @@ export const loginRedirectUrl = '/github/redirect/user/login'
 export const logoutRedirectUrl = '/logout'
 
 export function getAppUrl(): string {
-    return 'https://github.com/apps/sidelines-dev'
+    const appName =
+        location.host === 'sidelines.dev'
+            ? 'sidelines-dev'
+            : 'sidelines-dev-dev'
+    return 'https://github.com/apps/' + appName
 }
 
 export function getAppInstallationConfigureUrl(installationId: number): string {
