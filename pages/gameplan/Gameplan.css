@@ -1,3 +1,6 @@
+@import '../global.css';
+@import './workflow/ChooseWorkflow.css';
+
 html,
 body {
     background: #eee;

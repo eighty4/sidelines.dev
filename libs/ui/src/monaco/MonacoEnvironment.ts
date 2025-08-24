@@ -1,10 +1,7 @@
 import type { Environment } from 'monaco-editor'
-import sidelinesBuildDefinitions from '../../../../build/definitions.json' with { type: 'json' }
-
-const monacoVersion = sidelinesBuildDefinitions.MONACO_VERSION
 
 function getWorkerURL(name: string) {
-    return `/lib/monaco/${name}-${monacoVersion}.js`
+    return `/lib/monaco/${name}-${sidelines.env.MONACO_VERSION}.js`
 }
 
 export const MonacoEnvironment: Environment = {

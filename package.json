@@ -7,13 +7,13 @@
     "libs/*"
   ],
   "scripts": {
-    "build": "bun dev/build.ts",
-    "dev": "bun dev/serve.ts",
+    "build": "node dev/build.ts",
+    "dev": "node --env-file .env.local dev/serve.ts",
     "fmt": "prettier --write .",
     "fmtcheck": "prettier --check .",
-    "graphql": "bun -F @sidelines/github graphql",
+    "graphql": "pnpm --filter github graphql",
     "test": "pnpm test:unit && pnpm test:e2e",
-    "test:unit": "bun test",
+    "test:unit": "node --test \"**/*.spec.ts\"",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit"
   },
@@ -30,12 +30,12 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.54.2",
-    "@types/bun": "^1.2.18",
     "@types/node": "^22.13.4",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.0.3",
     "esbuild": "0.25.9",
     "graphql": "^16.11.0",
+    "parse5": "^8.0.0",
     "prettier": "^3.5.3",
     "typescript": "^5.8.2"
   }

@@ -21,7 +21,7 @@ export default defineConfig({
     ],
     webServer: [
         {
-            command: 'bun run dev',
+            command: 'pnpm dev',
             env: {},
             url: 'http://127.0.0.1:3000',
             reuseExistingServer: false,

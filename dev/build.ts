@@ -1,33 +1,39 @@
-import { mkdir, rename, rm } from 'node:fs/promises'
-import { basename, dirname } from 'node:path'
-import { join } from 'node:path/posix'
-import { $ } from 'bun'
-import esbuild, {
-    type BuildOptions,
-    type BuildResult,
-    type Message,
-} from 'esbuild'
-import monacoPackageJson from '../node_modules/monaco-editor/package.json' with { type: 'json' }
+import { exec } from 'node:child_process'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { basename, dirname, join, join as fsJoin, extname } from 'node:path'
+import esbuild from 'esbuild'
+import {
+    defineSidelinesFromWorkerUrls,
+    type DefineSidelinesGlobal,
+    monacoVersion,
+} from './define.ts'
+import {
+    esbuildBuildOptsForWebpage,
+    esbuildBuildOptsForWorker,
+    esbuildResultChecks,
+} from './esbuild.ts'
+import { HtmlEntrypoint } from './html.ts'
 import { paths as apiRoutes } from '../server/routes.ts'
 
-if (
-    import.meta.main &&
-    Bun.argv.some(arg => arg === '-h' || arg === '--help')
-) {
-    console.log('bun ./dev/build.ts [--minify] [--production]')
+// fyi if invoked directly by shell as executable it would be argv[0]
+const isMain = process.argv[1].endsWith(import.meta.filename)
+
+if (isMain && process.argv.some(arg => arg === '-h' || arg === '--help')) {
+    console.log('node ./dev/build.ts [--minify] [--production]')
     console.log('\nOPTIONS:')
     console.log('  --minify       build minified sources')
     console.log('  --production   minify and use release tag versioning')
     process.exit(0)
 }
 
-export type WebappPath = `/${string}`
-
-const production =
-    Bun.env.PRODUCTION === 'true' || Bun.argv.includes('--production')
+const isProduction =
+    process.env.PRODUCTION === 'true' || process.argv.includes('--production')
 const minify =
-    production || Bun.env.MINIFY === 'true' || Bun.argv.includes('--minify')
+    isProduction ||
+    process.env.MINIFY === 'true' ||
+    process.argv.includes('--minify')
 const buildTag = await createBuildTag()
+const buildDir = fsJoin('build', 'dist')
 
 async function createBuildTag(): Promise<string> {
     const now = new Date()
@@ -39,173 +45,178 @@ async function createBuildTag(): Promise<string> {
     const date = now.toISOString().substring(0, 10)
     const time = String(ms).padStart(8, '0')
     const when = `${date}-${time}`
-    if (production) {
-        return `${when}-${(await $`git rev-parse --short HEAD`.text()).trimEnd()}`
+    if (isProduction) {
+        const gitHash = await new Promise((res, rej) =>
+            exec('git rev-parse --short HEAD', (err, stdout) => {
+                if (err) rej(err)
+                res(stdout.trim())
+            }),
+        )
+        return `${when}-${gitHash}`
     } else {
         return when
     }
 }
 
-function esbuildBuildOpts(): BuildOptions & { write: false } {
-    return {
-        bundle: true,
-        format: 'iife',
-        minify,
-        platform: 'browser',
-        treeShaking: true,
-        // esbuild does not return filenames or hashes
-        // if it writes to disk :(
-        write: false,
-    }
+export const webpages: Record<string, string> = {
+    '/': './home/Home.html',
+    '/configure': './configure/Configure.html',
+    '/gameplan': './gameplan/Gameplan.html',
+    '/project': './project/Project.html',
+    '/notes': './project/notes/Notes.html',
 }
 
-function esbuildResultChecks(buildResult: BuildResult, path: string) {
-    if ((buildResult.outputFiles?.length || 0) > 1) {
-        throw Error('wtf')
-    }
-    if (buildResult.errors.length) {
-        buildResult.errors.forEach(msg =>
-            esbuildPrintMessage(msg, 'warning', path),
-        )
-        process.exit(1)
-    }
-    if (buildResult.warnings.length) {
-        buildResult.warnings.forEach(msg =>
-            esbuildPrintMessage(msg, 'warning', path),
-        )
-    }
-}
-
-function esbuildPrintMessage(
-    msg: Message,
-    cat: 'error' | 'warning',
-    p: string,
-) {
-    console.error(`esbuild ${cat} (${p}):`, msg.text)
-    if (msg.location) console.error(' ', msg.location)
-    msg.notes.forEach(note => {
-        console.error('  ', note.text)
-        if (note.location) console.error('   ', note.location)
-    })
-}
-
-export const webpages: Record<WebappPath, string> = {
-    '/': './pages/home/Home.html',
-    '/configure': './pages/configure/Configure.html',
-    '/gameplan': './pages/gameplan/Gameplan.html',
-    '/project': './pages/project/Project.html',
-    '/notes': './pages/project/notes/Notes.html',
-}
-
-// workers are namespaced in /lib/monaco or /lib/sidelines
+// workers are namespaced in /lib/monaco/workers or /lib/sidelines/workers
 // this record is keyed by the scripts' names during dev without versioning
 // monaco is versioned by npm package version
 // sidelines is versioned by build hash
-export const workers: Record<WebappPath, string> = {
-    '/lib/sidelines/syncRefs.js': './workers/syncRefs.ts',
-    '/lib/sidelines/userData.js': './workers/userData.ts',
-    '/lib/sidelines/ghActions.js': './workers/ghActions.ts',
-    '/lib/monaco/main.js':
+export const workers: Record<string, string> = {
+    '/lib/sidelines/workers/syncRefs.js': './workers/syncRefs.ts',
+    '/lib/sidelines/workers/userData.js': './workers/userData.ts',
+    '/lib/sidelines/workers/ghActions.js': './workers/ghActions.ts',
+    '/lib/monaco/workers/main.js':
         './node_modules/monaco-editor/esm/vs/editor/editor.worker.js',
-    '/lib/monaco/css.js':
+    '/lib/monaco/workers/css.js':
         './node_modules/monaco-editor/esm/vs/language/css/css.worker.js',
-    '/lib/monaco/html.js':
+    '/lib/monaco/workers/html.js':
         './node_modules/monaco-editor/esm/vs/language/html/html.worker.js',
-    '/lib/monaco/json.js':
+    '/lib/monaco/workers/json.js':
         './node_modules/monaco-editor/esm/vs/language/json/json.worker.js',
-    '/lib/monaco/ts.js':
+    '/lib/monaco/workers/ts.js':
         './node_modules/monaco-editor/esm/vs/language/typescript/ts.worker.js',
 }
 
-// todo create a PR for Bun.build HTMLBundle's asset naming
 async function buildWebpage(
-    out: WebappPath,
-    src: string,
-): Promise<Array<WebappPath>> {
-    // Bun.build automagically creates an HTMLBundle of all of a webpage's CSS and JS
-    const buildOutput = await Bun.build({
-        minify,
-        entrypoints: [src],
-        outdir: join('build', 'tmp', out),
-    })
-    const pagePaths: Array<WebappPath> = [join(out, 'index.html') as WebappPath]
-    // htmlFilename is Home.html or Project.html
-    const htmlFilename = basename(src)
-    // pageName is Home.html or Project.html lowercase and without extension
-    const pageName = htmlFilename
-        .substring(0, htmlFilename.indexOf('.'))
-        .toLowerCase()
-    const assetsDir = join('/lib/assets', pageName)
-    // rename does not create intermediary directories so we do mkdir first
-    await mkdir(join('build/dist', assetsDir), { recursive: true })
-    let htmlSrc = await Bun.file(join('build', 'tmp', out, htmlFilename)).text()
-    for (const output of buildOutput.outputs) {
-        if (output.path.endsWith('css') || output.path.endsWith('js')) {
-            const chunkFilenameFrom = basename(output.path)
-            const chunkFilenameTo =
-                pageName + chunkFilenameFrom.substring('chunk'.length)
-            const assetPath = join(assetsDir, chunkFilenameTo) as WebappPath
-            await rename(output.path, join('build/dist', assetPath))
-            pagePaths.push(assetPath)
-            htmlSrc = htmlSrc.replace(`./${chunkFilenameFrom}`, assetPath)
-        }
+    urlPath: string,
+    fsPath: string,
+    define: DefineSidelinesGlobal,
+): Promise<Array<string>> {
+    const html = await HtmlEntrypoint.readFrom(fsJoin('pages', fsPath))
+    if (urlPath !== '/') {
+        await mkdir(fsJoin(buildDir, urlPath), { recursive: true })
     }
-    await Bun.write(join('build', 'dist', out, 'index.html'), htmlSrc)
-    return pagePaths
+    const entryPointUrls: Set<string> = new Set()
+    const entryPoints: Array<{ in: string; out: string }> = []
+    html.collectScripts()
+        .filter(scriptImport => !entryPointUrls.has(scriptImport.in))
+        .forEach(scriptImport => {
+            entryPointUrls.add(scriptImport.in)
+            entryPoints.push({
+                in: scriptImport.in,
+                out: scriptImport.out,
+            })
+        })
+    const buildResult = await esbuild.build({
+        ...esbuildBuildOptsForWebpage({ minify }),
+        define,
+        entryPoints,
+        minify,
+        outdir: buildDir,
+    })
+    esbuildResultChecks(buildResult)
+    await writeMetafile(`page.${basename(fsPath)}.json`, buildResult.metafile)
+    const mapInToOutHrefs: Record<string, string> = {}
+    for (const [outputFile, { entryPoint }] of Object.entries(
+        buildResult.metafile.outputs,
+    )) {
+        mapInToOutHrefs[entryPoint!] = outputFile.substring(
+            outputFile.indexOf('/lib/sidelines/pages'),
+        )
+    }
+    html.rewriteHrefs(mapInToOutHrefs)
+    await html.writeTo(fsJoin(buildDir, urlPath, 'index.html'))
+    return [
+        urlPath,
+        ...Object.keys(buildResult.metafile.outputs).map(p =>
+            p.substring(p.indexOf('/lib/sidelines/pages')),
+        ),
+    ]
 }
 
-async function buildWorker(out: WebappPath, src: string): Promise<WebappPath> {
-    const versioning = out.startsWith('/lib/monaco/')
-        ? monacoPackageJson.version
+async function buildWorker(urlPath: string, src: string): Promise<string> {
+    const versioning = urlPath.startsWith('/lib/monaco/')
+        ? monacoVersion
         : '[hash]'
-    const naming = out.substring(1).replace('.js', `-${versioning}`)
+    const naming = urlPath.substring(1).replace('.js', `-${versioning}`)
     const buildResult = await esbuild.build({
-        ...esbuildBuildOpts(),
+        ...esbuildBuildOptsForWorker({ minify }),
         entryPoints: [src],
         entryNames: naming,
+        // esbuild does not return outputFiles[].hash
+        // if it writes to disk :(
+        write: false,
     })
-    esbuildResultChecks(buildResult, out)
-    const hash = buildResult.outputFiles[0].hash.toLowerCase()
-    const path =
-        `${dirname(out)}/${basename(out.replace('.js', `-${versioning.replace('[hash]', hash)}.js`))}` as WebappPath
-    await Bun.write(
-        join('build/dist', path),
-        buildResult.outputFiles[0].contents,
-    )
+    esbuildResultChecks(buildResult)
+    await writeMetafile(`worker.${basename(src)}.json`, buildResult.metafile)
+    const hash = buildResult.outputFiles[0].hash
+    const path = `${dirname(urlPath)}/${basename(urlPath.replace('.js', `-${versioning.replace('[hash]', hash)}.js`))}`
+    const out = join('build/dist', path)
+    await mkdir(dirname(out), { recursive: true })
+    await writeFile(out, buildResult.outputFiles[0].contents)
     return path
 }
 
-async function buildServiceWorker(
-    files: Array<WebappPath>,
-): Promise<WebappPath> {
+async function buildServiceWorker(files: Array<string>): Promise<string> {
     await writeCacheManifest(files)
     const buildResult = await esbuild.build({
-        ...esbuildBuildOpts(),
+        ...esbuildBuildOptsForWorker({ minify }),
         entryPoints: ['./workers/serviceWorker.ts'],
         entryNames: 'sidelines.sw',
         outdir: 'build/dist',
-        write: true,
     })
-    esbuildResultChecks(buildResult, '/sidelines.sw.js')
+    esbuildResultChecks(buildResult)
+    await writeMetafile(`sidelines.sw.json`, buildResult.metafile)
     return '/sidelines.sw.js'
 }
 
-export async function prepareBuildDirForBundler() {
+export async function performBuild(): Promise<{
+    dir: string
+    files: Array<string>
+}> {
+    console.log(
+        minify
+            ? isProduction
+                ? 'minified production'
+                : 'minified'
+            : 'unminified',
+        'build',
+        buildTag,
+        'building in ./build/dist',
+    )
     await rm('build', { recursive: true, force: true })
-    await writeDefinitionsManifest()
+    await mkdir(fsJoin('build', 'metafiles'), { recursive: true })
+    const buildUrls: Array<string> = []
+    const workerBuildUrls: Record<string, string> = {}
+    for (const [urlPath, fsPath] of Object.entries(workers)) {
+        buildUrls.push(
+            (workerBuildUrls[urlPath] = await buildWorker(urlPath, fsPath)),
+        )
+    }
+    const definitions = defineSidelinesFromWorkerUrls(workerBuildUrls)
+    for (const [urlPath, fsPath] of Object.entries(webpages)) {
+        buildUrls.push(...(await buildWebpage(urlPath, fsPath, definitions)))
+    }
+
+    buildUrls.push(await buildServiceWorker(buildUrls))
+    await writeBuildManifest(buildUrls)
+    return {
+        dir: buildDir,
+        files: buildUrls,
+    }
 }
 
-// todo Bun.build HTMLBundle support for `define` and `env` should replace this
-// definitions.json are pre-build resolvable values used within the app
-// excludes build computed values like asset hashing
-//  that cannot be statically resolved pre-build
-async function writeDefinitionsManifest() {
-    await writeJsonToBuildDir('definitions.json', {
-        MONACO_VERSION: monacoPackageJson.version,
-    })
+if (isMain) {
+    await performBuild()
 }
 
-async function writeCacheManifest(files: Array<WebappPath>) {
+async function writeMetafile(filename: string, json: any) {
+    await writeFile(
+        join('build', 'metafiles', filename),
+        JSON.stringify(json, null, 4),
+    )
+}
+
+async function writeCacheManifest(files: Array<string>) {
     await writeJsonToBuildDir('cache.json', {
         apiRoutes,
         buildTag,
@@ -214,7 +225,7 @@ async function writeCacheManifest(files: Array<WebappPath>) {
 }
 
 // drops index.html from path
-export function filenameToWebappPath(p: WebappPath): WebappPath {
+function filenameToWebappPath(p: string): string {
     if (p === '/index.html') {
         return '/'
     } else if (p.endsWith('/index.html')) {
@@ -225,59 +236,18 @@ export function filenameToWebappPath(p: WebappPath): WebappPath {
 }
 
 async function writeBuildManifest(files: Array<string>) {
-    await writeJsonToBuildDir('manifest.json', { buildTag, files })
+    await writeJsonToBuildDir('manifest.json', {
+        buildTag,
+        files: files.map(f => {
+            if (extname(f) === '') {
+                return f === '/' ? '/index.html' : f + '/index.html'
+            } else {
+                return f
+            }
+        }),
+    })
 }
 
 async function writeJsonToBuildDir(filename: `${string}.json`, json: any) {
-    await Bun.write(join('./build', filename), JSON.stringify(json, null, 4))
-}
-
-// todo Bun.build HTMLBundle support for `define` and `env` should replace this
-async function rewriteHashedWorkerURLs(
-    files: Array<string>,
-    workerHashing: Record<string, string>,
-) {
-    for (const file of files) {
-        if (file.startsWith('/lib/assets/') && file.endsWith('.js')) {
-            const path = join('build/dist', file)
-            let src = await Bun.file(path).text()
-            for (const [fromURL, toURL] of Object.entries(workerHashing)) {
-                src = src.replaceAll(fromURL, toURL)
-            }
-            await Bun.write(path, src)
-        }
-    }
-}
-
-export async function performBuild(): Promise<Array<WebappPath>> {
-    console.log(
-        minify
-            ? production
-                ? 'minified production'
-                : 'minified'
-            : 'unminified',
-        'build',
-        buildTag,
-        'building in ./build/dist',
-    )
-    await prepareBuildDirForBundler()
-    const files: Array<WebappPath> = []
-    const workerHashing: Record<string, string> = {}
-    for (const [out, src] of Object.entries(workers)) {
-        files.push(
-            (workerHashing[out] = await buildWorker(out as WebappPath, src)),
-        )
-    }
-    for (const [out, src] of Object.entries(webpages)) {
-        files.push(...(await buildWebpage(out as WebappPath, src)))
-    }
-    files.push(await buildServiceWorker(files))
-    await rewriteHashedWorkerURLs(files, workerHashing)
-    await writeBuildManifest(files)
-    await rm(join('build', 'tmp'), { recursive: true, force: true })
-    return files
-}
-
-if (import.meta.main) {
-    await performBuild()
+    await writeFile(join('./build', filename), JSON.stringify(json, null, 4))
 }

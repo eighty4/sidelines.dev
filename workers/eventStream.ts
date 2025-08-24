@@ -1,7 +1,6 @@
-/// <reference lib="WebWorker" />
 declare let self: SharedWorkerGlobalScope
 
-import { WS_EVENTS_PATH } from '../server/EventWebSockets.ts'
+const WS_EVENTS_PATH = '/api/events'
 
 console.log('on created', Date.now())
 

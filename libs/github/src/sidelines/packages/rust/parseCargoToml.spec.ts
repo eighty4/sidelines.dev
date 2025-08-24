@@ -1,4 +1,5 @@
-import { expect, test } from 'bun:test'
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
 import type { RepositoryId } from '@sidelines/model'
 import {
     parseCargoToml,
@@ -13,53 +14,56 @@ const branchRef = { headOid: 'abcdefg' } as RepoBranchReference
 
 test('rust package .name .version and .publish in [package]', async () => {
     const toml = `[package]\nname = "cquill"\nversion = "0.0.1"\npublish = false`
-    expect(
+    assert.deepEqual(
         await parseCargoToml(
             new TestFindPackagesApi(repo, branchRef, {}, {}),
             '',
             toml,
         ),
-    ).toStrictEqual({
-        name: 'cquill',
-        version: '0.0.1',
-        private: true,
-        path: '',
-        language: 'rust',
-        configFile: 'Cargo.toml',
-    })
+        {
+            name: 'cquill',
+            version: '0.0.1',
+            private: true,
+            path: '',
+            language: 'rust',
+            configFile: 'Cargo.toml',
+        },
+    )
 })
 
 test('rust package defaults for [package]', async () => {
     const toml = `[package]\n`
-    expect(
+    assert.deepEqual(
         await parseCargoToml(
             new TestFindPackagesApi(repo, branchRef, {}, {}),
             '',
             toml,
         ),
-    ).toStrictEqual({
-        name: 'maestro',
-        version: 'abcdefg',
-        private: false,
-        path: '',
-        language: 'rust',
-        configFile: 'Cargo.toml',
-    })
+        {
+            name: 'maestro',
+            version: 'abcdefg',
+            private: false,
+            path: '',
+            language: 'rust',
+            configFile: 'Cargo.toml',
+        },
+    )
 })
 
 test('rust package without [package] or workspace.members', async () => {
-    expect(
+    assert.deepEqual(
         await parseCargoToml(
             new TestFindPackagesApi(repo, branchRef, {}, {}),
             '',
             '',
         ),
-    ).toStrictEqual(null)
+        null,
+    )
 })
 
 test('rust package cargo.toml with explicit workspace paths', async () => {
     const clap = '[package]\nname = "clap-api"\nversion = "1"'
-    expect(
+    assert.deepEqual(
         await parseCargoToml(
             new TestFindPackagesApi(
                 repo,
@@ -70,25 +74,26 @@ test('rust package cargo.toml with explicit workspace paths', async () => {
             '',
             'workspace.members = ["clap"]',
         ),
-    ).toStrictEqual({
-        language: 'rust',
-        configFile: 'Cargo.toml',
-        packages: [
-            {
-                name: 'clap-api',
-                version: '1',
-                path: 'clap',
-                language: 'rust',
-                configFile: 'Cargo.toml',
-                private: false,
-            },
-        ],
-    })
+        {
+            language: 'rust',
+            configFile: 'Cargo.toml',
+            packages: [
+                {
+                    name: 'clap-api',
+                    version: '1',
+                    path: 'clap',
+                    language: 'rust',
+                    configFile: 'Cargo.toml',
+                    private: false,
+                },
+            ],
+        },
+    )
 })
 
 test('rust package cargo.toml with workspace and root crate', async () => {
     const clap = '[package]\nname = "clap-api"\nversion = "1"'
-    expect(
+    assert.deepEqual(
         await parseCargoToml(
             new TestFindPackagesApi(
                 repo,
@@ -99,58 +104,63 @@ test('rust package cargo.toml with workspace and root crate', async () => {
             '',
             'workspace.members = ["clap"]',
         ),
-    ).toStrictEqual({
-        language: 'rust',
-        configFile: 'Cargo.toml',
-        packages: [
-            {
-                name: 'clap-api',
-                version: '1',
-                path: 'clap',
-                language: 'rust',
-                configFile: 'Cargo.toml',
-                private: false,
-            },
-        ],
-    })
+        {
+            language: 'rust',
+            configFile: 'Cargo.toml',
+            packages: [
+                {
+                    name: 'clap-api',
+                    version: '1',
+                    path: 'clap',
+                    language: 'rust',
+                    configFile: 'Cargo.toml',
+                    private: false,
+                },
+            ],
+        },
+    )
 })
 
 test('cargo.toml .name .version and .publish in [package]', () => {
-    expect(
+    assert.deepEqual(
         parsePackageInCargoToml(
             `[package]\nname = "cquill"\nversion = "0.0.1"\npublish = false`,
         ),
-    ).toStrictEqual({
-        name: 'cquill',
-        version: '0.0.1',
-        private: true,
-    })
+        {
+            name: 'cquill',
+            version: '0.0.1',
+            private: true,
+        },
+    )
 })
 
 test('cargo.toml .name .version and .publish in ["package"]', () => {
-    expect(
+    assert.deepEqual(
         parsePackageInCargoToml(
             `["package"]\nname = "cquill"\nversion = "0.0.1"\npublish = false`,
         ),
-    ).toStrictEqual({
-        name: 'cquill',
-        version: '0.0.1',
-        private: true,
-    })
+        {
+            name: 'cquill',
+            version: '0.0.1',
+            private: true,
+        },
+    )
 })
 
 test('cargo.toml undefined defaults for [package]', () => {
-    expect(parsePackageInCargoToml(`[package]`)).toStrictEqual({})
+    assert.deepEqual(parsePackageInCargoToml(`[package]`), {})
 })
 
 test('cargo.toml .members in [workspace]', () => {
-    expect(
+    assert.deepEqual(
         parseWorkspaceInCargoToml(`[workspace]\nmembers = [\n"cli", "git"\n]`),
-    ).toStrictEqual(['cli', 'git'])
+        ['cli', 'git'],
+    )
 })
 
 test('cargo.toml .members in workspace.members', () => {
-    expect(
+    assert.deepEqual(
         parseWorkspaceInCargoToml(`workspace.members = ["cli", "git"]`),
-    ).toStrictEqual(['cli', 'git'])
+        ['cli', 'git'],
+    )
 })

@@ -1,4 +1,5 @@
-import { expect, test } from 'bun:test'
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
 import type { RepositoryId } from '@sidelines/model'
 import { parsePackageJson } from './parsePackageJson.ts'
 import { TestFindPackagesApi } from '../_testFindPackages.ts'
@@ -16,21 +17,22 @@ test('js package standalone package', async () => {
         name: '@eighty4/changelog',
         version: '0.0.8',
     })
-    expect(
+    assert.deepEqual(
         await parsePackageJson(
             new TestFindPackagesApi(repo, branchRef, {}, {}),
             '',
             packageJson,
             null,
         ),
-    ).toStrictEqual({
-        name: '@eighty4/changelog',
-        version: '0.0.8',
-        language: 'js',
-        configFile: 'package.json',
-        path: '',
-        private: false,
-    })
+        {
+            name: '@eighty4/changelog',
+            version: '0.0.8',
+            language: 'js',
+            configFile: 'package.json',
+            path: '',
+            private: false,
+        },
+    )
 })
 
 test('js package bun or npm workspace with explicit path', async () => {
@@ -45,36 +47,37 @@ test('js package bun or npm workspace with explicit path', async () => {
             version: '0.0.8',
         }),
     }
-    expect(
+    assert.deepEqual(
         await parsePackageJson(
             new TestFindPackagesApi(repo, branchRef, files, {}),
             '',
             rootPackageJson,
             null,
         ),
-    ).toStrictEqual({
-        language: 'js',
-        configFile: 'package.json',
-        path: '',
-        root: {
-            name: '@eighty4/plunder',
-            version: '0.0.0',
+        {
             language: 'js',
             configFile: 'package.json',
             path: '',
-            private: false,
-        },
-        packages: [
-            {
-                name: '@eighty4/plunder-core',
-                version: '0.0.8',
+            root: {
+                name: '@eighty4/plunder',
+                version: '0.0.0',
                 language: 'js',
                 configFile: 'package.json',
-                path: 'core',
+                path: '',
                 private: false,
             },
-        ],
-    })
+            packages: [
+                {
+                    name: '@eighty4/plunder-core',
+                    version: '0.0.8',
+                    language: 'js',
+                    configFile: 'package.json',
+                    path: 'core',
+                    private: false,
+                },
+            ],
+        },
+    )
 })
 
 test('js package pnpm workspace with explicit path', async () => {
@@ -88,36 +91,37 @@ test('js package pnpm workspace with explicit path', async () => {
             version: '0.0.8',
         }),
     }
-    expect(
+    assert.deepEqual(
         await parsePackageJson(
             new TestFindPackagesApi(repo, branchRef, files, {}),
             '',
             rootPackageJson,
             `packages:\n  - core`,
         ),
-    ).toStrictEqual({
-        language: 'js',
-        configFile: 'package.json',
-        path: '',
-        root: {
-            name: '@eighty4/plunder',
-            version: '0.0.0',
+        {
             language: 'js',
             configFile: 'package.json',
             path: '',
-            private: false,
-        },
-        packages: [
-            {
-                name: '@eighty4/plunder-core',
-                version: '0.0.8',
+            root: {
+                name: '@eighty4/plunder',
+                version: '0.0.0',
                 language: 'js',
                 configFile: 'package.json',
-                path: 'core',
+                path: '',
                 private: false,
             },
-        ],
-    })
+            packages: [
+                {
+                    name: '@eighty4/plunder-core',
+                    version: '0.0.8',
+                    language: 'js',
+                    configFile: 'package.json',
+                    path: 'core',
+                    private: false,
+                },
+            ],
+        },
+    )
 })
 
 test.skip('js package bun or npm with wildcard path', async () => {
@@ -132,34 +136,35 @@ test.skip('js package bun or npm with wildcard path', async () => {
             version: '0.0.8',
         }),
     }
-    expect(
+    assert.deepEqual(
         await parsePackageJson(
             new TestFindPackagesApi(repo, branchRef, files, {}),
             '',
             rootPackageJson,
             null,
         ),
-    ).toStrictEqual({
-        language: 'js',
-        configFile: 'package.json',
-        path: '',
-        root: {
-            name: '@eighty4/plunder',
-            version: '0.0.0',
+        {
             language: 'js',
             configFile: 'package.json',
             path: '',
-            private: false,
-        },
-        packages: [
-            {
-                name: '@eighty4/plunder-core',
-                version: '0.0.8',
+            root: {
+                name: '@eighty4/plunder',
+                version: '0.0.0',
                 language: 'js',
                 configFile: 'package.json',
-                path: 'packages/core',
+                path: '',
                 private: false,
             },
-        ],
-    })
+            packages: [
+                {
+                    name: '@eighty4/plunder-core',
+                    version: '0.0.8',
+                    language: 'js',
+                    configFile: 'package.json',
+                    path: 'packages/core',
+                    private: false,
+                },
+            ],
+        },
+    )
 })

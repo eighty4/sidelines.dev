@@ -6,13 +6,12 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "graphql": "bun graphql.ts"
+    "graphql": "node graphql.ts"
   },
   "dependencies": {
     "@sidelines/model": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.18",
     "graphql": "^16.11.0"
   }
 }

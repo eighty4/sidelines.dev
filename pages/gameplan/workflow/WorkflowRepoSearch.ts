@@ -11,8 +11,6 @@ import type {
     WorkflowCallToAction,
 } from '../../../workers/ghActions.ts'
 
-const GH_ACTIONS_WORKER = '/lib/sidelines/ghActions.js'
-
 export type CallToAction =
     | {
           kind: 'cicd'
@@ -75,7 +73,9 @@ export class WorkflowRepoSearch {
     }
 
     #launchGhActionsWorker = (repo: string) => {
-        const w = (this.#workers[repo] = new Worker(GH_ACTIONS_WORKER))
+        const w = (this.#workers[repo] = new Worker(
+            sidelines.worker.GH_ACTIONS,
+        ))
         w.onmessage = this.#onGhActionsWorkerMessage
         const request: ActionsCallToActionsRequest = {
             ghToken: this.#ghToken,

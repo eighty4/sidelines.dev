@@ -1,171 +1,108 @@
-import { join } from 'node:path'
-import type { ServeFunctionOptions, Server, TLSOptions } from 'bun'
+import { mkdir, rm } from 'node:fs/promises'
+import { join as fsJoin } from 'node:path'
+import esbuild from 'esbuild'
+import { performBuild, webpages, workers } from './build.ts'
+import { defineSidelinesForEsbuildWatch } from './define.ts'
+import { esbuildBuildOptsForWebpage } from './esbuild.ts'
+import { HtmlEntrypoint } from './html.ts'
 import {
-    filenameToWebappPath,
-    performBuild,
-    prepareBuildDirForBundler,
-    type WebappPath,
-    webpages,
-    workers,
-} from './build.ts'
-import { isValidGitHubRepoUrl } from '../pages/ghRepoUrl.ts'
-import ComponentsPage from '../pages/_dev/components/Components.html'
-import DataPage from '../pages/_dev/data/Data.html'
-import { routes as apiRoutes } from '../server/routes.ts'
+    createEsbuildFilesFetcher,
+    createFrontendFilesFetcher,
+    createWebServer,
+    type FrontendFetcher,
+} from './http.ts'
 
-const CRT_FILE = './dev/certificate.crt'
-const KEY_FILE = './dev/private.key'
-
-if (Bun.argv.some(arg => arg === '-h' || arg === '--help')) {
-    console.log('bun ./dev/serve.ts [--preview] [--production] [--tls]')
+if (process.argv.some(arg => arg === '-h' || arg === '--help')) {
+    console.log('node ./dev/serve.ts [--preview] [--production] [--tls]')
     console.log('\nOPTIONS:')
     console.log('  --preview      pre-bundled with ServiceWorker')
     console.log('  --production   minify pre-bundled sources with preview')
-    console.log('  --tls          use', CRT_FILE, 'and', KEY_FILE, 'for tls')
     process.exit(0)
 }
 
-type BunServeOpts = ServeFunctionOptions<any, any>
+const isPreview =
+    process.env.PREVIEW === 'true' || process.argv.includes('--preview')
+const isProduction =
+    process.env.PRODUCTION === 'true' || process.argv.includes('--production')
+const PORT = isPreview ? 4000 : 3000
+const ESBUILD_PORT = 2999
 
-const isPreview = Bun.env.PREVIEW === 'true' || Bun.argv.includes('--preview')
-
-Bun.env.WEBAPP_ADDRESS = isPreview
-    ? 'http://127.0.0.1:4000'
-    : 'http://127.0.0.1:3000'
-
-let tls: TLSOptions | undefined = undefined
-
-if (Bun.env.TLS === 'true' || Bun.argv.includes('--tls')) {
-    const tlsFilesReady =
-        (await Bun.file(CRT_FILE).exists()) &&
-        (await Bun.file(KEY_FILE).exists())
-    if (!tlsFilesReady) {
-        console.log(`must create TLS files ${CRT_FILE} and ${KEY_FILE}`)
-        process.exit(1)
-    }
-    tls = {
-        certFile: CRT_FILE,
-        keyFile: KEY_FILE,
-    }
+if (
+    !process.env.GH_APP_ID ||
+    !process.env.GH_CLIENT_ID ||
+    !process.env.GH_CLIENT_SECRET
+) {
+    throw new Error('must set GH_APP_ID, GH_CLIENT_ID and GH_CLIENT_SECRET')
 }
 
-async function routesForBundleOnRequest(): Promise<BunServeOpts['routes']> {
-    // ensure ./build/definitions.json is in place during dev bundling
-    await prepareBuildDirForBundler()
-    const routes: BunServeOpts['routes'] = {
-        ...routesForDevPages(),
-    }
-    for (const [path, src] of Object.entries(webpages)) {
-        // map Bun.build entrypoint input of a ./ path from project root
-        // to a ../ import path from ./dev/serve.ts
-        const webpageImportPath = src.replace(/^\.\//, '../')
-        routes[path] = (await import(webpageImportPath)).default
-    }
-    for (const [path, src] of Object.entries(workers)) {
-        routes[path] = async () => {
-            const buildOutput = await Bun.build({
-                entrypoints: [src],
-                format: 'iife',
-                splitting: false,
-                target: 'browser',
-                minify: false,
-            })
-            return new Response(buildOutput.outputs[0], {
-                headers: new Headers({
-                    'Content-Type': 'application/javascript',
-                }),
-            })
-        }
-    }
-    return routes
-}
+await rm('build', { force: true, recursive: true })
 
-export function routesFromBundledFiles(
-    files: Array<WebappPath>,
-): BunServeOpts['routes'] {
-    const routes: BunServeOpts['routes'] = {}
-    for (const file of files) {
-        if (file === '/sidelines.sw.js') {
-            const headers = new Headers()
-            headers.set(
-                'Cache-Control',
-                'no-cache, no-store, must-revalidate, max-age=0',
-            )
-            routes[file] = new Response(Bun.file(join('build/dist', file)), {
-                headers,
-            })
-        } else {
-            routes[filenameToWebappPath(file)] = Bun.file(
-                join('build/dist', file),
-            )
-        }
-    }
-    return routes
-}
+async function startEsbuildWatch(): Promise<{ port: number }> {
+    const watchDir = fsJoin('build', 'watch')
+    await mkdir(watchDir, { recursive: true })
 
-function routesForDevPages(): BunServeOpts['routes'] {
-    return {
-        '/_data': DataPage,
-        '/_ui': ComponentsPage,
-    }
-}
+    const entryPointUrls: Set<string> = new Set()
+    const entryPoints: esbuild.BuildOptions['entryPoints'] = []
 
-async function routes(): Promise<BunServeOpts['routes']> {
-    const frontendRoutes: BunServeOpts['routes'] = isPreview
-        ? {
-              ...routesFromBundledFiles(await performBuild()),
-              ...routesForDevPages(),
-          }
-        : await routesForBundleOnRequest()
-    return {
-        ...frontendRoutes,
-        ...apiRoutes,
-    }
-}
-
-// dev mode fetch supports /eighty4/changelog style repo URLs
-// Cloudflare transform rules handles this in production
-function fetch(req: Request, _server: Server) {
-    const url = new URL(req.url)
-    if (isValidGitHubRepoUrl(url)) {
-        const urlParts = url.pathname.substring(1).split('/')
-        const [owner, name] = urlParts
-        const redirectUrl =
-            urlParts.length > 2 && urlParts[2] === 'notes'
-                ? `/notes?owner=${owner}&name=${name}`
-                : `/project?owner=${owner}&name=${name}`
-        return Response.redirect(redirectUrl, 302)
-    }
-    console.log(404, req.method, req.url)
-    return new Response('Not Found', { status: 404 })
-}
-
-async function startServer() {
-    const port = isPreview ? 4000 : 3000
-
-    Bun.serve({
-        development: true,
-        routes: await routes(),
-        tls,
-        fetch,
-        port,
+    Object.entries(workers).map(([urlPath, fsPath]) => {
+        entryPoints.push({
+            in: fsPath,
+            out: urlPath.substring(1, urlPath.indexOf('.js')),
+        })
     })
 
-    const protocol = tls ? 'https' : 'http'
-    const address = `${protocol}://127.0.0.1:${port}`
-    console.log(`sidelines.dev is running at ${address}`)
-    console.log()
-    console.log(
-        `    ${address}/_data`,
-        `\u001b[90m${'for IndexedDB & OPFS'}\u001b[0m`,
+    await Promise.all(
+        Object.entries(webpages).map(async ([urlPath, fsPath]) => {
+            const html = await HtmlEntrypoint.readFrom(fsJoin('pages', fsPath))
+            if (urlPath !== '/') {
+                await mkdir(fsJoin(watchDir, urlPath), { recursive: true })
+            }
+            html.collectScripts()
+                .filter(scriptImport => !entryPointUrls.has(scriptImport.in))
+                .forEach(scriptImport => {
+                    entryPointUrls.add(scriptImport.in)
+                    entryPoints.push({
+                        in: scriptImport.in,
+                        out: scriptImport.out,
+                    })
+                })
+            html.rewriteHrefs()
+            await html.writeTo(fsJoin(watchDir, urlPath, 'index.html'))
+            return html
+        }),
     )
-    console.log(
-        `    ${address}/_ui`,
-        `\u001b[90m${'for UI components'}\u001b[0m`,
-    )
-    console.log()
+
+    const ctx = await esbuild.context({
+        ...esbuildBuildOptsForWebpage({ minify: isProduction }),
+        entryNames: '[dir]/[name]',
+        entryPoints,
+        define: defineSidelinesForEsbuildWatch(),
+        outdir: watchDir,
+        splitting: false,
+    })
+
+    await ctx.watch()
+
+    await ctx.serve({
+        host: '127.0.0.1',
+        port: ESBUILD_PORT,
+        servedir: watchDir,
+    })
+
+    return { port: ESBUILD_PORT }
 }
 
-if (import.meta.main) {
-    await startServer()
+let frontend: FrontendFetcher
+if (isPreview) {
+    const { dir, files } = await performBuild()
+    frontend = createFrontendFilesFetcher(dir, files)
+} else {
+    const { port } = await startEsbuildWatch()
+    frontend = createEsbuildFilesFetcher(port)
 }
+
+process.env.WEBAPP_ADDRESS = `http://127.0.0.1:${PORT}`
+
+createWebServer(frontend).listen(PORT)
+
+console.log(`sidelines.dev is running at http://127.0.0.1:${PORT}`)

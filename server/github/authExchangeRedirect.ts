@@ -19,7 +19,7 @@ export function authedRedirectResponse(tokens: GHAuthedTokens): Response {
     return new Response('Found', {
         status: 302,
         headers: {
-            Location: Bun.env.WEBAPP_ADDRESS + '/configure',
+            Location: process.env.WEBAPP_ADDRESS + '/configure',
             'Set-Cookie': `ght=${tokens.access.value}; Secure; SameSite=Strict; Path=/; Max-Age=${tokens.access.expiresIn}`,
         },
     })
@@ -43,8 +43,8 @@ async function exchangeAuthorizationCodeForAccessToken(
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                client_id: Bun.env.GH_CLIENT_ID,
-                client_secret: Bun.env.GH_CLIENT_SECRET,
+                client_id: process.env.GH_CLIENT_ID,
+                client_secret: process.env.GH_CLIENT_SECRET,
                 code,
             }),
         },

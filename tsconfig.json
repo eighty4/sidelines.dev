@@ -12,10 +12,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "strict": true,
-    "verbatimModuleSyntax": true,
-
-    /* :( only for build.ts, MonacoEnvironment.ts and sw.ts :( */
-    "resolveJsonModule": true,
-    "esModuleInterop": true
-  }
+    "verbatimModuleSyntax": true
+  },
+  "include": ["**/*.ts", "**/*.tsx", "global.d.ts"],
+  "exclude": ["node_modules"]
 }

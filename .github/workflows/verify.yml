@@ -14,11 +14,11 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      - uses: oven-sh/setup-bun@v2
       - run: pnpm i
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm exec playwright install --with-deps
+      - run: echo -e "GH_APP_ID=a\nGH_CLIENT_ID=b\nGH_CLIENT_SECRET=c\n" > .env.local
       - run: pnpm test
       - run: pnpm fmtcheck
       - run: echo 'Look what hell made'
