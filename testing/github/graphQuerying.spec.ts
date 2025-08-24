@@ -1,4 +1,5 @@
-import { expect, test } from 'bun:test'
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
 import { GraphqlResponses } from './graphQuerying.ts'
 
 test('GraphqlResponses matches no vars', () => {
@@ -10,7 +11,7 @@ test('GraphqlResponses matches no vars', () => {
         `query ViewerLogin { viewer }`,
         null,
     )
-    expect(response).toStrictEqual({
+    assert.deepEqual(response, {
         viewer: { login: 'eighty4' },
     })
 })
@@ -28,7 +29,7 @@ test('GraphqlResponses matches vars', () => {
         `query ViewerRepoExists { viewer }`,
         { repo: 'changelog' },
     )
-    expect(response).toStrictEqual({
+    assert.deepEqual(response, {
         viewer: { repository: { nameWithOwner: 'eighty4/changelog' } },
     })
 })

@@ -1,0 +1,6 @@
+@import '../global.css';
+
+a {
+    display: block;
+    padding: 0.35rem 1rem;
+}

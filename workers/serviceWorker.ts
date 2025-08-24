@@ -91,7 +91,7 @@ async function handleRequest(req: Request): Promise<Response> {
 
 function isApiUrl(url: URL): boolean {
     return (
-        url.host === 'https://api.github.com' ||
+        url.host === 'api.github.com' ||
         buildManifest.apiRoutes.includes(url.pathname)
     )
 }

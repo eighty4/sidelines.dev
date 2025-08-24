@@ -1,4 +1,4 @@
-import { readdir } from 'node:fs/promises'
+import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
     buildSchema,
@@ -16,7 +16,7 @@ const GRAPHQL_IGNORE = [GITHUB_SCHEMA, 'README.md']
 
 // GitHub GraphQL schema to validate against
 const schema: GraphQLSchema = buildSchema(
-    await Bun.file(join(GRAPHQL_DIR, GITHUB_SCHEMA)).text(),
+    await readFile(join(GRAPHQL_DIR, GITHUB_SCHEMA), 'utf-8'),
 )
 
 const graphqlFiles = (await readdir(GRAPHQL_DIR)).filter(
@@ -43,7 +43,7 @@ function printGraphqlError(filename: string, e: GraphQLError) {
 const documents: Record<string, DocumentNode> = {}
 for (const filename of graphqlFiles) {
     maxGraphqlFilename = Math.max(maxGraphqlFilename, filename.length)
-    const src = await Bun.file(join(GRAPHQL_DIR, filename)).text()
+    const src = await readFile(join(GRAPHQL_DIR, filename), 'utf-8')
     try {
         documents[filename] = parse(src)
     } catch (e) {
@@ -101,7 +101,7 @@ await Promise.all(
             ...filename.substring(0, filename.indexOf('.')).split('_'),
             'gql.ts',
         )
-        await Bun.write(dest, gqlOut.join('\n\n'))
+        await writeFile(dest, gqlOut.join('\n\n'))
         output[filename] = dest
     }),
 )

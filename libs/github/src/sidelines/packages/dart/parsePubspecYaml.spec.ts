@@ -1,4 +1,5 @@
-import { expect, test } from 'bun:test'
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
 import type { RepositoryId } from '@sidelines/model'
 import { parsePubspecYaml } from './parsePubspecYaml.ts'
 import { TestFindPackagesApi } from '../_testFindPackages.ts'
@@ -14,76 +15,80 @@ const branchRef: RepoBranchReference = {
 
 test('dart package name and version from pubspec.yaml', async () => {
     const yaml = `name: libtab\nversion: 1.1.1`
-    expect(
+    assert.deepEqual(
         await parsePubspecYaml(
             new TestFindPackagesApi(repo, branchRef, {}, {}),
             '',
             yaml,
         ),
-    ).toStrictEqual({
-        name: 'libtab',
-        version: '1.1.1',
-        path: '',
-        language: 'dart',
-        configFile: 'pubspec.yaml',
-        private: false,
-    })
+        {
+            name: 'libtab',
+            version: '1.1.1',
+            path: '',
+            language: 'dart',
+            configFile: 'pubspec.yaml',
+            private: false,
+        },
+    )
 })
 
 test('dart package name from repo name', async () => {
     const yaml = `version: 1.1.1`
-    expect(
+    assert.deepEqual(
         await parsePubspecYaml(
             new TestFindPackagesApi(repo, branchRef, {}, {}),
             '',
             yaml,
         ),
-    ).toStrictEqual({
-        name: 'picking.pl',
-        version: '1.1.1',
-        path: '',
-        language: 'dart',
-        configFile: 'pubspec.yaml',
-        private: false,
-    })
+        {
+            name: 'picking.pl',
+            version: '1.1.1',
+            path: '',
+            language: 'dart',
+            configFile: 'pubspec.yaml',
+            private: false,
+        },
+    )
 })
 
 test('dart package version from git tag', async () => {
-    expect(
+    assert.deepEqual(
         await parsePubspecYaml(
             new TestFindPackagesApi(repo, branchRef, {}, { '': '1.2.3' }),
             '',
             '',
         ),
-    ).toStrictEqual({
-        name: 'picking.pl',
-        version: '1.2.3',
-        path: '',
-        language: 'dart',
-        configFile: 'pubspec.yaml',
-        private: false,
-    })
+        {
+            name: 'picking.pl',
+            version: '1.2.3',
+            path: '',
+            language: 'dart',
+            configFile: 'pubspec.yaml',
+            private: false,
+        },
+    )
 })
 
 test('dart package version from branch ref', async () => {
-    expect(
+    assert.deepEqual(
         await parsePubspecYaml(
             new TestFindPackagesApi(repo, branchRef, {}, {}),
             '',
             '',
         ),
-    ).toStrictEqual({
-        name: 'picking.pl',
-        version: 'abcdefg',
-        path: '',
-        language: 'dart',
-        configFile: 'pubspec.yaml',
-        private: false,
-    })
+        {
+            name: 'picking.pl',
+            version: 'abcdefg',
+            path: '',
+            language: 'dart',
+            configFile: 'pubspec.yaml',
+            private: false,
+        },
+    )
 })
 
 test('dart package with explicit workspace paths', async () => {
-    expect(
+    assert.deepEqual(
         await parsePubspecYaml(
             new TestFindPackagesApi(
                 repo,
@@ -94,19 +99,20 @@ test('dart package with explicit workspace paths', async () => {
             '',
             '\n\nworkspace:\n  - abc\n\n',
         ),
-    ).toStrictEqual({
-        path: '',
-        language: 'dart',
-        configFile: 'pubspec.yaml',
-        packages: [
-            {
-                name: 'libtab',
-                version: '1.1.1',
-                path: 'abc',
-                language: 'dart',
-                configFile: 'pubspec.yaml',
-                private: false,
-            },
-        ],
-    })
+        {
+            path: '',
+            language: 'dart',
+            configFile: 'pubspec.yaml',
+            packages: [
+                {
+                    name: 'libtab',
+                    version: '1.1.1',
+                    path: 'abc',
+                    language: 'dart',
+                    configFile: 'pubspec.yaml',
+                    private: false,
+                },
+            ],
+        },
+    )
 })

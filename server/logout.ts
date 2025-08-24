@@ -3,7 +3,7 @@ import { getCookie, GH_TOKEN } from '@sidelines/data'
 export default (req: Request) => {
     const headers: Record<string, string> = {
         'Clear-Site-Data': '"storage"',
-        Location: Bun.env.WEBAPP_ADDRESS!,
+        Location: process.env.WEBAPP_ADDRESS!,
     }
     const cookie = req.headers.get('cookie')
     if (cookie) {

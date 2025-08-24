@@ -5,7 +5,7 @@ const userData = await getUserDataClient()
 if (userData === null) {
     createLink(loginRedirectUrl, 'Login')
 } else {
-    const sw = new SharedWorker('/lib/sidelines/syncRefs.js', {
+    const sw = new SharedWorker(sidelines.worker.SYNC_REFS, {
         name: 'sidelines.dev events',
     })
     sw.port.start()

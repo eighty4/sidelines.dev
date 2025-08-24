@@ -1,20 +1,22 @@
-import { expect, test } from 'bun:test'
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
 import { topYamlList } from './findPackagesApi.ts'
 
 test('topYamlList', () => {
-    expect(
-        topYamlList('workspace:', '\nworkspace:\n  - abc\n\n'),
-    ).toStrictEqual(['abc'])
+    assert.deepEqual(topYamlList('workspace:', '\nworkspace:\n  - abc\n\n'), [
+        'abc',
+    ])
 })
 
 test('topYamlList newline after list key', () => {
-    expect(
-        topYamlList('workspace:', '\nworkspace:\n\n  - abc\n\n'),
-    ).toStrictEqual(['abc'])
+    assert.deepEqual(topYamlList('workspace:', '\nworkspace:\n\n  - abc\n\n'), [
+        'abc',
+    ])
 })
 
 test('topYamlList newline in the list midst', () => {
-    expect(
+    assert.deepEqual(
         topYamlList('workspace:', '\nworkspace:\n  - abc\n  - def\n\n'),
-    ).toStrictEqual(['abc', 'def'])
+        ['abc', 'def'],
+    )
 })
