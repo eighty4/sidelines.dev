@@ -1,10 +1,11 @@
 import { type BuildOptions, type BuildResult, type Message } from 'esbuild'
+import { willMinify } from './flags.ts'
 
-export function esbuildBuildOptsForWebpage(
-    opts: Pick<BuildOptions, 'minify'>,
-): BuildOptions & { metafile: true; write: true } {
+export function esbuildBuildOptsForWebpage(): BuildOptions & {
+    metafile: true
+    write: true
+} {
     return {
-        ...opts,
         assetNames: 'lib/assets/[name]-[hash]',
         bundle: true,
         chunkNames: 'lib/sidelines/[name]-[hash]',
@@ -15,7 +16,7 @@ export function esbuildBuildOptsForWebpage(
         //     '.ttf': 'file',
         // },
         metafile: true,
-        minify: false,
+        minify: willMinify(),
         platform: 'browser',
         splitting: true,
         treeShaking: true,
@@ -23,14 +24,15 @@ export function esbuildBuildOptsForWebpage(
     }
 }
 
-export function esbuildBuildOptsForWorker(
-    opts: Pick<BuildOptions, 'minify'>,
-): BuildOptions & { metafile: true; write: true } {
+export function esbuildBuildOptsForWorker(): BuildOptions & {
+    metafile: true
+    write: true
+} {
     return {
-        ...opts,
         bundle: true,
         format: 'iife',
         metafile: true,
+        minify: willMinify(),
         platform: 'browser',
         splitting: false,
         treeShaking: true,
@@ -48,10 +50,7 @@ export function esbuildResultChecks(buildResult: BuildResult) {
     }
 }
 
-export function esbuildPrintMessage(
-    msg: Message,
-    category: 'error' | 'warning',
-) {
+function esbuildPrintMessage(msg: Message, category: 'error' | 'warning') {
     const location = msg.location
         ? ` (${msg.location.file}L${msg.location.line}:${msg.location.column})`
         : ''

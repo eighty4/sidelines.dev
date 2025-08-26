@@ -13,12 +13,16 @@ import {
     routes,
 } from '../server/routes.ts'
 
-export type FrontendFetcher = (url: URL, res: ServerResponse) => void
+export type FrontendFetcher = (
+    url: URL,
+    headers: Headers,
+    res: ServerResponse,
+) => void
 
 export function createEsbuildFilesFetcher(
     esbuildPort: number,
 ): FrontendFetcher {
-    return (url: URL, res: ServerResponse) => {
+    return (url: URL, _headers: Headers, res: ServerResponse) => {
         fetch(`http://127.0.0.1:${esbuildPort}${url.pathname}`).then(
             fetchResponse => {
                 res.writeHead(
@@ -33,10 +37,10 @@ export function createEsbuildFilesFetcher(
 
 export function createFrontendFilesFetcher(
     dir: string,
-    files: Array<string>,
+    files: Set<string>,
 ): FrontendFetcher {
-    return (url: URL, res: ServerResponse) => {
-        if (!files.includes(url.pathname)) {
+    return (url: URL, _headers: Headers, res: ServerResponse) => {
+        if (!files.has(url.pathname)) {
             res.writeHead(404)
             res.end()
         } else {
@@ -51,6 +55,9 @@ export function createFrontendFilesFetcher(
                     break
                 case '.css':
                     res.setHeader('Content-Type', 'text/css')
+                    break
+                case '.svg':
+                    res.setHeader('Content-Type', 'image/svg+xml')
                     break
                 default:
                     res.setHeader('Content-Type', 'application/octet-stream')
@@ -89,7 +96,7 @@ export function createWebServer(
                 res.writeHead(405)
                 res.end()
             } else {
-                frontendFetcher(url, res)
+                frontendFetcher(url, convertHeadersToFetch(req.headers), res)
             }
         }
     })

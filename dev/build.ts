@@ -12,7 +12,9 @@ import {
     esbuildBuildOptsForWorker,
     esbuildResultChecks,
 } from './esbuild.ts'
+import { isProductionBuild, willMinify } from './flags.ts'
 import { HtmlEntrypoint } from './html.ts'
+import { copyAssets } from './public.ts'
 import { paths as apiRoutes } from '../server/routes.ts'
 
 // fyi if invoked directly by shell as executable it would be argv[0]
@@ -21,17 +23,11 @@ const isMain = process.argv[1].endsWith(import.meta.filename)
 if (isMain && process.argv.some(arg => arg === '-h' || arg === '--help')) {
     console.log('node ./dev/build.ts [--minify] [--production]')
     console.log('\nOPTIONS:')
-    console.log('  --minify       build minified sources')
-    console.log('  --production   minify and use release tag versioning')
+    console.log('  --minify       minify sources')
+    console.log('  --production   build for production release')
     process.exit(0)
 }
 
-const isProduction =
-    process.env.PRODUCTION === 'true' || process.argv.includes('--production')
-const minify =
-    isProduction ||
-    process.env.MINIFY === 'true' ||
-    process.argv.includes('--minify')
 const buildTag = await createBuildTag()
 const buildDir = fsJoin('build', 'dist')
 
@@ -45,7 +41,7 @@ async function createBuildTag(): Promise<string> {
     const date = now.toISOString().substring(0, 10)
     const time = String(ms).padStart(8, '0')
     const when = `${date}-${time}`
-    if (isProduction) {
+    if (isProductionBuild()) {
         const gitHash = await new Promise((res, rej) =>
             exec('git rev-parse --short HEAD', (err, stdout) => {
                 if (err) rej(err)
@@ -92,25 +88,25 @@ async function buildWebpage(
     define: DefineSidelinesGlobal,
 ): Promise<Array<string>> {
     const html = await HtmlEntrypoint.readFrom(fsJoin('pages', fsPath))
+    await html.injectPartials()
     if (urlPath !== '/') {
         await mkdir(fsJoin(buildDir, urlPath), { recursive: true })
     }
     const entryPointUrls: Set<string> = new Set()
-    const entryPoints: Array<{ in: string; out: string }> = []
-    html.collectScripts()
+    const entryPoints: Array<{ in: string; out: string }> = html
+        .collectScripts()
         .filter(scriptImport => !entryPointUrls.has(scriptImport.in))
-        .forEach(scriptImport => {
+        .map(scriptImport => {
             entryPointUrls.add(scriptImport.in)
-            entryPoints.push({
+            return {
                 in: scriptImport.in,
                 out: scriptImport.out,
-            })
+            }
         })
     const buildResult = await esbuild.build({
-        ...esbuildBuildOptsForWebpage({ minify }),
+        ...esbuildBuildOptsForWebpage(),
         define,
         entryPoints,
-        minify,
         outdir: buildDir,
     })
     esbuildResultChecks(buildResult)
@@ -128,7 +124,7 @@ async function buildWebpage(
     return [
         urlPath,
         ...Object.keys(buildResult.metafile.outputs).map(p =>
-            p.substring(p.indexOf('/lib/sidelines/pages')),
+            p.substring(p.indexOf('/lib/sidelines/')),
         ),
     ]
 }
@@ -139,7 +135,7 @@ async function buildWorker(urlPath: string, src: string): Promise<string> {
         : '[hash]'
     const naming = urlPath.substring(1).replace('.js', `-${versioning}`)
     const buildResult = await esbuild.build({
-        ...esbuildBuildOptsForWorker({ minify }),
+        ...esbuildBuildOptsForWorker(),
         entryPoints: [src],
         entryNames: naming,
         // esbuild does not return outputFiles[].hash
@@ -156,10 +152,10 @@ async function buildWorker(urlPath: string, src: string): Promise<string> {
     return path
 }
 
-async function buildServiceWorker(files: Array<string>): Promise<string> {
+async function buildServiceWorker(files: Set<string>): Promise<string> {
     await writeCacheManifest(files)
     const buildResult = await esbuild.build({
-        ...esbuildBuildOptsForWorker({ minify }),
+        ...esbuildBuildOptsForWorker(),
         entryPoints: ['./workers/serviceWorker.ts'],
         entryNames: 'sidelines.sw',
         outdir: 'build/dist',
@@ -171,11 +167,11 @@ async function buildServiceWorker(files: Array<string>): Promise<string> {
 
 export async function performBuild(): Promise<{
     dir: string
-    files: Array<string>
+    files: Set<string>
 }> {
     console.log(
-        minify
-            ? isProduction
+        willMinify()
+            ? isProductionBuild()
                 ? 'minified production'
                 : 'minified'
             : 'unminified',
@@ -184,7 +180,9 @@ export async function performBuild(): Promise<{
         'building in ./build/dist',
     )
     await rm('build', { recursive: true, force: true })
+    await mkdir(buildDir, { recursive: true })
     await mkdir(fsJoin('build', 'metafiles'), { recursive: true })
+    const staticAssets = await copyAssets(fsJoin('build', 'dist'))
     const buildUrls: Array<string> = []
     const workerBuildUrls: Record<string, string> = {}
     for (const [urlPath, fsPath] of Object.entries(workers)) {
@@ -196,17 +194,38 @@ export async function performBuild(): Promise<{
     for (const [urlPath, fsPath] of Object.entries(webpages)) {
         buildUrls.push(...(await buildWebpage(urlPath, fsPath, definitions)))
     }
-
-    buildUrls.push(await buildServiceWorker(buildUrls))
-    await writeBuildManifest(buildUrls)
+    buildUrls.push(
+        await buildServiceWorker(
+            new Set([...buildUrls, ...staticAssets.cached]),
+        ),
+    )
+    buildUrls.push(...staticAssets.all)
+    const result = new Set(buildUrls)
+    await writeBuildManifest(result)
+    validateBuildUrls(result)
     return {
         dir: buildDir,
-        files: buildUrls,
+        files: result,
     }
 }
 
 if (isMain) {
     await performBuild()
+}
+
+// safety check to catch conflicts with github style repo routes
+function validateBuildUrls(files: Set<string>) {
+    let e = false
+    for (const f of files) {
+        if (!f.startsWith('/')) {
+            console.error(f, 'is not prefixed with /')
+            e = true
+        } else if (f.split('/').length === 3) {
+            console.error(f, 'clashes with /owner/repo style repo routes')
+            e = true
+        }
+    }
+    if (e) process.exit(1)
 }
 
 async function writeMetafile(filename: string, json: any) {
@@ -216,11 +235,11 @@ async function writeMetafile(filename: string, json: any) {
     )
 }
 
-async function writeCacheManifest(files: Array<string>) {
+async function writeCacheManifest(files: Set<string>) {
     await writeJsonToBuildDir('cache.json', {
         apiRoutes,
         buildTag,
-        files: files.map(filenameToWebappPath),
+        files: Array.from(files).map(filenameToWebappPath),
     })
 }
 
@@ -235,10 +254,10 @@ function filenameToWebappPath(p: string): string {
     }
 }
 
-async function writeBuildManifest(files: Array<string>) {
+async function writeBuildManifest(files: Set<string>) {
     await writeJsonToBuildDir('manifest.json', {
         buildTag,
-        files: files.map(f => {
+        files: Array.from(files).map(f => {
             if (extname(f) === '') {
                 return f === '/' ? '/index.html' : f + '/index.html'
             } else {

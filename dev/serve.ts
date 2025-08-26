@@ -4,6 +4,7 @@ import esbuild from 'esbuild'
 import { performBuild, webpages, workers } from './build.ts'
 import { defineSidelinesForEsbuildWatch } from './define.ts'
 import { esbuildBuildOptsForWebpage } from './esbuild.ts'
+import { isPreviewBuild, isProductionBuild } from './flags.ts'
 import { HtmlEntrypoint } from './html.ts'
 import {
     createEsbuildFilesFetcher,
@@ -11,20 +12,25 @@ import {
     createWebServer,
     type FrontendFetcher,
 } from './http.ts'
+import { copyAssets } from './public.ts'
 
 if (process.argv.some(arg => arg === '-h' || arg === '--help')) {
     console.log('node ./dev/serve.ts [--preview] [--production] [--tls]')
     console.log('\nOPTIONS:')
-    console.log('  --preview      pre-bundled with ServiceWorker')
-    console.log('  --production   minify pre-bundled sources with preview')
+    console.log('  --preview      pre-bundling with ServiceWorker')
+    console.log('  --production   preview a production build')
     process.exit(0)
 }
 
-const isPreview =
-    process.env.PREVIEW === 'true' || process.argv.includes('--preview')
-const isProduction =
-    process.env.PRODUCTION === 'true' || process.argv.includes('--production')
-const PORT = isPreview ? 4000 : 3000
+if (isProductionBuild() && !isPreviewBuild()) {
+    console.error('dev/serve.ts --production requires --preview to be set')
+    process.exit(1)
+}
+
+// alternate port for --preview bc of service worker
+const PORT = isPreviewBuild() ? 4000 : 3000
+
+// port for esbuild.serve
 const ESBUILD_PORT = 2999
 
 if (
@@ -40,6 +46,7 @@ await rm('build', { force: true, recursive: true })
 async function startEsbuildWatch(): Promise<{ port: number }> {
     const watchDir = fsJoin('build', 'watch')
     await mkdir(watchDir, { recursive: true })
+    await copyAssets(watchDir)
 
     const entryPointUrls: Set<string> = new Set()
     const entryPoints: esbuild.BuildOptions['entryPoints'] = []
@@ -54,6 +61,7 @@ async function startEsbuildWatch(): Promise<{ port: number }> {
     await Promise.all(
         Object.entries(webpages).map(async ([urlPath, fsPath]) => {
             const html = await HtmlEntrypoint.readFrom(fsJoin('pages', fsPath))
+            await html.injectPartials()
             if (urlPath !== '/') {
                 await mkdir(fsJoin(watchDir, urlPath), { recursive: true })
             }
@@ -73,7 +81,7 @@ async function startEsbuildWatch(): Promise<{ port: number }> {
     )
 
     const ctx = await esbuild.context({
-        ...esbuildBuildOptsForWebpage({ minify: isProduction }),
+        ...esbuildBuildOptsForWebpage(),
         entryNames: '[dir]/[name]',
         entryPoints,
         define: defineSidelinesForEsbuildWatch(),
@@ -87,13 +95,16 @@ async function startEsbuildWatch(): Promise<{ port: number }> {
         host: '127.0.0.1',
         port: ESBUILD_PORT,
         servedir: watchDir,
+        cors: {
+            origin: 'http://127.0.0.1:' + PORT,
+        },
     })
 
     return { port: ESBUILD_PORT }
 }
 
 let frontend: FrontendFetcher
-if (isPreview) {
+if (isPreviewBuild()) {
     const { dir, files } = await performBuild()
     frontend = createFrontendFilesFetcher(dir, files)
 } else {

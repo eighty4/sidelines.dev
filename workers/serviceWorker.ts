@@ -82,9 +82,11 @@ async function handleRequest(req: Request): Promise<Response> {
             )
             url.pathname = mapped
         }
-        // todo can the active cache be opened once on activate event and reused?
         const cache = await caches.open(APP_CACHE_KEY)
-        return (await cache.match(url)) || new Response('', { status: 408 })
+        const fromCache = await cache.match(url)
+        if (fromCache) {
+            return fromCache
+        }
     }
     return fetch(req)
 }

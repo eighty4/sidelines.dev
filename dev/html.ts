@@ -1,7 +1,14 @@
 import { readFile, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import { type DefaultTreeAdapterTypes, parse, serialize } from 'parse5'
+import { dirname, join, relative } from 'node:path'
+import {
+    defaultTreeAdapter,
+    type DefaultTreeAdapterTypes,
+    parse,
+    parseFragment,
+    serialize,
+} from 'parse5'
 
+type CommentNode = DefaultTreeAdapterTypes.CommentNode
 type Document = DefaultTreeAdapterTypes.Document
 type Element = DefaultTreeAdapterTypes.Element
 type ParentNode = DefaultTreeAdapterTypes.ParentNode
@@ -14,6 +21,11 @@ export type ImportedScript = {
     out: string
 }
 
+// unenforced but necessary sequence:
+//  injectPartials
+//  collectScripts
+//  rewriteHrefs
+//  writeTo
 export class HtmlEntrypoint {
     static async readFrom(fsPath: string): Promise<HtmlEntrypoint> {
         const html = await readFile(fsPath, 'utf-8')
@@ -22,11 +34,17 @@ export class HtmlEntrypoint {
 
     #document: Document
     #fsPath: string
+    #partials: Array<CommentNode> = []
     #scripts: Array<ImportedScript> = []
 
     constructor(html: string, fsPath: string) {
         this.#document = parse(html)
         this.#fsPath = fsPath
+    }
+
+    async injectPartials() {
+        this.#collectPartials(this.#document)
+        await this.#injectPartials()
     }
 
     collectScripts(): Array<ImportedScript> {
@@ -35,7 +53,7 @@ export class HtmlEntrypoint {
     }
 
     // rewrites hrefs to content hashed urls
-    // for dev call without hrefs to rewrite tsx? ext to js
+    // call without hrefs to rewrite tsx? ext to js
     rewriteHrefs(hrefs?: Record<string, string>) {
         for (const importScript of this.#scripts) {
             const rewriteTo = hrefs ? hrefs[importScript.in] : null
@@ -60,6 +78,58 @@ export class HtmlEntrypoint {
         await writeFile(fsPath, serialize(this.#document))
     }
 
+    async #injectPartials() {
+        for (const commentNode of this.#partials) {
+            const pp = commentNode.data
+                .match(/\{\{(?<pp>.+)\}\}/)!
+                .groups!.pp.trim()
+            const fragment = parseFragment(await readFile(pp, 'utf-8'))
+            for (const node of fragment.childNodes) {
+                if (node.nodeName === 'script') {
+                    this.#rewritePathFromPartial(pp, node, 'src')
+                } else if (
+                    node.nodeName === 'link' &&
+                    hasAttr(node, 'rel', 'stylesheet')
+                ) {
+                    this.#rewritePathFromPartial(pp, node, 'href')
+                }
+                defaultTreeAdapter.insertBefore(
+                    commentNode.parentNode!,
+                    node,
+                    commentNode,
+                )
+            }
+            defaultTreeAdapter.detachNode(commentNode)
+        }
+    }
+
+    // rewrite a ts or css href relative to an html partial to be relative to the html entrypoint
+    #rewritePathFromPartial(
+        pp: string,
+        elem: Element,
+        attrName: 'href' | 'src',
+    ) {
+        const attr = getAttr(elem, attrName)
+        if (attr) {
+            attr.value = join(
+                relative(dirname(this.#fsPath), dirname(pp)),
+                attr.value,
+            )
+        }
+    }
+
+    #collectPartials(node: ParentNode) {
+        for (const childNode of node.childNodes) {
+            if (childNode.nodeName === '#comment' && 'data' in childNode) {
+                if (/\{\{.+\}\}/.test(childNode.data)) {
+                    this.#partials.push(childNode)
+                }
+            } else if ('childNodes' in childNode) {
+                this.#collectPartials(childNode)
+            }
+        }
+    }
+
     #collectScripts(node: ParentNode) {
         for (const childNode of node.childNodes) {
             if (childNode.nodeName === 'script') {
@@ -71,13 +141,9 @@ export class HtmlEntrypoint {
                 }
             } else if (
                 childNode.nodeName === 'link' &&
-                childNode.attrs.some(
-                    attr => attr.name === 'rel' && attr.value === 'stylesheet',
-                )
+                hasAttr(childNode, 'rel', 'stylesheet')
             ) {
-                const hrefAttr = childNode.attrs.find(
-                    attr => attr.name === 'href',
-                )
+                const hrefAttr = getAttr(childNode, 'href')
                 if (hrefAttr) {
                     this.#addScript('style', hrefAttr.value, childNode)
                 }
@@ -100,4 +166,12 @@ export class HtmlEntrypoint {
             out: outPath,
         })
     }
+}
+
+function getAttr(elem: Element, name: string) {
+    return elem.attrs.find(attr => attr.name === name)
+}
+
+function hasAttr(elem: Element, name: string, value: string): boolean {
+    return elem.attrs.some(attr => attr.name === name && attr.value === value)
 }

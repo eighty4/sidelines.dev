@@ -1,7 +1,7 @@
 import { UnauthorizedError } from '@sidelines/github'
 import { type FC } from 'react'
 import { createRoot } from 'react-dom/client'
-import { expectGhLogin, expectGhToken } from '../init.ts'
+import { expectGhLogin, expectGhToken, onDomInteractive } from '../init.ts'
 import { logout } from '../nav.ts'
 
 interface GameplanPageProps {
@@ -13,7 +13,7 @@ const Gameplan: FC<GameplanPageProps> = () => {
     return <p></p>
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+onDomInteractive(async () => {
     try {
         const ghToken = expectGhToken()
         const ghLogin = await expectGhLogin(ghToken)

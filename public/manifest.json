@@ -1,0 +1,34 @@
+{
+  "name": "Sidelines.dev",
+  "short_name": "Sidelines.dev",
+  "start_url": "/gameplan",
+  "display": "minimal-ui",
+  "background_color": "#6d8196",
+  "theme_color": "#ff746c",
+  "categories": ["productivity"],
+  "description": "Keeping your open-source projects on the bench.",
+  "orientation": "natural",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/assets/sidelines/icons/logo-192.png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/assets/sidelines/icons/logo-180.png",
+      "sizes": "180x180"
+    },
+    {
+      "src": "/assets/sidelines/icons/logo.svg",
+      "sizes": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Gameplan",
+      "short_name": "Gameplan",
+      "description": "View your work and make a gameplan!",
+      "url": "/gameplan"
+    }
+  ]
+}

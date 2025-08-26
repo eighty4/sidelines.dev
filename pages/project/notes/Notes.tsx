@@ -6,7 +6,7 @@ import { FileExplorer } from './FileExplorer.tsx'
 import { RepoSources } from './RepoSources.ts'
 import { WorkspaceEditor } from './editor/WorkspaceEditor.tsx'
 import { ProjectNavbar } from './navbar/ProjectNavbar.tsx'
-import { expectUserDataClient } from '../../init.ts'
+import { expectUserDataClient, onDomInteractive } from '../../init.ts'
 import { logout } from '../../nav.ts'
 import { expectRepoFromLocation } from '../../repoFromLocation.ts'
 import { UserDataClient } from '../../../workers/UserDataClient.ts'
@@ -40,7 +40,7 @@ const Notes: FC<ProjectPageProps> = ({ repo, userData }) => {
     )
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+onDomInteractive(async () => {
     try {
         const userData = await expectUserDataClient()
         const repo = expectRepoFromLocation(userData.ghLogin)

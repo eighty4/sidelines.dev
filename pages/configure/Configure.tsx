@@ -7,7 +7,7 @@ import {
 import { useEffect, useState, type FC } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MakeSidelinesRepo } from './MakeSidelinesRepo.tsx'
-import { expectGhLogin, expectGhToken } from '../init.ts'
+import { expectGhLogin, expectGhToken, onDomInteractive } from '../init.ts'
 import { getAppInstallationConfigureUrl, getAppUrl, logout } from '../nav.ts'
 
 // todo hard-coded value should be a build env variable or globalThis
@@ -123,7 +123,7 @@ const Configure: FC<ConfigurePageProps> = ({ ghToken, ghLogin }) => {
     }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+onDomInteractive(async () => {
     try {
         const ghToken = expectGhToken()
         const ghLogin = await expectGhLogin(ghToken)

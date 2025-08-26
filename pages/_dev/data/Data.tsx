@@ -33,6 +33,7 @@ import {
     SortAscSvg,
     SortDescSvg,
 } from './Svgs.tsx'
+import { onDomInteractive } from '../../init.ts'
 
 const DB_STORES = [
     DB_STORE_REPO_NAV,
@@ -396,6 +397,6 @@ function toStringForTable(datum: unknown): string {
     }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+onDomInteractive(async () => {
     createRoot(document.getElementById('root')!).render(<DataPage />)
 })
