@@ -1,0 +1,15 @@
+{
+  "name": "@sidelines/server",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./routes": {
+      "types": "./lib_types/routes.d.ts",
+      "import": "./lib_js/routes.js"
+    }
+  },
+  "dependencies": {
+    "@sidelines/data": "workspace:*",
+    "@sidelines/github": "workspace:*"
+  }
+}

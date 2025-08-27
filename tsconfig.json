@@ -1,20 +1,21 @@
 {
+  "extends": ["./tsconfig.common.json"],
   "compilerOptions": {
     "noEmit": true,
-    "target": "ESNext",
-    "module": "NodeNext",
-    "jsx": "react-jsx",
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "allowImportingTsExtensions": true,
-    "rewriteRelativeImportExtensions": true,
-    /* Linting */
-    "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "strict": true,
-    "verbatimModuleSyntax": true
+    "jsx": "react-jsx"
   },
-  "include": ["**/*.ts", "**/*.tsx", "global.d.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "dev/**/*.ts",
+    "pages/**/*.ts",
+    "pages/**/*.tsx",
+    "workers/**/*.ts",
+    "global.d.ts"
+  ],
+  "exclude": ["node_modules"],
+  "references": [
+    { "path": "./libs/data" },
+    { "path": "./libs/github" },
+    { "path": "./libs/model" },
+    { "path": "./server" }
+  ]
 }

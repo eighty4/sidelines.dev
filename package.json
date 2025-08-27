@@ -8,20 +8,21 @@
   ],
   "scripts": {
     "build": "node dev/build.ts",
+    "clean": "rm -rf build && tsc --build --clean",
     "dev": "node --env-file .env.local dev/serve.ts",
     "fmt": "prettier --write .",
     "fmtcheck": "prettier --check .",
     "graphql": "pnpm --filter github graphql",
     "test": "pnpm test:unit && pnpm test:e2e",
     "test:unit": "node --test \"**/*.spec.ts\"",
-    "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@eighty4/model-t": "0.0.5-3",
     "@sidelines/data": "workspace:*",
     "@sidelines/github": "workspace:*",
     "@sidelines/model": "workspace:*",
+    "@sidelines/server": "workspace:*",
     "@sidelines/ui": "workspace:*",
     "monaco-editor": "^0.52.2",
     "react": "^19.1.0",

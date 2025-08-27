@@ -1,7 +1,10 @@
 .DS_Store
+
 .env.local
 .playwright
+
 build
-dev/certificate.crt
-dev/private.key
+lib_js
+lib_types
 node_modules
+tsconfig.tsbuildinfo

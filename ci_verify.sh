@@ -57,5 +57,4 @@ fi
 
 pnpm test
 pnpm build
-pnpm typecheck
 pnpm fmtcheck

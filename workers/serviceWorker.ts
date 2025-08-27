@@ -1,3 +1,4 @@
+// @ts-ignore - cache.json will be made before esbuild bundles the service worker
 import buildManifest from '../build/cache.json' with { type: 'json' }
 import { isValidGitHubRepoUrl } from '../pages/ghRepoUrl.ts'
 

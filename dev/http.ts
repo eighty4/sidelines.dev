@@ -11,7 +11,7 @@ import {
     type HttpMethod,
     type RequestHandler,
     routes,
-} from '../server/routes.ts'
+} from '@sidelines/server/routes'
 
 export type FrontendFetcher = (
     url: URL,

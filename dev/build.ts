@@ -15,7 +15,6 @@ import {
 import { isProductionBuild, willMinify } from './flags.ts'
 import { HtmlEntrypoint } from './html.ts'
 import { copyAssets } from './public.ts'
-import { paths as apiRoutes } from '../server/routes.ts'
 
 // fyi if invoked directly by shell as executable it would be argv[0]
 const isMain = process.argv[1].endsWith(import.meta.filename)
@@ -180,6 +179,7 @@ export async function performBuild(): Promise<{
         'building in ./build/dist',
     )
     await rm('build', { recursive: true, force: true })
+    await tscBuild()
     await mkdir(buildDir, { recursive: true })
     await mkdir(fsJoin('build', 'metafiles'), { recursive: true })
     const staticAssets = await copyAssets(fsJoin('build', 'dist'))
@@ -209,6 +209,19 @@ export async function performBuild(): Promise<{
     }
 }
 
+async function tscBuild(): Promise<void | never> {
+    await new Promise<void>(res =>
+        exec('pnpm exec tsc --build', err => {
+            if (err) {
+                console.error('failed tsc, run `pnpm exec tsc --build`')
+                process.exit(1)
+            } else {
+                res()
+            }
+        }),
+    )
+}
+
 if (isMain) {
     await performBuild()
 }
@@ -236,6 +249,7 @@ async function writeMetafile(filename: string, json: any) {
 }
 
 async function writeCacheManifest(files: Set<string>) {
+    const { paths: apiRoutes } = await import('@sidelines/server/routes')
     await writeJsonToBuildDir('cache.json', {
         apiRoutes,
         buildTag,

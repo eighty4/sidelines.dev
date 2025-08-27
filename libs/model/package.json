@@ -3,6 +3,10 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./model.ts"
+    ".": {
+      "types": "./lib_types/model.d.ts",
+      "node": "./lib_js/model.js",
+      "import": "./lib/model.ts"
+    }
   }
 }

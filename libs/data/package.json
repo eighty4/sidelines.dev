@@ -3,9 +3,21 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./debug": "./src/debug.ts",
-    "./web": "./src/web.ts"
+    ".": {
+      "types": "./lib_types/index.d.ts",
+      "node": "./lib_js/index.js",
+      "default": "./lib/index.ts"
+    },
+    "./debug": {
+      "types": "./lib_types/debug.d.ts",
+      "node": "./lib_js/debug.js",
+      "default": "./lib/debug.ts"
+    },
+    "./web": {
+      "types": "./lib_types/web.d.ts",
+      "node": "./lib_js/web.js",
+      "default": "./lib/web.ts"
+    }
   },
   "dependencies": {
     "@sidelines/github": "workspace:*",

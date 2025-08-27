@@ -3,6 +3,7 @@ lockfileVersion: '9.0'
 settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
+  injectWorkspacePackages: true
 
 importers:
 
@@ -20,6 +21,9 @@ importers:
       '@sidelines/model':
         specifier: workspace:*
         version: link:libs/model
+      '@sidelines/server':
+        specifier: workspace:*
+        version: link:server
       '@sidelines/ui':
         specifier: workspace:*
         version: link:libs/ui
@@ -96,6 +100,15 @@ importers:
       react-dom:
         specifier: ^19.1.0
         version: 19.1.1(react@19.1.1)
+
+  server:
+    dependencies:
+      '@sidelines/data':
+        specifier: workspace:*
+        version: link:../libs/data
+      '@sidelines/github':
+        specifier: workspace:*
+        version: link:../libs/github
 
 packages:
 

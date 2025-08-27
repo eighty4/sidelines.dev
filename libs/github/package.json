@@ -3,7 +3,11 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./lib_types/index.d.ts",
+      "node": "./lib_js/index.js",
+      "import": "./lib/index.ts"
+    }
   },
   "scripts": {
     "graphql": "node graphql.ts"
