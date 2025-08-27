@@ -1,29 +1,4 @@
-export default (req: Request) => loginAndRedirect(new URL(req.url))
-
-export async function loginAndRedirect(url: URL): Promise<Response> {
-    const authorizationCode = url.searchParams.get('code')
-    if (!authorizationCode) {
-        return new Response('Bad Request', { status: 400 })
-    }
-    try {
-        const tokens =
-            await exchangeAuthorizationCodeForAccessToken(authorizationCode)
-        return authedRedirectResponse(tokens)
-    } catch (e) {
-        console.error(e)
-        return new Response('Internal Server Error', { status: 500 })
-    }
-}
-
-export function authedRedirectResponse(tokens: GHAuthedTokens): Response {
-    return new Response('Found', {
-        status: 302,
-        headers: {
-            Location: process.env.WEBAPP_ADDRESS + '/configure',
-            'Set-Cookie': `ght=${tokens.access.value}; Secure; SameSite=Strict; Path=/; Max-Age=${tokens.access.expiresIn}`,
-        },
-    })
-}
+import type { ServerEnv } from '../routes.ts'
 
 type GHAuthedTokens = { access: GHAccessToken; refresh: GHAccessToken }
 
@@ -32,7 +7,46 @@ type GHAccessToken = {
     expiresIn: number
 }
 
+export function createLoginAndRedirectRoute(env: ServerEnv) {
+    return (req: Request) => loginAndRedirect(env, new URL(req.url))
+}
+
+export function createLoginAndRedirectHandler(env: ServerEnv) {
+    return (url: URL) => loginAndRedirect(env, url)
+}
+
+async function loginAndRedirect(env: ServerEnv, url: URL): Promise<Response> {
+    const authorizationCode = url.searchParams.get('code')
+    if (!authorizationCode) {
+        return new Response('Bad Request', { status: 400 })
+    }
+    try {
+        const tokens = await exchangeAuthorizationCodeForAccessToken(
+            env,
+            authorizationCode,
+        )
+        return authedRedirectResponse(env.WEBAPP_ADDRESS, tokens)
+    } catch (e) {
+        console.error(e)
+        return new Response('Internal Server Error', { status: 500 })
+    }
+}
+
+export function authedRedirectResponse(
+    webappAddress: ServerEnv['WEBAPP_ADDRESS'],
+    tokens: GHAuthedTokens,
+): Response {
+    return new Response('Found', {
+        status: 302,
+        headers: {
+            Location: webappAddress + '/configure',
+            'Set-Cookie': `ght=${tokens.access.value}; Secure; SameSite=Strict; Path=/; Max-Age=${tokens.access.expiresIn}`,
+        },
+    })
+}
+
 async function exchangeAuthorizationCodeForAccessToken(
+    env: ServerEnv,
     code: string,
 ): Promise<GHAuthedTokens> {
     const response = await fetch(
@@ -43,8 +57,8 @@ async function exchangeAuthorizationCodeForAccessToken(
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                client_id: process.env.GH_CLIENT_ID,
-                client_secret: process.env.GH_CLIENT_SECRET,
+                client_id: env.GH_CLIENT_ID,
+                client_secret: env.GH_CLIENT_SECRET,
                 code,
             }),
         },

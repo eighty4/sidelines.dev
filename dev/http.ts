@@ -8,9 +8,10 @@ import {
 } from 'node:http'
 import { extname, join as fsJoin } from 'node:path'
 import {
+    createRoutes,
+    hasServerEnvValues,
     type HttpMethod,
     type RequestHandler,
-    routes,
 } from '@sidelines/server/routes'
 
 export type FrontendFetcher = (
@@ -78,6 +79,10 @@ export function createFrontendFilesFetcher(
 export function createWebServer(
     frontendFetcher: FrontendFetcher,
 ): ReturnType<typeof createServer> {
+    if (!hasServerEnvValues(process.env)) {
+        throw Error('missing env vars for web server')
+    }
+    const routes = createRoutes(process.env)
     return createServer((req: IncomingMessage, res: ServerResponse) => {
         if (!req.url || !req.method) {
             res.end()
