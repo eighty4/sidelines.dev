@@ -13,6 +13,7 @@ import {
     type HttpMethod,
     type RequestHandler,
 } from '@sidelines/server/routes'
+import { isProductionBuild } from './flags.ts'
 
 export type FrontendFetcher = (
     url: URL,
@@ -45,34 +46,43 @@ export function createFrontendFilesFetcher(
             res.writeHead(404)
             res.end()
         } else {
-            let p = fsJoin(dir, url.pathname)
-            switch (extname(url.pathname)) {
-                case '':
-                    res.setHeader('Content-Type', 'text/html')
-                    p = p + '/index.html'
-                    break
-                case '.js':
-                    res.setHeader('Content-Type', 'text/javascript')
-                    break
-                case '.css':
-                    res.setHeader('Content-Type', 'text/css')
-                    break
-                case '.svg':
-                    res.setHeader('Content-Type', 'image/svg+xml')
-                    break
-                default:
-                    res.setHeader('Content-Type', 'application/octet-stream')
-            }
-            const reading = createReadStream(p)
+            const mimeType = resolveMimeType(url)
+            res.setHeader('Content-Type', mimeType)
+            const reading = createReadStream(
+                mimeType === 'text/html'
+                    ? fsJoin(dir, url.pathname, 'index.html')
+                    : fsJoin(dir, url.pathname),
+            )
             reading.pipe(res)
             reading.on('error', err => {
                 console.error(
-                    `${url.pathname} file read ${p} error ${err.message}`,
+                    `${url.pathname} file read ${reading.path} error ${err.message}`,
                 )
                 res.statusCode = 500
                 res.end()
             })
         }
+    }
+}
+
+function resolveMimeType(url: URL): string {
+    switch (extname(url.pathname)) {
+        case '':
+            return 'text/html'
+        case '.js':
+            return 'text/javascript'
+        case '.json':
+            return 'application/json'
+        case '.css':
+            return 'text/css'
+        case '.svg':
+            return 'image/svg+xml'
+        case '.png':
+            return 'image/png'
+        default:
+            console.warn('? mime type for', url.pathname)
+            if (!isProductionBuild()) process.exit(1)
+            return 'application/octet-stream'
     }
 }
 
