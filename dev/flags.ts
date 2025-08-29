@@ -11,3 +11,8 @@ export const willMinify = () =>
     isProductionBuild() ||
     process.env.MINIFY === 'true' ||
     process.argv.includes('--minify')
+
+export const willTsc = () =>
+    isProductionBuild() ||
+    process.env.TSC === 'true' ||
+    process.argv.includes('--tsc')

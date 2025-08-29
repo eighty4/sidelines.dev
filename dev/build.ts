@@ -1,18 +1,13 @@
 import { exec } from 'node:child_process'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
-import { basename, dirname, join, join as fsJoin, extname } from 'node:path'
-import esbuild from 'esbuild'
+import { join, extname } from 'node:path'
 import {
     defineSidelinesFromWorkerUrls,
     type DefineSidelinesGlobal,
     monacoVersion,
 } from './define.ts'
-import {
-    esbuildBuildOptsForWebpage,
-    esbuildBuildOptsForWorker,
-    esbuildResultChecks,
-} from './esbuild.ts'
-import { isProductionBuild, willMinify } from './flags.ts'
+import { esbuildWebpages, esbuildWorkers } from './esbuild.ts'
+import { isProductionBuild, willMinify, willTsc } from './flags.ts'
 import { HtmlEntrypoint } from './html.ts'
 import { copyAssets } from './public.ts'
 
@@ -20,15 +15,50 @@ import { copyAssets } from './public.ts'
 const isMain = process.argv[1].endsWith(import.meta.filename)
 
 if (isMain && process.argv.some(arg => arg === '-h' || arg === '--help')) {
-    console.log('node ./dev/build.ts [--minify] [--production]')
+    console.log('node ./dev/build.ts [--minify] [--production] [--tsc]')
     console.log('\nOPTIONS:')
     console.log('  --minify       minify sources')
     console.log('  --production   build for production release')
+    console.log('  --tsc          compile libs/* ts to js')
     process.exit(0)
 }
 
 const buildTag = await createBuildTag()
-const buildDir = fsJoin('build', 'dist')
+const buildDir = join('build', 'dist')
+
+// maps url to entrypoint src
+export const webpages: Record<string, string> = {
+    '/': './home/Home.html',
+    '/configure': './configure/Configure.html',
+    '/gameplan': './gameplan/Gameplan.html',
+    '/project': './project/Project.html',
+    '/notes': './project/notes/Notes.html',
+}
+
+// worker urls are namespaced in /lib/monaco/workers or /lib/sidelines/workers
+// monaco urls are versioned by npm package version
+// sidelines urls are versioned by build hash
+//
+// maps entrypoint src to url
+export const workers: Record<string, string> = {
+    './workers/syncRefs.ts': '/lib/sidelines/workers/syncRefs.js',
+    './workers/userData.ts': '/lib/sidelines/workers/userData.js',
+    './workers/ghActions.ts': '/lib/sidelines/workers/ghActions.js',
+    './node_modules/monaco-editor/esm/vs/editor/editor.worker.js':
+        '/lib/monaco/workers/main.js',
+    './node_modules/monaco-editor/esm/vs/language/css/css.worker.js':
+        '/lib/monaco/workers/css.js',
+    './node_modules/monaco-editor/esm/vs/language/html/html.worker.js':
+        '/lib/monaco/workers/html.js',
+    './node_modules/monaco-editor/esm/vs/language/json/json.worker.js':
+        '/lib/monaco/workers/json.js',
+    './node_modules/monaco-editor/esm/vs/language/typescript/ts.worker.js':
+        '/lib/monaco/workers/ts.js',
+}
+
+if (isMain) {
+    await performBuild()
+}
 
 async function createBuildTag(): Promise<string> {
     const now = new Date()
@@ -53,117 +83,6 @@ async function createBuildTag(): Promise<string> {
     }
 }
 
-export const webpages: Record<string, string> = {
-    '/': './home/Home.html',
-    '/configure': './configure/Configure.html',
-    '/gameplan': './gameplan/Gameplan.html',
-    '/project': './project/Project.html',
-    '/notes': './project/notes/Notes.html',
-}
-
-// workers are namespaced in /lib/monaco/workers or /lib/sidelines/workers
-// this record is keyed by the scripts' names during dev without versioning
-// monaco is versioned by npm package version
-// sidelines is versioned by build hash
-export const workers: Record<string, string> = {
-    '/lib/sidelines/workers/syncRefs.js': './workers/syncRefs.ts',
-    '/lib/sidelines/workers/userData.js': './workers/userData.ts',
-    '/lib/sidelines/workers/ghActions.js': './workers/ghActions.ts',
-    '/lib/monaco/workers/main.js':
-        './node_modules/monaco-editor/esm/vs/editor/editor.worker.js',
-    '/lib/monaco/workers/css.js':
-        './node_modules/monaco-editor/esm/vs/language/css/css.worker.js',
-    '/lib/monaco/workers/html.js':
-        './node_modules/monaco-editor/esm/vs/language/html/html.worker.js',
-    '/lib/monaco/workers/json.js':
-        './node_modules/monaco-editor/esm/vs/language/json/json.worker.js',
-    '/lib/monaco/workers/ts.js':
-        './node_modules/monaco-editor/esm/vs/language/typescript/ts.worker.js',
-}
-
-async function buildWebpage(
-    urlPath: string,
-    fsPath: string,
-    define: DefineSidelinesGlobal,
-): Promise<Array<string>> {
-    const html = await HtmlEntrypoint.readFrom(fsJoin('pages', fsPath))
-    await html.injectPartials()
-    if (urlPath !== '/') {
-        await mkdir(fsJoin(buildDir, urlPath), { recursive: true })
-    }
-    const entryPointUrls: Set<string> = new Set()
-    const entryPoints: Array<{ in: string; out: string }> = html
-        .collectScripts()
-        .filter(scriptImport => !entryPointUrls.has(scriptImport.in))
-        .map(scriptImport => {
-            entryPointUrls.add(scriptImport.in)
-            return {
-                in: scriptImport.in,
-                out: scriptImport.out,
-            }
-        })
-    const buildResult = await esbuild.build({
-        ...esbuildBuildOptsForWebpage(),
-        define,
-        entryPoints,
-        outdir: buildDir,
-    })
-    esbuildResultChecks(buildResult)
-    await writeMetafile(`page.${basename(fsPath)}.json`, buildResult.metafile)
-    const mapInToOutHrefs: Record<string, string> = {}
-    for (const [outputFile, { entryPoint }] of Object.entries(
-        buildResult.metafile.outputs,
-    )) {
-        mapInToOutHrefs[entryPoint!] = outputFile.substring(
-            outputFile.indexOf('/lib/sidelines/pages'),
-        )
-    }
-    html.rewriteHrefs(mapInToOutHrefs)
-    await html.writeTo(fsJoin(buildDir, urlPath, 'index.html'))
-    return [
-        urlPath,
-        ...Object.keys(buildResult.metafile.outputs).map(p =>
-            p.substring(p.indexOf('/lib/sidelines/')),
-        ),
-    ]
-}
-
-async function buildWorker(urlPath: string, src: string): Promise<string> {
-    const versioning = urlPath.startsWith('/lib/monaco/')
-        ? monacoVersion
-        : '[hash]'
-    const naming = urlPath.substring(1).replace('.js', `-${versioning}`)
-    const buildResult = await esbuild.build({
-        ...esbuildBuildOptsForWorker(),
-        entryPoints: [src],
-        entryNames: naming,
-        // esbuild does not return outputFiles[].hash
-        // if it writes to disk :(
-        write: false,
-    })
-    esbuildResultChecks(buildResult)
-    await writeMetafile(`worker.${basename(src)}.json`, buildResult.metafile)
-    const hash = buildResult.outputFiles[0].hash
-    const path = `${dirname(urlPath)}/${basename(urlPath.replace('.js', `-${versioning.replace('[hash]', hash)}.js`))}`
-    const out = join('build/dist', path)
-    await mkdir(dirname(out), { recursive: true })
-    await writeFile(out, buildResult.outputFiles[0].contents)
-    return path
-}
-
-async function buildServiceWorker(files: Set<string>): Promise<string> {
-    await writeCacheManifest(files)
-    const buildResult = await esbuild.build({
-        ...esbuildBuildOptsForWorker(),
-        entryPoints: ['./workers/serviceWorker.ts'],
-        entryNames: 'sidelines.sw',
-        outdir: 'build/dist',
-    })
-    esbuildResultChecks(buildResult)
-    await writeMetafile(`sidelines.sw.json`, buildResult.metafile)
-    return '/sidelines.sw.js'
-}
-
 export async function performBuild(): Promise<{
     dir: string
     files: Set<string>
@@ -179,21 +98,19 @@ export async function performBuild(): Promise<{
         'building in ./build/dist',
     )
     await rm('build', { recursive: true, force: true })
-    await tscBuild()
+    if (willTsc()) {
+        await tscBuild()
+    }
     await mkdir(buildDir, { recursive: true })
-    await mkdir(fsJoin('build', 'metafiles'), { recursive: true })
-    const staticAssets = await copyAssets(fsJoin('build', 'dist'))
+    await mkdir(join('build', 'metafiles'), { recursive: true })
+    const staticAssets = await copyAssets(join('build', 'dist'))
     const buildUrls: Array<string> = []
-    const workerBuildUrls: Record<string, string> = {}
-    for (const [urlPath, fsPath] of Object.entries(workers)) {
-        buildUrls.push(
-            (workerBuildUrls[urlPath] = await buildWorker(urlPath, fsPath)),
-        )
-    }
+    const workerBuildUrls = await buildWorkers('sidelines')
     const definitions = defineSidelinesFromWorkerUrls(workerBuildUrls)
-    for (const [urlPath, fsPath] of Object.entries(webpages)) {
-        buildUrls.push(...(await buildWebpage(urlPath, fsPath, definitions)))
-    }
+    await writeJsonToBuildDir('definitions.json', definitions)
+    buildUrls.push(...(await buildWebpages(definitions)))
+    buildUrls.push(...Object.values(workerBuildUrls))
+    buildUrls.push(...Object.values(await buildWorkers('monaco')))
     buildUrls.push(
         await buildServiceWorker(
             new Set([...buildUrls, ...staticAssets.cached]),
@@ -222,8 +139,97 @@ async function tscBuild(): Promise<void | never> {
     )
 }
 
-if (isMain) {
-    await performBuild()
+async function buildWorkers(
+    kind: 'monaco' | 'sidelines',
+): Promise<Record<string, string>> {
+    const versioning = kind === 'monaco' ? monacoVersion : '[hash]'
+    const entryPoints: Array<string> = Object.keys(workers).filter(path =>
+        workers[path].startsWith(`/lib/${kind}/workers/`),
+    )
+    const metafile = await esbuildWorkers(
+        entryPoints,
+        `[name]-${versioning}`,
+        join(buildDir, 'lib', kind, 'workers'),
+    )
+    await writeMetafile(`workers.${kind}.json`, metafile)
+    const workerBuildUrls: Record<string, string> = {}
+    for (const [outputFile, { entryPoint }] of Object.entries(
+        metafile.outputs,
+    )) {
+        const from =
+            workers[
+                entryPoint!.startsWith('node_modules')
+                    ? Object.keys(workers).find(path =>
+                          entryPoint!.endsWith(path.substring(2)),
+                      )!
+                    : `./${entryPoint}`
+            ]
+        const to = outputFile.substring(outputFile.indexOf('/lib/'))
+        workerBuildUrls[from] = to
+    }
+    return workerBuildUrls
+}
+
+async function buildWebpages(
+    define: DefineSidelinesGlobal,
+): Promise<Array<string>> {
+    const entryPointUrls: Set<string> = new Set()
+    const entryPoints: Array<{ in: string; out: string }> = []
+    const htmlEntrypoints: Array<HtmlEntrypoint> = await Promise.all(
+        Object.entries(webpages).map(async ([urlPath, fsPath]) => {
+            const html = await HtmlEntrypoint.readFrom(
+                urlPath,
+                join('pages', fsPath),
+            )
+            await html.injectPartials()
+            if (urlPath !== '/') {
+                await mkdir(join(buildDir, urlPath), { recursive: true })
+            }
+            html.collectScripts()
+                .filter(scriptImport => !entryPointUrls.has(scriptImport.in))
+                .forEach(scriptImport => {
+                    entryPointUrls.add(scriptImport.in)
+                    entryPoints.push({
+                        in: scriptImport.in,
+                        out: scriptImport.out,
+                    })
+                })
+            return html
+        }),
+    )
+    const metafile = await esbuildWebpages(define, entryPoints, buildDir)
+    await writeMetafile(`pages.json`, metafile)
+    const mapInToOutHrefs: Record<string, string> = {}
+    for (const [outputFile, { entryPoint }] of Object.entries(
+        metafile.outputs,
+    )) {
+        mapInToOutHrefs[entryPoint!] = outputFile.substring(
+            outputFile.indexOf('/lib/sidelines/pages'),
+        )
+    }
+    await Promise.all(
+        htmlEntrypoints.map(async html => {
+            html.rewriteHrefs(mapInToOutHrefs)
+            await html.writeTo(buildDir)
+        }),
+    )
+    return [
+        ...Object.keys(webpages),
+        ...Object.keys(metafile.outputs).map(p =>
+            p.substring(p.indexOf('/lib/sidelines/')),
+        ),
+    ]
+}
+
+async function buildServiceWorker(files: Set<string>): Promise<string> {
+    await writeCacheManifest(files)
+    const metafile = await esbuildWorkers(
+        ['./workers/serviceWorker.ts'],
+        'sidelines.sw',
+        buildDir,
+    )
+    await writeMetafile(`sidelines.sw.json`, metafile)
+    return '/sidelines.sw.js'
 }
 
 // safety check to catch conflicts with github style repo routes
@@ -241,14 +247,19 @@ function validateBuildUrls(files: Set<string>) {
     if (e) process.exit(1)
 }
 
-async function writeMetafile(filename: string, json: any) {
-    await writeFile(
-        join('build', 'metafiles', filename),
-        JSON.stringify(json, null, 4),
+async function writeMetafile(filename: `${string}.json`, json: any) {
+    await writeJsonToBuildDir(
+        join('metafiles', filename) as `${string}.json`,
+        json,
     )
 }
 
 async function writeCacheManifest(files: Set<string>) {
+    // calling tsc --build from this script when libs do not have lib_js built
+    // causes dep on this project reference to fail tsc
+    // dynamic import here removes the compile error in that scenario
+    // ideally tsc --build to build libs should not typecheck dev scripts
+    // but for now the same tsconfig.json is also used to typecheck ./dev
     const { paths: apiRoutes } = await import('@sidelines/server/routes')
     await writeJsonToBuildDir('cache.json', {
         apiRoutes,
@@ -271,13 +282,13 @@ function filenameToWebappPath(p: string): string {
 async function writeBuildManifest(files: Set<string>) {
     await writeJsonToBuildDir('manifest.json', {
         buildTag,
-        files: Array.from(files).map(f => {
-            if (extname(f) === '') {
-                return f === '/' ? '/index.html' : f + '/index.html'
-            } else {
-                return f
-            }
-        }),
+        files: Array.from(files).map(f =>
+            extname(f).length
+                ? f
+                : f === '/'
+                  ? '/index.html'
+                  : f + '/index.html',
+        ),
     })
 }
 

@@ -27,17 +27,22 @@ export type ImportedScript = {
 //  rewriteHrefs
 //  writeTo
 export class HtmlEntrypoint {
-    static async readFrom(fsPath: string): Promise<HtmlEntrypoint> {
+    static async readFrom(
+        urlPath: string,
+        fsPath: string,
+    ): Promise<HtmlEntrypoint> {
         const html = await readFile(fsPath, 'utf-8')
-        return new HtmlEntrypoint(html, fsPath)
+        return new HtmlEntrypoint(urlPath, html, fsPath)
     }
 
     #document: Document
     #fsPath: string
     #partials: Array<CommentNode> = []
     #scripts: Array<ImportedScript> = []
+    #url: string
 
-    constructor(html: string, fsPath: string) {
+    constructor(url: string, html: string, fsPath: string) {
+        this.#url = url
         this.#document = parse(html)
         this.#fsPath = fsPath
     }
@@ -74,8 +79,11 @@ export class HtmlEntrypoint {
         }
     }
 
-    async writeTo(fsPath: string): Promise<void> {
-        await writeFile(fsPath, serialize(this.#document))
+    async writeTo(buildDir: string): Promise<void> {
+        await writeFile(
+            join(buildDir, this.#url, 'index.html'),
+            serialize(this.#document),
+        )
     }
 
     async #injectPartials() {

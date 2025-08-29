@@ -15,6 +15,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm i
+      - run: pnpm build:libs
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps
       - run: echo -e "GH_APP_ID=a\nGH_CLIENT_ID=b\nGH_CLIENT_SECRET=c\n" > .env.local

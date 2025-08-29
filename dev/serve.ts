@@ -1,9 +1,8 @@
 import { mkdir, rm } from 'node:fs/promises'
 import { join as fsJoin } from 'node:path'
-import esbuild from 'esbuild'
+import type { BuildOptions } from 'esbuild'
 import { performBuild, webpages, workers } from './build.ts'
-import { defineSidelinesForEsbuildWatch } from './define.ts'
-import { esbuildBuildOptsForWebpage } from './esbuild.ts'
+import { esbuildDevContext } from './esbuild.ts'
 import { isPreviewBuild, isProductionBuild } from './flags.ts'
 import { HtmlEntrypoint } from './html.ts'
 import {
@@ -15,10 +14,15 @@ import {
 import { copyAssets } from './public.ts'
 
 if (process.argv.some(arg => arg === '-h' || arg === '--help')) {
-    console.log('node ./dev/serve.ts [--preview] [--production] [--tls]')
+    console.log(
+        'node ./dev/serve.ts [--minify] [--preview] [--production] [--tsc]',
+    )
     console.log('\nOPTIONS:')
     console.log('  --preview      pre-bundling with ServiceWorker')
-    console.log('  --production   preview a production build')
+    console.log()
+    console.log(
+        'all `pnpm build -h` options apply to `pnpm dev --preview` builds',
+    )
     process.exit(0)
 }
 
@@ -49,21 +53,24 @@ async function startEsbuildWatch(): Promise<{ port: number }> {
     await copyAssets(watchDir)
 
     const entryPointUrls: Set<string> = new Set()
-    const entryPoints: esbuild.BuildOptions['entryPoints'] = []
+    const entryPoints: BuildOptions['entryPoints'] = []
 
-    Object.entries(workers).map(([urlPath, fsPath]) => {
+    Object.entries(workers).map(([srcPath, url]) => {
         entryPoints.push({
-            in: fsPath,
-            out: urlPath.substring(1, urlPath.indexOf('.js')),
+            in: srcPath,
+            out: url.substring(1, url.indexOf('.js')),
         })
     })
 
     await Promise.all(
-        Object.entries(webpages).map(async ([urlPath, fsPath]) => {
-            const html = await HtmlEntrypoint.readFrom(fsJoin('pages', fsPath))
+        Object.entries(webpages).map(async ([url, srcPath]) => {
+            const html = await HtmlEntrypoint.readFrom(
+                url,
+                fsJoin('pages', srcPath),
+            )
             await html.injectPartials()
-            if (urlPath !== '/') {
-                await mkdir(fsJoin(watchDir, urlPath), { recursive: true })
+            if (url !== '/') {
+                await mkdir(fsJoin(watchDir, url), { recursive: true })
             }
             html.collectScripts()
                 .filter(scriptImport => !entryPointUrls.has(scriptImport.in))
@@ -75,19 +82,12 @@ async function startEsbuildWatch(): Promise<{ port: number }> {
                     })
                 })
             html.rewriteHrefs()
-            await html.writeTo(fsJoin(watchDir, urlPath, 'index.html'))
+            await html.writeTo(watchDir)
             return html
         }),
     )
 
-    const ctx = await esbuild.context({
-        ...esbuildBuildOptsForWebpage(),
-        entryNames: '[dir]/[name]',
-        entryPoints,
-        define: defineSidelinesForEsbuildWatch(),
-        outdir: watchDir,
-        splitting: false,
-    })
+    const ctx = await esbuildDevContext(entryPoints, watchDir)
 
     await ctx.watch()
 

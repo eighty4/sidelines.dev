@@ -56,5 +56,6 @@ fi
 # run through all the checks done for ci
 
 pnpm test
+pnpm build:libs
 pnpm build
 pnpm fmtcheck

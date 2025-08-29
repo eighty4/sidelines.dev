@@ -1,11 +1,43 @@
-import { type BuildOptions, type BuildResult, type Message } from 'esbuild'
+import esbuild, {
+    type BuildContext,
+    type BuildOptions,
+    type BuildResult,
+    type Message,
+    type Metafile,
+} from 'esbuild'
+import {
+    defineSidelinesForEsbuildWatch,
+    type DefineSidelinesGlobal,
+} from './define.ts'
 import { willMinify } from './flags.ts'
 
-export function esbuildBuildOptsForWebpage(): BuildOptions & {
-    metafile: true
-    write: true
-} {
-    return {
+export async function esbuildDevContext(
+    entryPoints: BuildOptions['entryPoints'],
+    outdir: string,
+): Promise<BuildContext> {
+    return await esbuild.context({
+        bundle: true,
+        entryNames: '[dir]/[name]',
+        entryPoints,
+        define: defineSidelinesForEsbuildWatch(),
+        external: ['monaco-editor'],
+        minify: willMinify(),
+        outdir,
+        platform: 'browser',
+        splitting: false,
+        write: true,
+    })
+}
+
+export async function esbuildWebpages(
+    define: DefineSidelinesGlobal,
+    entryPoints: Array<{ in: string; out: string }>,
+    outdir: string,
+): Promise<Metafile> {
+    const buildResult = await esbuild.build({
+        define,
+        entryPoints,
+        outdir,
         assetNames: 'lib/assets/[name]-[hash]',
         bundle: true,
         chunkNames: 'lib/sidelines/[name]-[hash]',
@@ -21,14 +53,20 @@ export function esbuildBuildOptsForWebpage(): BuildOptions & {
         splitting: true,
         treeShaking: true,
         write: true,
-    }
+    })
+    esbuildResultChecks(buildResult)
+    return buildResult.metafile
 }
 
-export function esbuildBuildOptsForWorker(): BuildOptions & {
-    metafile: true
-    write: true
-} {
-    return {
+export async function esbuildWorkers(
+    entryPoints: Array<string>,
+    entryNames: string,
+    outdir: string,
+): Promise<Metafile> {
+    const buildResult = await esbuild.build({
+        entryPoints,
+        entryNames,
+        outdir,
         bundle: true,
         format: 'iife',
         metafile: true,
@@ -37,10 +75,12 @@ export function esbuildBuildOptsForWorker(): BuildOptions & {
         splitting: false,
         treeShaking: true,
         write: true,
-    }
+    })
+    esbuildResultChecks(buildResult)
+    return buildResult.metafile
 }
 
-export function esbuildResultChecks(buildResult: BuildResult) {
+function esbuildResultChecks(buildResult: BuildResult) {
     if (buildResult.errors.length) {
         buildResult.errors.forEach(msg => esbuildPrintMessage(msg, 'warning'))
         process.exit(1)
