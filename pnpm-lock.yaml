@@ -21,6 +21,9 @@ importers:
       '@sidelines/model':
         specifier: workspace:*
         version: link:libs/model
+      '@sidelines/pageload':
+        specifier: workspace:*
+        version: link:libs/pageload
       '@sidelines/server':
         specifier: workspace:*
         version: link:server
@@ -88,6 +91,18 @@ importers:
         version: 16.11.0
 
   libs/model: {}
+
+  libs/pageload:
+    dependencies:
+      '@sidelines/data':
+        specifier: workspace:*
+        version: link:../data
+      '@sidelines/github':
+        specifier: workspace:*
+        version: link:../github
+      '@sidelines/model':
+        specifier: workspace:*
+        version: link:../model
 
   libs/ui:
     dependencies:

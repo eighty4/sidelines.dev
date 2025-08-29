@@ -23,6 +23,7 @@
     "@sidelines/data": "workspace:*",
     "@sidelines/github": "workspace:*",
     "@sidelines/model": "workspace:*",
+    "@sidelines/pageload": "workspace:*",
     "@sidelines/server": "workspace:*",
     "@sidelines/ui": "workspace:*",
     "monaco-editor": "^0.52.2",

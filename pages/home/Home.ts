@@ -1,4 +1,5 @@
-import { getUserDataClient, onDomInteractive } from '../init.ts'
+import { onDomInteractive } from '@sidelines/pageload'
+import { getUserDataClient } from '../expectUserData.ts'
 import { buildProjectUrl, loginRedirectUrl } from '../nav.ts'
 
 onDomInteractive(async () => {

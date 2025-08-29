@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { isValidGitHubRepoUrl } from './ghRepoUrl.ts'
+import { isValidGitHubRepoUrl } from './isValidRepoUrl.ts'
 
 test('isValidGitHubRepoUrl for repo', () => {
     assert.equal(

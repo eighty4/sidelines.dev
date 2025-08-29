@@ -4,10 +4,14 @@ import {
     type SidelinesRepoProblem,
     UnauthorizedError,
 } from '@sidelines/github'
+import {
+    expectGhLogin,
+    expectGhToken,
+    onDomInteractive,
+} from '@sidelines/pageload'
 import { useEffect, useState, type FC } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MakeSidelinesRepo } from './MakeSidelinesRepo.tsx'
-import { expectGhLogin, expectGhToken, onDomInteractive } from '../init.ts'
 import { getAppInstallationConfigureUrl, getAppUrl, logout } from '../nav.ts'
 
 // todo hard-coded value should be a build env variable or globalThis

@@ -5,6 +5,7 @@ import {
     DB_STORE_REPO_PACKAGES,
     DB_STORE_SYNCING,
 } from '@sidelines/data/debug'
+import { onDomInteractive } from '@sidelines/pageload'
 import {
     type ChangeEvent,
     type CSSProperties,
@@ -33,7 +34,6 @@ import {
     SortAscSvg,
     SortDescSvg,
 } from './Svgs.tsx'
-import { onDomInteractive } from '../../init.ts'
 
 const DB_STORES = [
     DB_STORE_REPO_NAV,

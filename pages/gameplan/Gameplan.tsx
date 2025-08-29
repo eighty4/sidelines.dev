@@ -1,7 +1,11 @@
 import { UnauthorizedError } from '@sidelines/github'
+import {
+    expectGhLogin,
+    expectGhToken,
+    onDomInteractive,
+} from '@sidelines/pageload'
 import { type FC } from 'react'
 import { createRoot } from 'react-dom/client'
-import { expectGhLogin, expectGhToken, onDomInteractive } from '../init.ts'
 import { logout } from '../nav.ts'
 
 interface GameplanPageProps {

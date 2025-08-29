@@ -1,10 +1,10 @@
 import { UnauthorizedError } from '@sidelines/github'
 import type { RepositoryId, RepositoryPackage } from '@sidelines/model'
+import { expectRepoFromLocation, onDomInteractive } from '@sidelines/pageload'
 import { type FC, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { getUserDataClient, onDomInteractive } from '../init.ts'
+import { getUserDataClient } from '../expectUserData.ts'
 import { loginRedirectUrl } from '../nav.ts'
-import { expectRepoFromLocation } from '../repoFromLocation.ts'
 import { UserDataClient } from '../../workers/UserDataClient.ts'
 
 type ProjectPageProps = {

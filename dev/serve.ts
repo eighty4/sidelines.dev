@@ -62,8 +62,14 @@ async function startEsbuildWatch(): Promise<{ port: number }> {
         })
     })
 
+    const devWebpages = {
+        ...webpages,
+        ['/_components']: './_dev/components/Components.html',
+        ['/_data']: './_dev/data/Data.html',
+    }
+
     await Promise.all(
-        Object.entries(webpages).map(async ([url, srcPath]) => {
+        Object.entries(devWebpages).map(async ([url, srcPath]) => {
             const html = await HtmlEntrypoint.readFrom(
                 url,
                 fsJoin('pages', srcPath),

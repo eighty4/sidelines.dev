@@ -1,4 +1,4 @@
-import { onLoadComplete } from './init.ts'
+import { onLoadComplete } from '@sidelines/pageload'
 
 if (sidelines.IS_DEV) {
     if (location.hostname === 'localhost') {

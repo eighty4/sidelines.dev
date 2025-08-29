@@ -11,21 +11,42 @@ import {
 } from './define.ts'
 import { willMinify } from './flags.ts'
 
+const jsBuildOptions: BuildOptions & { metafile: true; write: true } = {
+    bundle: true,
+    metafile: true,
+    minify: willMinify(),
+    platform: 'browser',
+    splitting: false,
+    treeShaking: true,
+    write: true,
+}
+
+const webpageBuildOptions: BuildOptions & { metafile: true; write: true } = {
+    assetNames: 'lib/assets/[name]-[hash]',
+    // chunkNames: 'lib/sidelines/[name]-[hash]',
+    external: ['monaco-editor'], //, 'react', 'react-dom'],
+    format: 'esm',
+    // loader: {
+    //     '.ttf': 'file',
+    // },
+    ...jsBuildOptions,
+}
+
+const workerBuildOptions: BuildOptions & { metafile: true; write: true } = {
+    format: 'iife',
+    ...jsBuildOptions,
+}
+
 export async function esbuildDevContext(
     entryPoints: BuildOptions['entryPoints'],
     outdir: string,
 ): Promise<BuildContext> {
     return await esbuild.context({
-        bundle: true,
+        define: defineSidelinesForEsbuildWatch(),
         entryNames: '[dir]/[name]',
         entryPoints,
-        define: defineSidelinesForEsbuildWatch(),
-        external: ['monaco-editor'],
-        minify: willMinify(),
         outdir,
-        platform: 'browser',
-        splitting: false,
-        write: true,
+        ...webpageBuildOptions,
     })
 }
 
@@ -36,23 +57,10 @@ export async function esbuildWebpages(
 ): Promise<Metafile> {
     const buildResult = await esbuild.build({
         define,
+        entryNames: '[dir]/[name]-[hash]',
         entryPoints,
         outdir,
-        assetNames: 'lib/assets/[name]-[hash]',
-        bundle: true,
-        chunkNames: 'lib/sidelines/[name]-[hash]',
-        entryNames: '[dir]/[name]-[hash]',
-        external: ['monaco-editor'],
-        format: 'esm',
-        // loader: {
-        //     '.ttf': 'file',
-        // },
-        metafile: true,
-        minify: willMinify(),
-        platform: 'browser',
-        splitting: true,
-        treeShaking: true,
-        write: true,
+        ...webpageBuildOptions,
     })
     esbuildResultChecks(buildResult)
     return buildResult.metafile
@@ -67,14 +75,7 @@ export async function esbuildWorkers(
         entryPoints,
         entryNames,
         outdir,
-        bundle: true,
-        format: 'iife',
-        metafile: true,
-        minify: willMinify(),
-        platform: 'browser',
-        splitting: false,
-        treeShaking: true,
-        write: true,
+        ...workerBuildOptions,
     })
     esbuildResultChecks(buildResult)
     return buildResult.metafile

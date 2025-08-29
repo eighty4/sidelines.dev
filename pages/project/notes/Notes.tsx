@@ -1,14 +1,14 @@
 import { UnauthorizedError } from '@sidelines/github'
 import type { RepositoryId } from '@sidelines/model'
+import { expectRepoFromLocation, onDomInteractive } from '@sidelines/pageload'
 import { type FC, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
 import { FileExplorer } from './FileExplorer.tsx'
 import { RepoSources } from './RepoSources.ts'
 import { WorkspaceEditor } from './editor/WorkspaceEditor.tsx'
 import { ProjectNavbar } from './navbar/ProjectNavbar.tsx'
-import { expectUserDataClient, onDomInteractive } from '../../init.ts'
+import { expectUserDataClient } from '../../expectUserData.ts'
 import { logout } from '../../nav.ts'
-import { expectRepoFromLocation } from '../../repoFromLocation.ts'
 import { UserDataClient } from '../../../workers/UserDataClient.ts'
 
 type ProjectPageProps = {

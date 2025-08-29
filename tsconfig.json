@@ -16,6 +16,7 @@
     { "path": "./libs/data" },
     { "path": "./libs/github" },
     { "path": "./libs/model" },
+    { "path": "./libs/pageload" },
     { "path": "./server" }
   ]
 }
