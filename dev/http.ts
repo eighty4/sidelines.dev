@@ -31,7 +31,7 @@ export function createEsbuildFilesFetcher(
                     fetchResponse.status,
                     convertHeadersFromFetch(fetchResponse.headers),
                 )
-                fetchResponse.text().then(data => res.end(data))
+                fetchResponse.bytes().then(data => res.end(data))
             },
         )
     }
