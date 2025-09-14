@@ -2,14 +2,18 @@ import type { RepositoryId, RepositoryObject } from '@sidelines/model'
 import { queryGraphqlApi } from '../../request.ts'
 import { sortRepositoryObjects } from '../../responses.ts'
 
+// repo obj query where obj expr is expected to return a tree
 export async function getRepoDirListing(
-    ghToken: string | null,
+    ghToken: string,
     repo: RepositoryId,
     dirpath: string | null,
+    opts?: {
+        signal?: AbortSignal
+    },
 ): Promise<Array<RepositoryObject> | 'repo-not-found'> {
     dirpath = dirpath || ''
-    const query = `query {
-    repository(owner: "${repo.owner}", name: "${repo.name}") {
+    const query = `query RepoDirListing {
+    repository (owner: "${repo.owner}", name: "${repo.name}") {
       object(expression: "HEAD:${dirpath || ''}") {
         ... on Tree {
           entries {
@@ -25,7 +29,7 @@ export async function getRepoDirListing(
       }
     }
   }`
-    const json = await queryGraphqlApi(ghToken, query, null)
+    const json = await queryGraphqlApi(ghToken, query, null, opts)
     if (!json.data.repository) {
         return 'repo-not-found'
     }

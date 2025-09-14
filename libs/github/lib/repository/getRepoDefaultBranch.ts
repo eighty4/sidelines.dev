@@ -25,7 +25,7 @@ function repoQuery() {
 }
 
 export async function getRepoDefaultBranch(
-    ghToken: string | null,
+    ghToken: string,
     repo: RepositoryId,
 ): Promise<RepoBranchReference | 'repo-not-found'> {
     const query = `query { repository(owner: "${repo.owner}", name: "${repo.name}") { ${repoQuery()} } }`

@@ -1,4 +1,4 @@
-import { getCookie, GH_TOKEN } from '@sidelines/data'
+import { getCookie, GH_TOKEN } from '@sidelines/data/cookie'
 import { getUserLogin, UnauthorizedError } from '@sidelines/github'
 
 export async function authorizedRequest(req: Request): Promise<false | string> {

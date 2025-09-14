@@ -6,7 +6,7 @@ import {
     readRepoContent,
     type ReadRepoListing,
     readRepoListing,
-} from '@sidelines/data/web'
+} from '@sidelines/data/indexeddb'
 import type {
     RepositoryId,
     RepositoryObject,

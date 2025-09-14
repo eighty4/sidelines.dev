@@ -2,7 +2,7 @@ import type { RepositoryId } from '@sidelines/model'
 import { queryGraphqlApi } from '../request.ts'
 
 export async function getHighestSemverTag(
-    ghToken: string | null,
+    ghToken: string,
     repo: RepositoryId,
     // for monorepo package tags where path to package prefixes tag name
     // tagPrefix example for a golang module in a subdirectory:

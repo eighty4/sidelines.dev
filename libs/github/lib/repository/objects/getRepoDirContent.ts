@@ -2,6 +2,8 @@ import type { RepositoryObject } from '@sidelines/model'
 import { queryGraphqlApi } from '../../request.ts'
 import { sortRepositoryObjects } from '../../responses.ts'
 
+// repo obj query where obj expr is expected to return a tree
+// and retrieves text of blob entries at that path
 export async function getRepoDirContent(
     ghToken: string,
     repo: string,

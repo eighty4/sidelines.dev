@@ -59,12 +59,12 @@ export abstract class FindPackagesApi {
 }
 
 export class FindPackagesApiImpl extends FindPackagesApi {
-    readonly #ghToken: string | null
+    readonly #ghToken: string
     readonly #repo: RepositoryId
     readonly #tagCache: Record<string, Promise<string | 'tag-not-found'>> = {}
 
     constructor(
-        ghToken: string | null,
+        ghToken: string,
         repo: RepositoryId,
         branchRef: RepoBranchReference,
     ) {

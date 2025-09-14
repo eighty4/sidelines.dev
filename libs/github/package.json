@@ -10,7 +10,8 @@
     }
   },
   "scripts": {
-    "graphql": "node graphql.ts"
+    "graphql": "node graphql.ts && pnpm fmt:graphql",
+    "fmt:graphql": "pnpm exec prettier --config ../../.prettierrc.ts --write \"**/gql.ts\""
   },
   "dependencies": {
     "@sidelines/model": "workspace:*"

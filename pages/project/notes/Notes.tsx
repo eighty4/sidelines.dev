@@ -1,6 +1,7 @@
 import { UnauthorizedError } from '@sidelines/github'
 import type { RepositoryId } from '@sidelines/model'
-import { expectRepoFromLocation, onDomInteractive } from '@sidelines/pageload'
+import { onDomInteractive } from '@sidelines/pageload/ready'
+import { expectRepoFromLocation } from '@sidelines/pageload/urls'
 import { type FC, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
 import { FileExplorer } from './FileExplorer.tsx'

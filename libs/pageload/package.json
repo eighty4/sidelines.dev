@@ -3,10 +3,20 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./lib_types/index.d.ts",
-      "node": "./lib_js/index.js",
-      "import": "./lib/index.ts"
+    "./ready": {
+      "types": "./lib_types/ready.d.ts",
+      "node": "./lib_js/ready.js",
+      "import": "./lib/ready.ts"
+    },
+    "./session": {
+      "types": "./lib_types/session.d.ts",
+      "node": "./lib_js/session.js",
+      "import": "./lib/session.ts"
+    },
+    "./urls": {
+      "types": "./lib_types/urls.d.ts",
+      "node": "./lib_js/urls.js",
+      "import": "./lib/urls.ts"
     }
   },
   "dependencies": {

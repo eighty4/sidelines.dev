@@ -1,4 +1,4 @@
-import { getCookie, GH_TOKEN } from '@sidelines/data'
+import { getCookie, GH_TOKEN } from '@sidelines/data/cookie'
 import type { ServerEnv } from './routes.ts'
 
 export function createLogoutRoute(env: ServerEnv) {

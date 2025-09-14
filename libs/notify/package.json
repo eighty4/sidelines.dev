@@ -1,0 +1,17 @@
+{
+  "name": "@sidelines/notify",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./rx": {
+      "types": "./lib_types/rx.d.ts",
+      "node": "./lib_js/rx.js",
+      "import": "./lib/rx.ts"
+    },
+    "./tx": {
+      "types": "./lib_types/tx.d.ts",
+      "node": "./lib_js/tx.js",
+      "import": "./lib/tx.ts"
+    }
+  }
+}

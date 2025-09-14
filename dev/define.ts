@@ -10,9 +10,10 @@ export type SidelinesGlobal = {
     IS_DEV: boolean
     IS_PROD: boolean
     worker: {
+        GH_ACTIONS: string
         SYNC_REFS: string
         USER_DATA: string
-        GH_ACTIONS: string
+        WATCHES: string
     }
 }
 
@@ -27,6 +28,7 @@ export type DefineSidelinesGlobal = Record<DefineSidelinesGlobalKey, string>
 const GH_ACTIONS = '/lib/sidelines/workers/ghActions.js'
 const SYNC_REFS = '/lib/sidelines/workers/syncRefs.js'
 const USER_DATA = '/lib/sidelines/workers/userData.js'
+const WATCHES = '/lib/sidelines/workers/watches.js'
 
 function create(workerUrls: Record<string, string>): DefineSidelinesGlobal {
     const isProduction = isProductionBuild()
@@ -37,6 +39,7 @@ function create(workerUrls: Record<string, string>): DefineSidelinesGlobal {
         'sidelines.worker.GH_ACTIONS': JSON.stringify(workerUrls.GH_ACTIONS),
         'sidelines.worker.SYNC_REFS': JSON.stringify(workerUrls.SYNC_REFS),
         'sidelines.worker.USER_DATA': JSON.stringify(workerUrls.USER_DATA),
+        'sidelines.worker.WATCHES': JSON.stringify(workerUrls.WATCHES),
     }
 }
 
@@ -45,6 +48,7 @@ export function defineSidelinesForEsbuildWatch(): DefineSidelinesGlobal {
         GH_ACTIONS,
         SYNC_REFS,
         USER_DATA,
+        WATCHES,
     })
 }
 
@@ -55,5 +59,6 @@ export function defineSidelinesFromWorkerUrls(
         GH_ACTIONS: workerUrls[GH_ACTIONS],
         SYNC_REFS: workerUrls[SYNC_REFS],
         USER_DATA: workerUrls[USER_DATA],
+        WATCHES: workerUrls[WATCHES],
     })
 }

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
-import { UserStory } from './github/UserStory.ts'
+import { UserStory } from '$testing/github/UserStory.ts'
+import { login } from '$testing/sidelines/login.ts'
 
 test('/configure redirects to /gameplan when GH app and .sidelines repo are good', async ({
     page,
@@ -18,12 +19,33 @@ test('/configure redirects to /gameplan when GH app and .sidelines repo are good
                 },
             },
         })
+        // for sync refs shared worker
+        .withGraphqlResponse('CollectRepoHeadOids', null, {
+            viewer: {
+                repositories: {
+                    nodes: [
+                        {
+                            name: 'l3',
+                            owner: { login: 'eighty4' },
+                            defaultBranchRef: {
+                                target: {
+                                    history: {
+                                        edges: [{ node: { oid: '6773aaca' } }],
+                                    },
+                                },
+                            },
+                        },
+                    ],
+                    pageInfo: {
+                        endCursor: 'asdf',
+                        hasNextPage: false,
+                    },
+                },
+            },
+        })
         .configureRoutes(page)
 
-    await page.goto('/')
-    await page.getByText('Login').click()
-    await page.waitForURL('/configure')
-    await page.waitForURL('/gameplan')
+    await login(page)
 })
 
 test('/configure notifies when GH app is not installed', async ({ page }) => {

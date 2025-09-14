@@ -98,7 +98,8 @@ export function createWebServer(
             res.end()
         } else {
             const url = new URL(`${process.env.WEBAPP_ADDRESS}${req.url}`)
-            console.log(req.method, url.pathname)
+            if (!url.pathname.startsWith('/assets/sidelines/icons/'))
+                console.log(req.method, url.pathname)
             if (routes[url.pathname]) {
                 const route = routes[url.pathname][req.method as HttpMethod]
                 if (!route) {

@@ -3,20 +3,25 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./lib_types/index.d.ts",
-      "node": "./lib_js/index.js",
-      "default": "./lib/index.ts"
+    "./cookie": {
+      "types": "./lib_types/cookie.d.ts",
+      "node": "./lib_js/cookie.js",
+      "default": "./lib/cookie.ts"
     },
-    "./debug": {
-      "types": "./lib_types/debug.d.ts",
-      "node": "./lib_js/debug.js",
-      "default": "./lib/debug.ts"
+    "./indexeddb": {
+      "types": "./lib_types/transactions/index.d.ts",
+      "node": "./lib_js/transactions/index.js",
+      "default": "./lib/transactions/index.ts"
     },
-    "./web": {
-      "types": "./lib_types/web.d.ts",
-      "node": "./lib_js/web.js",
-      "default": "./lib/web.ts"
+    "./indexeddb/dev": {
+      "types": "./lib_types/database.d.ts",
+      "node": "./lib_js/database.js",
+      "default": "./lib/database.ts"
+    },
+    "./storage": {
+      "types": "./lib_types/storage.d.ts",
+      "node": "./lib_js/storage.js",
+      "default": "./lib/storage.ts"
     }
   },
   "dependencies": {

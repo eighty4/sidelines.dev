@@ -1,11 +1,14 @@
 import {
     connectToDb,
+    DB_STORE_READ_COMMITS,
+    DB_STORE_READ_WATCHES,
     DB_STORE_REPO_FILES,
     DB_STORE_REPO_NAV,
     DB_STORE_REPO_PACKAGES,
-    DB_STORE_SYNCING,
-} from '@sidelines/data/debug'
-import { onDomInteractive } from '@sidelines/pageload'
+    DB_STORE_SYNC_LOG,
+    DB_STORE_SYNC_TASKS,
+} from '@sidelines/data/indexeddb/dev'
+import { onDomInteractive } from '@sidelines/pageload/ready'
 import {
     type ChangeEvent,
     type CSSProperties,
@@ -36,10 +39,13 @@ import {
 } from './Svgs.tsx'
 
 const DB_STORES = [
+    DB_STORE_READ_COMMITS,
+    DB_STORE_READ_WATCHES,
     DB_STORE_REPO_NAV,
     DB_STORE_REPO_PACKAGES,
     DB_STORE_REPO_FILES,
-    DB_STORE_SYNCING,
+    DB_STORE_SYNC_LOG,
+    DB_STORE_SYNC_TASKS,
 ]
 
 type ViewState =

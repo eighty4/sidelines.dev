@@ -33,6 +33,10 @@ export const webpages: Record<string, string> = {
     '/gameplan': './gameplan/Gameplan.html',
     '/project': './project/Project.html',
     '/notes': './project/notes/Notes.html',
+
+    // watches
+    '/reading': './watching/reading/Reading.html',
+    '/watches': './watching/watches/Watches.html',
 }
 
 // worker urls are namespaced in /lib/monaco/workers or /lib/sidelines/workers
@@ -44,6 +48,7 @@ export const workers: Record<string, string> = {
     './workers/syncRefs.ts': '/lib/sidelines/workers/syncRefs.js',
     './workers/userData.ts': '/lib/sidelines/workers/userData.js',
     './workers/ghActions.ts': '/lib/sidelines/workers/ghActions.js',
+    './workers/watches.ts': '/lib/sidelines/workers/watches.js',
     './node_modules/monaco-editor/esm/vs/editor/editor.worker.js':
         '/lib/monaco/workers/main.js',
     './node_modules/monaco-editor/esm/vs/language/css/css.worker.js':

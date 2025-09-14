@@ -1,4 +1,5 @@
-import { onLoadComplete } from '@sidelines/pageload'
+import { getGhTokenCookie } from '@sidelines/data/cookie'
+import { onLoadComplete } from '@sidelines/pageload/ready'
 
 if (sidelines.IS_DEV) {
     if (location.hostname === 'localhost') {
@@ -8,68 +9,75 @@ if (sidelines.IS_DEV) {
     if (location.port === '4000') {
         registerServiceWorker()
     } else {
-        type EsbuildEvent = {
-            added: Array<any>
-            updated: Array<any>
-            removed: Array<string>
-        }
-        new EventSource('http://127.0.0.1:2999/esbuild').addEventListener(
-            'change',
-            (e: MessageEvent) => {
-                const change: EsbuildEvent = JSON.parse(e.data)
-                const cssUpdates = change.updated.filter(p =>
-                    p.endsWith('.css'),
-                )
-                if (cssUpdates.length) {
-                    console.log('esbuild css updates', cssUpdates)
-                    const cssLinks: Record<string, HTMLLinkElement> = {}
-                    for (const elem of document.getElementsByTagName('link')) {
-                        if (elem.getAttribute('rel') === 'stylesheet') {
-                            const url = new URL(elem.href)
-                            if ((url.host = location.host)) {
-                                cssLinks[url.pathname] = elem
-                            }
-                        }
-                    }
-                    let swappedCss: boolean = false
-                    for (const cssUpdate of cssUpdates) {
-                        const cssLink = cssLinks[cssUpdate]
-                        if (cssLink) {
-                            const next = cssLink.cloneNode() as HTMLLinkElement
-                            next.href = `${cssUpdate}?${Math.random().toString(36).slice(2)}`
-                            next.onload = () => cssLink.remove()
-                            cssLink.parentNode!.insertBefore(
-                                next,
-                                cssLink.nextSibling,
-                            )
-                            swappedCss = true
-                        }
-                    }
-                    if (swappedCss) {
-                        addCssUpdateIndicator()
-                    }
-                }
-                if (cssUpdates.length < change.updated.length) {
-                    const jsUpdates = change.updated.filter(
-                        p => !p.endsWith('.css'),
-                    )
-                    const jsScripts: Set<string> = new Set()
-                    for (const elem of document.getElementsByTagName(
-                        'script',
-                    )) {
-                        const url = new URL(elem.src)
-                        if ((url.host = location.host)) {
-                            jsScripts.add(url.pathname)
-                        }
-                    }
-                    if (jsUpdates.some(jsUpdate => jsScripts.has(jsUpdate))) {
-                        console.log('esbuild js updates require reload')
-                        addJsReloadIndicator()
-                    }
-                }
-            },
-        )
+        streamEsbuildEvents()
     }
+}
+
+if (sidelines.IS_PROD) {
+    onLoadComplete(registerServiceWorker)
+}
+
+registerSyncWorker()
+
+type EsbuildEvent = {
+    added: Array<any>
+    updated: Array<any>
+    removed: Array<string>
+}
+
+function streamEsbuildEvents() {
+    new EventSource('http://127.0.0.1:2999/esbuild').addEventListener(
+        'change',
+        (e: MessageEvent) => {
+            const change: EsbuildEvent = JSON.parse(e.data)
+            const cssUpdates = change.updated.filter(p => p.endsWith('.css'))
+            if (cssUpdates.length) {
+                console.log('esbuild css updates', cssUpdates)
+                const cssLinks: Record<string, HTMLLinkElement> = {}
+                for (const elem of document.getElementsByTagName('link')) {
+                    if (elem.getAttribute('rel') === 'stylesheet') {
+                        const url = new URL(elem.href)
+                        if ((url.host = location.host)) {
+                            cssLinks[url.pathname] = elem
+                        }
+                    }
+                }
+                let swappedCss: boolean = false
+                for (const cssUpdate of cssUpdates) {
+                    const cssLink = cssLinks[cssUpdate]
+                    if (cssLink) {
+                        const next = cssLink.cloneNode() as HTMLLinkElement
+                        next.href = `${cssUpdate}?${Math.random().toString(36).slice(2)}`
+                        next.onload = () => cssLink.remove()
+                        cssLink.parentNode!.insertBefore(
+                            next,
+                            cssLink.nextSibling,
+                        )
+                        swappedCss = true
+                    }
+                }
+                if (swappedCss) {
+                    addCssUpdateIndicator()
+                }
+            }
+            if (cssUpdates.length < change.updated.length) {
+                const jsUpdates = change.updated.filter(
+                    p => !p.endsWith('.css'),
+                )
+                const jsScripts: Set<string> = new Set()
+                for (const elem of document.getElementsByTagName('script')) {
+                    const url = new URL(elem.src)
+                    if ((url.host = location.host)) {
+                        jsScripts.add(url.pathname)
+                    }
+                }
+                if (jsUpdates.some(jsUpdate => jsScripts.has(jsUpdate))) {
+                    console.log('esbuild js updates require reload')
+                    addJsReloadIndicator()
+                }
+            }
+        },
+    )
 }
 
 function addCssUpdateIndicator() {
@@ -107,8 +115,15 @@ function createUpdateIndicator(
     return indicator
 }
 
-if (sidelines.IS_PROD) {
-    onLoadComplete(registerServiceWorker)
+function registerSyncWorker() {
+    const ghToken = getGhTokenCookie(document.cookie)
+    if (!ghToken) {
+        return
+    }
+    const sw = new SharedWorker(sidelines.worker.SYNC_REFS, {
+        name: 'sidelines.dev syncing',
+    })
+    sw.port.postMessage({ kind: 'init', ghToken })
 }
 
 // recent chrome versions do not HTTP cache service workers

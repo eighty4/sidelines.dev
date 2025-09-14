@@ -7,6 +7,8 @@ export type Repository = {
 
 export type RepositoryId = Pick<Repository, 'owner' | 'name'>
 
+export type RepoWatches = { repo: RepositoryId; paths: Array<string> }
+
 export type RepositoryPackage = Package<Language> | PackageWorkspace<Language>
 
 export type PackageWorkspace<L extends Language> = {

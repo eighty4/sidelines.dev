@@ -1,9 +1,12 @@
 import { NotFoundError, UnauthorizedError } from './responses.ts'
 
 export async function queryGraphqlApi<T>(
-    ghToken: string | null,
+    ghToken: string,
     query: string,
     variables: T | null,
+    opts?: {
+        signal?: AbortSignal
+    },
 ): Promise<any> {
     const body = JSON.stringify(variables ? { query, variables } : { query })
     const headers = new Headers({
@@ -17,6 +20,7 @@ export async function queryGraphqlApi<T>(
         method: 'POST',
         headers,
         body,
+        signal: opts?.signal,
     })
     if (response.status === 401) {
         throw new UnauthorizedError('401 /graphql')

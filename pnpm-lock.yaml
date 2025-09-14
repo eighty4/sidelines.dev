@@ -92,6 +92,8 @@ importers:
 
   libs/model: {}
 
+  libs/notify: {}
+
   libs/pageload:
     dependencies:
       '@sidelines/data':

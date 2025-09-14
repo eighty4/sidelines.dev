@@ -14,7 +14,7 @@ import {
 // package name -> repo name + path
 // version -> latest semver git tag || default branch head oid
 export async function findRepoPackages(
-    ghToken: string | null,
+    ghToken: string,
     repo: RepositoryId,
     branchRef: RepoBranchReference,
 ): Promise<Array<RepositoryPackage> | 'repo-not-found'> {

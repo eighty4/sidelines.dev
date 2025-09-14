@@ -10,6 +10,7 @@ import {
     type VariableDefinitionNode,
 } from 'graphql'
 
+const SRC_DIR = 'lib'
 const GRAPHQL_DIR = './queries'
 const GITHUB_SCHEMA = 'github.graphql'
 const GRAPHQL_IGNORE = [GITHUB_SCHEMA, 'README.md']
@@ -97,7 +98,7 @@ await Promise.all(
             gqlOut.push(`export const ${queryName}: string = '${query}'`)
         }
         const dest = join(
-            'src',
+            SRC_DIR,
             ...filename.substring(0, filename.indexOf('.')).split('_'),
             'gql.ts',
         )

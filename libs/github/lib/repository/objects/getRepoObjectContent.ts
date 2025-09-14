@@ -3,7 +3,7 @@ import { queryGraphqlApi } from '../../request.ts'
 
 // cat of file at a given path in a repository
 export async function getRepoObjectContent(
-    ghToken: string | null,
+    ghToken: string,
     repo: RepositoryId,
     path: string,
 ): Promise<string | null> {

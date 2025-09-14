@@ -11,3 +11,7 @@ export function getCookie(cookieStr: string, name: string): string | null {
     }
     return null
 }
+
+export function getGhTokenCookie(cookieStr: string): string | null {
+    return getCookie(cookieStr, GH_TOKEN)
+}

@@ -47,29 +47,31 @@ export class GraphqlResponses {
                     )
                 }
                 const match = this.#responses[definition.name.value].find(
-                    response => matchVars(queryVars, response.variables),
+                    queryVars === null
+                        ? hasNullVars
+                        : hasMatchingVars(queryVars),
                 )
                 if (!match) {
                     throw Error(
-                        `must register a ${definition.name.value} query result without variables`,
+                        `must register a ${definition.name.value} query result ${queryVars === null ? 'without variables' : 'with matching variables for ' + JSON.stringify(queryVars)}`,
                     )
                 }
-                if (!queryVars) {
-                    return match.data
-                } else {
-                    for (const response of this.#responses[
-                        definition.name.value
-                    ]) {
-                        if (matchVars(queryVars, response.variables)) {
-                            return response.data
-                        }
-                    }
-                    throw Error(
-                        `must register a ${definition.name.value} query result with matching variables`,
-                    )
-                }
+                return match.data
             }
         }
+        throw Error('should have had a query in the ast')
+    }
+}
+
+function hasNullVars(response: RegisteredResponse): boolean {
+    return response.variables === null
+}
+
+function hasMatchingVars(
+    queryVars: Record<string, any>,
+): (response: RegisteredResponse) => boolean {
+    return (response: RegisteredResponse) => {
+        return matchVars(queryVars, response.variables)
     }
 }
 

@@ -1,4 +1,4 @@
-import { onDomInteractive } from '@sidelines/pageload'
+import { onDomInteractive } from '@sidelines/pageload/ready'
 import { getUserDataClient } from '../expectUserData.ts'
 import { buildProjectUrl, loginRedirectUrl } from '../nav.ts'
 
@@ -13,6 +13,8 @@ onDomInteractive(async () => {
         sw.port.postMessage({ kind: 'init', ghToken: userData.ghToken })
 
         createLink('/configure', 'Configure')
+        createLink('/gameplan', 'Gameplan')
+        createLink('/watches', 'Watches')
         for (const repo of await userData.navHistory()) {
             createLink(
                 buildProjectUrl(repo),

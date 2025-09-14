@@ -1,5 +1,14 @@
-const DB_NAME = 'sidelines-dev2'
+const DB_NAME = 'sidelines-dev6'
 const DB_VERSION = 1
+
+export const DB_STORE_READ_COMMITS = 'read-commits'
+// const DB_STORE_READ_COMMITS_KEY = ['']
+
+export const DB_STORE_READ_WATCHES = 'read-watches'
+const DB_STORE_READ_WATCHES_KEY = ['nameWithOwner', 'path']
+
+export const DB_INDEX_READ_WATCHES_REPO = 'read-watches-by-repo'
+const DB_INDEX_READ_WATCHES_REPO_KEY = 'nameWithOwner'
 
 export const DB_STORE_REPO_NAV = 'repo-nav'
 const DB_STORE_REPO_NAV_KEY = 'nameWithOwner'
@@ -10,11 +19,17 @@ const DB_INDEX_REPO_NAV_WHEN_KEY = 'when'
 export const DB_STORE_REPO_FILES = 'repo-objects'
 const DB_STORE_REPO_FILES_KEY = ['owner', 'name', 'sha', 'dirpath']
 
+export const DB_STORE_REPO_HEADS = 'repo-heads'
+const DB_STORE_REPO_HEADS_KEY = 'nameWithOwner'
+
 export const DB_STORE_REPO_PACKAGES = 'repo-pkgs'
 const DB_STORE_REPO_PACKAGES_KEY = ['nameWithOwner', 'commitHash']
 
-export const DB_STORE_SYNCING = 'sync-log'
-const DB_STORE_SYNCING_KEY = ['kind', 'category']
+export const DB_STORE_SYNC_LOG = 'sync-log'
+const DB_STORE_SYNC_LOG_KEY = ['kind', 'category']
+
+export const DB_STORE_SYNC_TASKS = 'sync-tasks'
+const DB_STORE_SYNC_TASKS_KEY = ['when', 'nameWithOwner', 'task']
 
 function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
     console.log('upgrading db from', oldVersion)
@@ -29,9 +44,24 @@ function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
             db.createObjectStore(DB_STORE_REPO_PACKAGES, {
                 keyPath: DB_STORE_REPO_PACKAGES_KEY,
             })
-            db.createObjectStore(DB_STORE_SYNCING, {
-                keyPath: DB_STORE_SYNCING_KEY,
+            db.createObjectStore(DB_STORE_SYNC_LOG, {
+                keyPath: DB_STORE_SYNC_LOG_KEY,
             })
+            db.createObjectStore(DB_STORE_SYNC_TASKS, {
+                keyPath: DB_STORE_SYNC_TASKS_KEY,
+            })
+            db.createObjectStore(DB_STORE_REPO_HEADS, {
+                keyPath: DB_STORE_REPO_HEADS_KEY,
+            })
+            db.createObjectStore(DB_STORE_READ_WATCHES, {
+                keyPath: DB_STORE_READ_WATCHES_KEY,
+            }).createIndex(
+                DB_INDEX_READ_WATCHES_REPO,
+                DB_INDEX_READ_WATCHES_REPO_KEY,
+            )
+            // db.createObjectStore(DB_STORE_READ_COMMITS, {
+            //     keyPath: DB_STORE_READ_COMMITS_KEY,
+            // })
         } else if (oldVersion === 1) {
         } else if (oldVersion === 2) {
         }
@@ -42,8 +72,14 @@ function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
 export async function connectToDb(): Promise<IDBDatabase> {
     return new Promise((res, rej) => {
         const opening = indexedDB.open(DB_NAME, DB_VERSION)
-        opening.onupgradeneeded = (e: IDBVersionChangeEvent) =>
-            upgradeDatabaseSchema((e.target as any).result, e.oldVersion)
+        opening.onupgradeneeded = (e: IDBVersionChangeEvent) => {
+            try {
+                upgradeDatabaseSchema((e.target as any).result, e.oldVersion)
+            } catch (e) {
+                console.error(e)
+                throw e
+            }
+        }
         opening.onerror = e =>
             rej(
                 new Error('error requesting database', {

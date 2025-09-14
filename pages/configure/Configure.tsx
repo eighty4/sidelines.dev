@@ -4,11 +4,8 @@ import {
     type SidelinesRepoProblem,
     UnauthorizedError,
 } from '@sidelines/github'
-import {
-    expectGhLogin,
-    expectGhToken,
-    onDomInteractive,
-} from '@sidelines/pageload'
+import { expectGhLogin, expectGhToken } from '@sidelines/pageload/session'
+import { onDomInteractive } from '@sidelines/pageload/ready'
 import { useEffect, useState, type FC } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MakeSidelinesRepo } from './MakeSidelinesRepo.tsx'

@@ -70,12 +70,12 @@ async function routeGitHubGraphqlQuery(
     graphqlResponses: GraphqlResponses,
 ) {
     await page.route('https://api.github.com/graphql', async (route, req) => {
-        const { query, vars } = req.postDataJSON()
+        const { query, variables } = req.postDataJSON()
         await route.fulfill({
             json: {
                 data: graphqlResponses.resolveQueryResponse(
                     query,
-                    vars || null,
+                    variables || null,
                 ),
             },
         })

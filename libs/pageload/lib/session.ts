@@ -1,10 +1,11 @@
-import { createCache, getCookie, GH_TOKEN } from '@sidelines/data/web'
+import { getGhTokenCookie } from '@sidelines/data/cookie'
+import { createCache } from '@sidelines/data/storage'
 import { getUserLogin, UnauthorizedError } from '@sidelines/github'
 
 const ghLoginCache = createCache(sessionStorage, 'sld.user.gh.login')
 
 export function expectGhToken(): string {
-    const ghToken = getCookie(document.cookie, GH_TOKEN)
+    const ghToken = getGhTokenCookie(document.cookie)
     if (ghToken === null) {
         throw new UnauthorizedError('missing token')
     } else {

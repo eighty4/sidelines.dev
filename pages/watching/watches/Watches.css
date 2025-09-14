@@ -1,0 +1,210 @@
+@import '../../global.css';
+
+#root #watches {
+    max-width: 640px;
+    margin: 0 auto;
+    /* background: salmon; */
+    min-height: 100%;
+
+    & #watch-search {
+        padding: 2rem;
+
+        & .header {
+            font-weight: 550;
+            margin-bottom: 1rem;
+        }
+
+        & #watch-search-ui {
+            --input-pad-left: 0.6rem;
+            --input-pad-top: 1.1rem;
+            --input-font-size: 0.8rem;
+            position: relative;
+            height: calc(var(--input-font-size) + (var(--input-pad-top) * 2));
+            border: 2px solid gray;
+            border-radius: 3px;
+
+            & * {
+                z-index: 3;
+            }
+
+            & #search-input {
+                z-index: 2;
+                background: transparent;
+            }
+
+            & #autocomplete-shadow {
+                z-index: 1;
+                color: #888;
+            }
+
+            & #search-input,
+            #autocomplete-shadow {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                box-sizing: border-box;
+                padding: var(--input-pad-top) var(--input-pad-left);
+                border: none;
+            }
+
+            /*
+            shadowing input with absolute positioning
+            will not align unless adding this -1px offset
+            */
+            & #autocomplete-shadow {
+                top: -1px;
+            }
+
+            & #search-input,
+            #autocomplete-shadow,
+            .sizing {
+                font-size: var(--input-font-size);
+            }
+
+            & #autocomplete-shadow,
+            .sizing {
+                user-select: none;
+                pointer-events: none;
+            }
+
+            & .sizing {
+                opacity: 0;
+            }
+
+            /* &:focus-within {
+                border: 2px solid yellow;
+            } */
+
+            & .indicator {
+                position: relative;
+                width: var(--width);
+                height: 3px;
+                top: calc(
+                    var(--input-font-size) + (var(--input-pad-top) * 1.25)
+                );
+
+                &.repo {
+                    left: var(--input-pad-left);
+                }
+
+                &.loading {
+                    background: #2b2;
+                }
+
+                &.error {
+                    left: var(--input-pad-left);
+                    background: #e22;
+                }
+            }
+
+            & #search-suggestions {
+                background: #cff;
+                z-index: 3;
+                position: relative;
+                left: calc(var(--left) + var(--input-pad-left));
+                top: calc(
+                    var(--input-font-size) + (var(--input-pad-top) * 1.25)
+                );
+                display: inline-block;
+                width: fit-content;
+                padding: 0.5rem;
+                color: #444;
+
+                & .suggestion {
+                    cursor: pointer;
+                    width: 100%;
+                    padding: 0.3rem 0.5rem;
+                    box-sizing: border-box;
+                    font-size: 0.7rem;
+
+                    &:hover,
+                    &.cursor {
+                        background: #eff;
+                        border-radius: 3px;
+                    }
+                }
+            }
+        }
+    }
+
+    & #watch-ls {
+        margin-top: 1rem;
+        padding: 2rem;
+
+        & #watch-ls-header {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: row;
+            gap: 1rem;
+
+            & .header {
+                display: inline;
+                font-weight: 550;
+            }
+
+            & .search {
+                border: none;
+                border-bottom: 1px solid gray;
+            }
+        }
+
+        & #watch-ls-body {
+            padding-left: 1rem;
+            display: grid;
+            /* avatar img, nameWithOwner, path */
+            grid-template-columns: min-content min-content 1fr;
+            gap: 1rem;
+
+            & .watch {
+                display: contents;
+                position: relative;
+
+                /* for &:hover .drop region */
+                &::after {
+                    content: '';
+                    position: absolute;
+                    width: 100%;
+                }
+
+                & .repo {
+                    font-weight: 100;
+                }
+
+                & .path {
+                    font-weight: 400;
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    gap: 1rem;
+
+                    & .slash {
+                        padding: 0 2px;
+                    }
+                }
+
+                & .link {
+                    color: #111;
+                    text-decoration: none;
+
+                    &:hover {
+                        color: #669933;
+                        text-decoration: underline;
+                    }
+                }
+
+                & .drop {
+                    cursor: pointer;
+                    display: none;
+                }
+
+                &:hover {
+                    & .drop {
+                        display: inline;
+                    }
+                }
+            }
+        }
+    }
+}

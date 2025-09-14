@@ -55,6 +55,7 @@ fi
 
 # run through all the checks done for ci
 
+pnpm graphql
 pnpm build:libs
 pnpm test
 pnpm build

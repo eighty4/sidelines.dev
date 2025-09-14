@@ -1,4 +1,29 @@
-query RepoDirContent($owner: String!, $name: String!, $objExpr: String!) {
+# repo obj where objExpr should resolve to tree or blob
+query QueryRepoObjects($owner: String!, $name: String!, $objExpr: String!) {
+    repository(owner: $owner, name: $name) {
+        object(expression: $objExpr) {
+            __typename
+            ... on Blob {
+                byteSize
+                isBinary
+            }
+            ... on Tree {
+                entries {
+                    name
+                    type
+                    object {
+                        ... on Blob {
+                            byteSize
+                            isBinary
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+query _RepoDirListing($owner: String!, $name: String!, $objExpr: String!) {
     repository(owner: $owner, name: $name) {
         object(expression: $objExpr) {
             ... on Tree {
@@ -8,7 +33,6 @@ query RepoDirContent($owner: String!, $name: String!, $objExpr: String!) {
                     object {
                         ... on Blob {
                             byteSize
-                            text
                         }
                     }
                 }
@@ -17,25 +41,7 @@ query RepoDirContent($owner: String!, $name: String!, $objExpr: String!) {
     }
 }
 
-query RepoDirListing($owner: String!, $name: String!, $objExpr: String!) {
-    repository(owner: $owner, name: $name) {
-        object(expression: $objExpr) {
-            ... on Tree {
-                entries {
-                    name
-                    type
-                    object {
-                        ... on Blob {
-                            byteSize
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-query RepoObjectHistory(
+query _RepoObjectHistory(
     $owner: String!
     $name: String!
     $branch: String!
@@ -68,7 +74,7 @@ query RepoObjectHistory(
     }
 }
 
-query RepoObjectContent($owner: String!, $name: String!, $objExpr: String!) {
+query _RepoObjectContent($owner: String!, $name: String!, $objExpr: String!) {
     repository(owner: $owner, name: $name) {
         object(expression: $objExpr) {
             ... on Blob {
