@@ -3,7 +3,7 @@ import {
     deleteWatch,
     getAllWatches,
     getWatchesForRepo,
-} from '@sidelines/data/indexeddb'
+} from '@sidelines/data/indexeddb/tx/readWatches'
 import type { WatchAsyncReq, WatchRpcReq, WatchRpcRes } from './WatchesApi.ts'
 import type { WorkerMsg } from './WorkerClient.ts'
 

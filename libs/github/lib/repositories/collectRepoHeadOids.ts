@@ -1,11 +1,11 @@
-import type { RepositoryId } from '@sidelines/model'
+import type { RepoHeadRef, RepositoryId } from '@sidelines/model'
 import { queryGraphqlApi } from '../request.ts'
 
 export async function collectRepoHeadOids(
     ghToken: string,
     repos: Array<RepositoryId>,
-): Promise<Array<{ repo: RepositoryId; sha: string }>> {
-    const oidQ = `defaultBranchRef { target { ... on Commit { history(first: 1) { edges { node { ... on Commit { oid } } } } } } }`
+): Promise<Array<RepoHeadRef>> {
+    const oidQ = `defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { oid } } } } } } }`
     const nodes: Array<string> = []
     for (let i = 0; i < repos.length; i++) {
         const r = repos[i]
@@ -36,7 +36,7 @@ export async function collectRepoHeadOids(
 
     // collect results by nameWithOwner to dedupe explicit repos
     // that get picked up by OWNER or COLLABORATOR
-    const result: Record<string, { repo: RepositoryId; sha: string }> = {}
+    const result: Record<string, RepoHeadRef> = {}
 
     // collect explicit repos from their `r0..` aliased node
     for (let i = 0; i < repos.length; i++) {
@@ -45,6 +45,7 @@ export async function collectRepoHeadOids(
             const repo = repos[i]
             result[`${repo.owner}/${repo.name}`] = {
                 repo,
+                defaultBranch: res.defaultBranchRef.name,
                 sha: res.defaultBranchRef.target.history.edges[0].node.oid,
             }
         }
@@ -56,6 +57,7 @@ export async function collectRepoHeadOids(
         if (!result[nameWithOwner]) {
             result[nameWithOwner] = {
                 repo: { owner: repo.owner.login, name: repo.name },
+                defaultBranch: repo.defaultBranchRef.name,
                 sha: repo.defaultBranchRef.target.history.edges[0].node.oid,
             }
         }

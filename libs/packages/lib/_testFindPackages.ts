@@ -1,6 +1,6 @@
+import type { RepoBranchReference } from '@sidelines/github'
 import type { RepositoryId } from '@sidelines/model'
 import { FindPackagesApi } from './findPackagesApi.ts'
-import type { RepoBranchReference } from '../../repository/getRepoDefaultBranch.ts'
 
 export class TestFindPackagesApi extends FindPackagesApi {
     readonly #contents: Record<string, string>

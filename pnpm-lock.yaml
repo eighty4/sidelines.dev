@@ -79,6 +79,9 @@ importers:
       '@sidelines/model':
         specifier: workspace:*
         version: link:../model
+      '@sidelines/packages':
+        specifier: workspace:*
+        version: link:../packages
 
   libs/github:
     dependencies:
@@ -93,6 +96,15 @@ importers:
   libs/model: {}
 
   libs/notify: {}
+
+  libs/packages:
+    dependencies:
+      '@sidelines/github':
+        specifier: workspace:*
+        version: link:../github
+      '@sidelines/model':
+        specifier: workspace:*
+        version: link:../model
 
   libs/pageload:
     dependencies:

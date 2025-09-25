@@ -1,13 +1,4 @@
-import {
-    connectToDb,
-    DB_STORE_READ_COMMITS,
-    DB_STORE_READ_WATCHES,
-    DB_STORE_REPO_FILES,
-    DB_STORE_REPO_NAV,
-    DB_STORE_REPO_PACKAGES,
-    DB_STORE_SYNC_LOG,
-    DB_STORE_SYNC_TASKS,
-} from '@sidelines/data/indexeddb/dev'
+import { connectToDb, DB_OBJECT_STORES } from '@sidelines/data/indexeddb/dev'
 import { onDomInteractive } from '@sidelines/pageload/ready'
 import {
     type ChangeEvent,
@@ -37,16 +28,6 @@ import {
     SortAscSvg,
     SortDescSvg,
 } from './Svgs.tsx'
-
-const DB_STORES = [
-    DB_STORE_READ_COMMITS,
-    DB_STORE_READ_WATCHES,
-    DB_STORE_REPO_NAV,
-    DB_STORE_REPO_PACKAGES,
-    DB_STORE_REPO_FILES,
-    DB_STORE_SYNC_LOG,
-    DB_STORE_SYNC_TASKS,
-]
 
 type ViewState =
     | {
@@ -91,7 +72,7 @@ const DataPage: FC = () => {
                 <div className="header">
                     <DatabaseSvg /> IndexedDB
                 </div>
-                {DB_STORES.map(store => {
+                {DB_OBJECT_STORES.map(store => {
                     const classes =
                         openStore === store ? 'db-store open' : 'db-store'
                     return (

@@ -1,5 +1,6 @@
 import { getGhTokenCookie } from '@sidelines/data/cookie'
 import { onLoadComplete } from '@sidelines/pageload/ready'
+import { SyncRefsClient } from '../workers/syncing/SyncRefsClient.ts'
 
 if (sidelines.IS_DEV) {
     if (location.hostname === 'localhost') {
@@ -11,6 +12,25 @@ if (sidelines.IS_DEV) {
     } else {
         streamEsbuildEvents()
     }
+
+    const dataLink = document.createElement('a')
+    dataLink.style.cursor = 'pointer'
+    dataLink.style.color = '#282'
+    dataLink.style.background = '#ccc'
+    dataLink.style.width = '4rem'
+    dataLink.style.height = '2rem'
+    dataLink.style.fontSize = '.8rem'
+    dataLink.style.display = 'flex'
+    dataLink.style.alignItems = 'center'
+    dataLink.style.justifyContent = 'center'
+    dataLink.style.position = 'fixed'
+    dataLink.style.left = '0'
+    dataLink.style.bottom = '0'
+    dataLink.innerText = '/_data'
+    dataLink.target = '_blank'
+    dataLink.href = dataLink.innerText
+
+    document.body.appendChild(dataLink)
 }
 
 if (sidelines.IS_PROD) {
@@ -120,10 +140,7 @@ function registerSyncWorker() {
     if (!ghToken) {
         return
     }
-    const sw = new SharedWorker(sidelines.worker.SYNC_REFS, {
-        name: 'sidelines.dev syncing',
-    })
-    sw.port.postMessage({ kind: 'init', ghToken })
+    new SyncRefsClient(ghToken)
 }
 
 // recent chrome versions do not HTTP cache service workers

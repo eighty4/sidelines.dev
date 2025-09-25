@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import type { RepoBranchReference } from '@sidelines/github'
 import type { RepositoryId } from '@sidelines/model'
 import { parseBuildZig, parseZon } from './parseBuildZig.ts'
 import { TestFindPackagesApi } from '../_testFindPackages.ts'
-import type { RepoBranchReference } from '../../../repository/getRepoDefaultBranch.ts'
 
 test('zig parse zig.build.zon modern', () => {
     assert.deepEqual(

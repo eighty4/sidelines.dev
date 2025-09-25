@@ -1,0 +1,16 @@
+{
+  "name": "@sidelines/packages",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./findRepoPackages": {
+      "types": "./lib_types/findRepoPackages.d.ts",
+      "node": "./lib_js/findRepoPackages.js",
+      "default": "./lib/findRepoPackages.ts"
+    }
+  },
+  "dependencies": {
+    "@sidelines/github": "workspace:*",
+    "@sidelines/model": "workspace:*"
+  }
+}

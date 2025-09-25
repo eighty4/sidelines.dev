@@ -25,11 +25,22 @@ const DB_STORE_REPO_HEADS_KEY = 'nameWithOwner'
 export const DB_STORE_REPO_PACKAGES = 'repo-pkgs'
 const DB_STORE_REPO_PACKAGES_KEY = ['nameWithOwner', 'commitHash']
 
-export const DB_STORE_SYNC_LOG = 'sync-log'
-const DB_STORE_SYNC_LOG_KEY = ['kind', 'category']
+export const DB_STORE_REPO_SYNCING = 'repo-syncing'
+const DB_STORE_REPO_SYNCING_KEY = ['when', 'nameWithOwner', 'task']
 
-export const DB_STORE_SYNC_TASKS = 'sync-tasks'
-const DB_STORE_SYNC_TASKS_KEY = ['when', 'nameWithOwner', 'task']
+export const DB_STORE_SYNC_LOG = 'sync-log'
+const DB_STORE_SYNC_LOG_KEY = ['when']
+
+export const DB_OBJECT_STORES = [
+    DB_STORE_READ_COMMITS,
+    DB_STORE_READ_WATCHES,
+    DB_STORE_REPO_NAV,
+    DB_STORE_REPO_FILES,
+    DB_STORE_REPO_HEADS,
+    DB_STORE_REPO_PACKAGES,
+    DB_STORE_REPO_SYNCING,
+    DB_STORE_SYNC_LOG,
+]
 
 function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
     console.log('upgrading db from', oldVersion)
@@ -47,8 +58,8 @@ function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
             db.createObjectStore(DB_STORE_SYNC_LOG, {
                 keyPath: DB_STORE_SYNC_LOG_KEY,
             })
-            db.createObjectStore(DB_STORE_SYNC_TASKS, {
-                keyPath: DB_STORE_SYNC_TASKS_KEY,
+            db.createObjectStore(DB_STORE_REPO_SYNCING, {
+                keyPath: DB_STORE_REPO_SYNCING_KEY,
             })
             db.createObjectStore(DB_STORE_REPO_HEADS, {
                 keyPath: DB_STORE_REPO_HEADS_KEY,

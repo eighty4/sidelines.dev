@@ -1,10 +1,10 @@
-import type { RepositoryId } from '@sidelines/model'
 import {
     getHighestSemverTag,
     getMultipleRepoObjectContents,
     getRepoObjectContent,
     type RepoBranchReference,
-} from '../../index.ts'
+} from '@sidelines/github'
+import type { RepositoryId } from '@sidelines/model'
 
 export abstract class FindPackagesApi {
     readonly #repo: RepositoryId

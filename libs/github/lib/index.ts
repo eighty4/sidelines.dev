@@ -20,6 +20,5 @@ export * from './repository/getRepoDefaultBranch.ts'
 export * from './search/searchCode.ts'
 export * from './user/getUserLogin.ts'
 
-export * from './sidelines/packages/findRepoPackages.ts'
 export * from './sidelines/repository/checkSidelinesRepo.ts'
 export * from './sidelines/repository/createSidelinesRepo.ts'

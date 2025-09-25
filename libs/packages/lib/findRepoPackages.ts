@@ -1,3 +1,7 @@
+import {
+    getMultipleRepoObjectContents,
+    type RepoBranchReference,
+} from '@sidelines/github'
 import type { RepositoryId, RepositoryPackage } from '@sidelines/model'
 import { type FindPackagesApi, FindPackagesApiImpl } from './findPackagesApi.ts'
 import { parsePubspecYaml } from './dart/parsePubspecYaml.ts'
@@ -5,10 +9,6 @@ import { parseGoMod } from './go/parseGoMod.ts'
 import { parsePackageJson } from './js/parsePackageJson.ts'
 import { parseCargoToml } from './rust/parseCargoToml.ts'
 import { parseBuildZig } from './zig/parseBuildZig.ts'
-import {
-    getMultipleRepoObjectContents,
-    type RepoBranchReference,
-} from '../../index.ts'
 
 // avoids parse errors or missing data by defaulting package data
 // package name -> repo name + path
@@ -18,10 +18,11 @@ export async function findRepoPackages(
     repo: RepositoryId,
     branchRef: RepoBranchReference,
 ): Promise<Array<RepositoryPackage> | 'repo-not-found'> {
-    // todo parallel query bun, npm and pnpm lock files to determine package manager
-    //  create a similar query to getMultipleRepoObjectContents that returns booleans
-    //  to check if file exists without transferring blob
-    // todo refactor graphql querying to support merging multiple queries in 1 request
+    // todo matrixQueryRepoObjects
+    //  variant of queryRepoObjects where files are matrixed with repos
+    //  support retrieving blobs or only checking if they exist
+    //   use to check presence of JS package manager files
+    //   and that build.zig exists (content is not necessary)
     const cats = await getMultipleRepoObjectContents(
         ghToken,
         repo,
@@ -30,7 +31,6 @@ export async function findRepoPackages(
             'go.mod',
             'package.json',
             'Cargo.toml',
-            // todo build.zig check exists, content is not necessary
             'build.zig',
             'build.zig.zon',
             'pnpm-workspace.yaml',

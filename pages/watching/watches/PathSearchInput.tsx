@@ -132,7 +132,10 @@ export const PathSearchInput: FC<PathSearchInputProps> = ({
     const sizingRef = useRef<HTMLDivElement>(null)
     const [inputFocus, setInputFocus] = useState<boolean>(false)
     const [repoState, setRepoState] = useState<ResolvingRepo | null>(null)
+
+    // map of repo objects paths to loading or loaded object
     const objectStateRef = useRef<Record<string, ResolvingObject>>({})
+
     const [tokens, setTokens] = useState<Array<InputToken>>([])
     const [autocompletePaths, setAutocompletePaths] =
         useState<Array<string> | null>(null)
@@ -189,9 +192,9 @@ export const PathSearchInput: FC<PathSearchInputProps> = ({
         }
         if (e.target.selectionEnd === value.length) {
             if (tokens?.length && repoState && repoState.mode === 'typing') {
-                // cursor at end of input with repo, resolve token on path separator and update autocomplete
                 const prev = tokens.at(-1)!
                 if (value.length > prev.end) {
+                    // cursor is typing at end of text input so lets resolve token if / or update autcomplete
                     if (c === '/') {
                         console.log('input / parsing in progress token')
                         resolveTokenFromTyping()
@@ -200,10 +203,11 @@ export const PathSearchInput: FC<PathSearchInputProps> = ({
                         updateAutocompletePaths()
                     }
                 } else if (prev.end === value.length) {
-                    console.log('input reset autocomplete')
+                    // cursor at end of text input presumably after deleting a character
                     resetAutocomplete()
                 } else {
-                    setTokens(tokens!.slice(0, -1))
+                    // cursor at end of text input and deleted a character belonging to prev token
+                    setTokens(tokens.slice(0, -1))
                     resetAutocomplete()
                 }
             } else if (c === ' ' || c === '/') {
@@ -422,6 +426,7 @@ export const PathSearchInput: FC<PathSearchInputProps> = ({
                             autocompletePaths[autocompleteFocus]!,
                         )
                     } else {
+                        // try resolve from autocomplete menu suggestions without a nav or exclusive focus
                         resolveTokenFromSubmit()
                     }
                     break

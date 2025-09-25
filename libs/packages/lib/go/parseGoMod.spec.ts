@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import type { RepoBranchReference } from '@sidelines/github'
 import type { RepositoryId } from '@sidelines/model'
 import { extractName, parseGoMod } from './parseGoMod.ts'
 import { TestFindPackagesApi } from '../_testFindPackages.ts'
-import type { RepoBranchReference } from '../../../repository/getRepoDefaultBranch.ts'
 
 const MOD = 'github.com/eighty4/sse'
 

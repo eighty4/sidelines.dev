@@ -8,5 +8,9 @@
   },
   "include": ["lib/**/*.ts"],
   "exclude": ["node_modules"],
-  "references": [{ "path": "../github" }, { "path": "../model" }]
+  "references": [
+    { "path": "../github" },
+    { "path": "../model" },
+    { "path": "../packages" }
+  ]
 }

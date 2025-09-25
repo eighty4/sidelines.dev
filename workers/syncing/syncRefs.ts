@@ -1,32 +1,26 @@
+import { getReposWithWatches } from '@sidelines/data/indexeddb/tx/readWatches'
 import {
-    getReposWithWatches,
     getTimeSinceLastSync,
     syncRefs,
-} from '@sidelines/data/indexeddb'
+} from '@sidelines/data/indexeddb/tx/syncRefs'
 import { collectRepoHeadOids } from '@sidelines/github'
-import type { RepositoryId } from '@sidelines/model'
 
 declare let self: SharedWorkerGlobalScope
 
-export type SyncRefsReq =
-    | {
-          kind: 'init'
-          ghToken: string
-      }
-    | {
-          kind: 'update'
-          repo: RepositoryId
-      }
+export type SyncRefsReq = {
+    kind: 'init'
+    ghToken: string
+    pageId: string
+}
 
-const ports: Array<MessagePort> = []
+let ports: Record<string, MessagePort> = {}
 let ghToken: string | null = null
 let syncTimeout: number
 
 // todo announce with port.postMessage detailing close cause
 function closeAll(toClose?: Iterable<MessagePort>) {
     if (syncTimeout) clearTimeout(syncTimeout)
-    for (const port of toClose || ports) port.close()
-    ports.length = 0
+    for (const port of toClose || Object.values(ports)) port.close()
 }
 
 self.onconnect = (e: MessageEvent<SyncRefsReq>) => {
@@ -44,16 +38,16 @@ function onMessage(e: MessageEvent<SyncRefsReq>) {
             if (ghToken !== null && ghToken !== e.data.ghToken) {
                 console.warn('new auth, closing ports')
                 closeAll()
+                ports = {}
             }
             ghToken = e.data.ghToken
-            ports.push(...e.ports)
-            initSyncRefs().then().catch(console.error)
+            ports[e.data.pageId] = e.ports[0]
+            if (!syncTimeout) {
+                initSyncRefs().then().catch(console.error)
+            }
             break
-        case 'update':
-            console.log('update')
-            // todo
-            console.log('todo')
-            break
+        default:
+            console.warn('?', JSON.stringify(e.data))
     }
 }
 
@@ -76,15 +70,13 @@ async function sync() {
     }
     console.log('SYNC')
     const watchedRepos = await getReposWithWatches()
-    if (watchedRepos.length) {
-        const headRefs = await collectRepoHeadOids(ghToken, watchedRepos)
-        console.log('syncing', headRefs.length, 'repos')
-        const syncUpdates = await syncRefs(headRefs)
-        console.log('updated', syncUpdates.length, 'repos')
-        // todo distribute sync tasks to dedicated workers
-        // todo retrieve uncompleted sync tasks to retry
-        // todo listen on broadcast channel for completed tasks
-    }
+    const headRefs = await collectRepoHeadOids(ghToken, watchedRepos)
+    console.log('syncing', headRefs.length, 'repos')
+    const syncUpdates = await syncRefs(headRefs)
+    console.log('updated', syncUpdates.length, 'repos')
+    // todo distribute sync tasks to dedicated workers
+    // todo retrieve uncompleted sync tasks to retry
+    // todo listen on broadcast channel for completed tasks
     scheduleSync()
 }
 

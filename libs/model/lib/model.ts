@@ -7,6 +7,12 @@ export type Repository = {
 
 export type RepositoryId = Pick<Repository, 'owner' | 'name'>
 
+export type RepoHeadRef = {
+    repo: RepositoryId
+    defaultBranch: string
+    sha: string
+}
+
 export type RepoWatches = { repo: RepositoryId; paths: Array<string> }
 
 export type RepositoryPackage = Package<Language> | PackageWorkspace<Language>

@@ -1,9 +1,9 @@
 import {
-    findRepoPackages,
     getRepoDefaultBranch,
     type RepoBranchReference,
 } from '@sidelines/github'
 import type { RepositoryId, RepositoryPackage } from '@sidelines/model'
+import { findRepoPackages } from '@sidelines/packages/findRepoPackages'
 import { connectToDb, DB_STORE_REPO_PACKAGES } from '../database.ts'
 
 type PackagesRecord = {

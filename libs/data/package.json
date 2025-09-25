@@ -8,10 +8,10 @@
       "node": "./lib_js/cookie.js",
       "default": "./lib/cookie.ts"
     },
-    "./indexeddb": {
-      "types": "./lib_types/transactions/index.d.ts",
-      "node": "./lib_js/transactions/index.js",
-      "default": "./lib/transactions/index.ts"
+    "./indexeddb/tx/*": {
+      "types": "./lib_types/transactions/*.d.ts",
+      "node": "./lib_js/transactions/*.js",
+      "default": "./lib/transactions/*.ts"
     },
     "./indexeddb/dev": {
       "types": "./lib_types/database.d.ts",
@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@sidelines/github": "workspace:*",
-    "@sidelines/model": "workspace:*"
+    "@sidelines/model": "workspace:*",
+    "@sidelines/packages": "workspace:*"
   }
 }

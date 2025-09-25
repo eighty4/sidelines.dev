@@ -1,6 +1,8 @@
+import { basename, dirname } from 'node:path/posix'
 import { expect, type Page, test } from '@playwright/test'
 import { UserStory } from '$testing/github/UserStory.ts'
 import { login } from '$testing/sidelines/login.ts'
+import type { RepositoryId } from '@sidelines/model'
 
 test.describe('PathSearchInput', () => {
     test.describe('pasting urls', () => {
@@ -32,71 +34,17 @@ test.describe('PathSearchInput', () => {
         }
 
         test('pasting blob url', async ({ page }) => {
-            await UserStory.login('eighty4')
-                // for configure page
-                .withAppInstallation({ id: 1234567, repos: 'all' })
-                // for verifying auth
-                .withGraphqlResponse('ViewerLogin', null, {
-                    viewer: { login: 'eighty4' },
-                })
-                // for configure page
-                .withGraphqlResponse('CheckSidelinesRepo', null, {
-                    viewer: {
-                        repository: {
-                            nameWithOwner: 'eighty4/.sidelines',
-                            homepageUrl: 'https://sidelines.dev',
-                            isPrivate: true,
-                        },
-                    },
-                })
-                // for sync refs shared worker
-                .withGraphqlResponse('CollectRepoHeadOids', null, {
-                    viewer: {
-                        repositories: {
-                            nodes: [
-                                {
-                                    name: 'l3',
-                                    owner: { login: 'eighty4' },
-                                    defaultBranchRef: {
-                                        target: {
-                                            history: {
-                                                edges: [
-                                                    {
-                                                        node: {
-                                                            oid: '6773aaca',
-                                                        },
-                                                    },
-                                                ],
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                            pageInfo: {
-                                endCursor: 'asdf',
-                                hasNextPage: false,
-                            },
-                        },
-                    },
-                })
-                .withGraphqlResponse(
-                    'QueryRepoObjects',
-                    {
-                        owner: 'eighty4',
-                        name: 'l3',
-                        objExpr: 'HEAD:Cargo.toml',
-                    },
-                    {
-                        repository: {
-                            object: {
-                                __typename: 'Blob',
-                                byteSize: 404,
-                                isBinary: false,
-                            },
-                        },
-                    },
-                )
-                .configureRoutes(page)
+            const userStory = UserStory.login('eighty4')
+            apiResponsesForPageSetup(userStory)
+            graphqlResponsesForRepoObjects(
+                userStory,
+                { owner: 'eighty4', name: 'l3' },
+                {
+                    '': 'tree',
+                    'Cargo.toml': 'blob',
+                },
+            )
+            await userStory.configureRoutes(page)
 
             await login(page)
             await page.goto('/watches')
@@ -108,91 +56,19 @@ test.describe('PathSearchInput', () => {
         })
 
         test('pasting tree url', async ({ page }) => {
-            await UserStory.login('eighty4')
-                // for configure page
-                .withAppInstallation({ id: 1234567, repos: 'all' })
-                // for verifying auth
-                .withGraphqlResponse('ViewerLogin', null, {
-                    viewer: { login: 'eighty4' },
-                })
-                // for configure page
-                .withGraphqlResponse('CheckSidelinesRepo', null, {
-                    viewer: {
-                        repository: {
-                            nameWithOwner: 'eighty4/.sidelines',
-                            homepageUrl: 'https://sidelines.dev',
-                            isPrivate: true,
-                        },
-                    },
-                })
-                // for sync refs shared worker
-                .withGraphqlResponse('CollectRepoHeadOids', null, {
-                    viewer: {
-                        repositories: {
-                            nodes: [
-                                {
-                                    name: 'l3',
-                                    owner: { login: 'eighty4' },
-                                    defaultBranchRef: {
-                                        target: {
-                                            history: {
-                                                edges: [
-                                                    {
-                                                        node: {
-                                                            oid: '6773aaca',
-                                                        },
-                                                    },
-                                                ],
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                            pageInfo: {
-                                endCursor: 'asdf',
-                                hasNextPage: false,
-                            },
-                        },
-                    },
-                })
-                .withGraphqlResponse(
-                    'QueryRepoObjects',
-                    {
-                        owner: 'eighty4',
-                        name: 'l3',
-                        objExpr: 'HEAD:l3_cli',
-                    },
-                    {
-                        repository: {
-                            object: {
-                                __typename: 'Tree',
-                                entries: [
-                                    {
-                                        name: 'src',
-                                        type: 'tree',
-                                    },
-                                    {
-                                        name: 'Cargo.toml',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 405,
-                                            isBinary: false,
-                                        },
-                                    },
-                                    {
-                                        name: 'CHANGELOG.md',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 404,
-                                            isBinary: false,
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                )
-                .configureRoutes(page)
+            const userStory = UserStory.login('eighty4')
+            apiResponsesForPageSetup(userStory)
+            graphqlResponsesForRepoObjects(
+                userStory,
+                { owner: 'eighty4', name: 'l3' },
+                {
+                    l3_cli: 'tree',
+                    'l3_cli/src': 'tree',
+                    'l3_cli/CHANGELOG.md': 'blob',
+                    'l3_cli/Cargo.toml': 'blob',
+                },
+            )
+            await userStory.configureRoutes(page)
 
             await login(page)
             await page.goto('/watches')
@@ -208,87 +84,18 @@ test.describe('PathSearchInput', () => {
 
     test.describe('autocomplete', () => {
         test('submit resolves complete filename', async ({ page }) => {
-            await UserStory.login('eighty4')
-                // for configure page
-                .withAppInstallation({ id: 1234567, repos: 'all' })
-                // for verifying auth
-                .withGraphqlResponse('ViewerLogin', null, {
-                    viewer: { login: 'eighty4' },
-                })
-                // for configure page
-                .withGraphqlResponse('CheckSidelinesRepo', null, {
-                    viewer: {
-                        repository: {
-                            nameWithOwner: 'eighty4/.sidelines',
-                            homepageUrl: 'https://sidelines.dev',
-                            isPrivate: true,
-                        },
-                    },
-                })
-                // for sync refs shared worker
-                .withGraphqlResponse('CollectRepoHeadOids', null, {
-                    viewer: {
-                        repositories: {
-                            nodes: [
-                                {
-                                    name: 'l3',
-                                    owner: { login: 'eighty4' },
-                                    defaultBranchRef: {
-                                        target: {
-                                            history: {
-                                                edges: [
-                                                    {
-                                                        node: {
-                                                            oid: '6773aaca',
-                                                        },
-                                                    },
-                                                ],
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                            pageInfo: {
-                                endCursor: 'asdf',
-                                hasNextPage: false,
-                            },
-                        },
-                    },
-                })
-                .withGraphqlResponse(
-                    'QueryRepoObjects',
-                    {
-                        owner: 'eighty4',
-                        name: 'l3',
-                        objExpr: 'HEAD:',
-                    },
-                    {
-                        repository: {
-                            object: {
-                                __typename: 'Tree',
-                                entries: [
-                                    {
-                                        name: 'README.md',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 201,
-                                            isBinary: false,
-                                        },
-                                    },
-                                    {
-                                        name: 'README',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 201,
-                                            isBinary: false,
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                )
-                .configureRoutes(page)
+            const userStory = UserStory.login('eighty4')
+            apiResponsesForPageSetup(userStory)
+            graphqlResponsesForRepoObjects(
+                userStory,
+                { owner: 'eighty4', name: 'l3' },
+                {
+                    '': 'tree',
+                    README: 'blob',
+                    'README.md': 'blob',
+                },
+            )
+            await userStory.configureRoutes(page)
 
             await login(page)
             await page.goto('/watches')
@@ -303,161 +110,25 @@ test.describe('PathSearchInput', () => {
         })
 
         test('shows autocomplete suggestions', async ({ page }) => {
-            await UserStory.login('eighty4')
-                // for configure page
-                .withAppInstallation({ id: 1234567, repos: 'all' })
-                // for verifying auth
-                .withGraphqlResponse('ViewerLogin', null, {
-                    viewer: { login: 'eighty4' },
-                })
-                // for configure page
-                .withGraphqlResponse('CheckSidelinesRepo', null, {
-                    viewer: {
-                        repository: {
-                            nameWithOwner: 'eighty4/.sidelines',
-                            homepageUrl: 'https://sidelines.dev',
-                            isPrivate: true,
-                        },
-                    },
-                })
-                // for sync refs shared worker
-                .withGraphqlResponse('CollectRepoHeadOids', null, {
-                    viewer: {
-                        repositories: {
-                            nodes: [
-                                {
-                                    name: 'l3',
-                                    owner: { login: 'eighty4' },
-                                    defaultBranchRef: {
-                                        target: {
-                                            history: {
-                                                edges: [
-                                                    {
-                                                        node: {
-                                                            oid: '6773aaca',
-                                                        },
-                                                    },
-                                                ],
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                            pageInfo: {
-                                endCursor: 'asdf',
-                                hasNextPage: false,
-                            },
-                        },
-                    },
-                })
-                .withGraphqlResponse(
-                    'QueryRepoObjects',
-                    {
-                        owner: 'eighty4',
-                        name: 'l3',
-                        objExpr: 'HEAD:',
-                    },
-                    {
-                        repository: {
-                            object: {
-                                __typename: 'Tree',
-                                entries: [
-                                    {
-                                        name: 'l3_base',
-                                        type: 'tree',
-                                    },
-                                    {
-                                        name: 'l3_cli',
-                                        type: 'tree',
-                                    },
-                                    {
-                                        name: 'README.md',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 201,
-                                            isBinary: false,
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                )
-                .withGraphqlResponse(
-                    'QueryRepoObjects',
-                    {
-                        owner: 'eighty4',
-                        name: 'l3',
-                        objExpr: 'HEAD:l3_base',
-                    },
-                    {
-                        repository: {
-                            object: {
-                                __typename: 'Tree',
-                                entries: [
-                                    {
-                                        name: 'src',
-                                        type: 'tree',
-                                    },
-                                    {
-                                        name: 'Cargo.toml',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 405,
-                                            isBinary: false,
-                                        },
-                                    },
-                                    {
-                                        name: 'CHANGELOG.md',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 404,
-                                            isBinary: false,
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                )
-                .withGraphqlResponse(
-                    'QueryRepoObjects',
-                    {
-                        owner: 'eighty4',
-                        name: 'l3',
-                        objExpr: 'HEAD:l3_cli',
-                    },
-                    {
-                        repository: {
-                            object: {
-                                __typename: 'Tree',
-                                entries: [
-                                    {
-                                        name: 'src',
-                                        type: 'tree',
-                                    },
-                                    {
-                                        name: 'Cargo.toml',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 405,
-                                            isBinary: false,
-                                        },
-                                    },
-                                    {
-                                        name: 'CHANGELOG.md',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 404,
-                                            isBinary: false,
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                )
-                .configureRoutes(page)
+            const userStory = UserStory.login('eighty4')
+            apiResponsesForPageSetup(userStory)
+            graphqlResponsesForRepoObjects(
+                userStory,
+                { owner: 'eighty4', name: 'l3' },
+                {
+                    '': 'tree',
+                    l3_base: 'tree',
+                    'l3_base/src': 'tree',
+                    'l3_base/Cargo.toml': 'blob',
+                    'l3_base/CHANGELOG.md': 'blob',
+                    l3_cli: 'tree',
+                    'README.md': 'blob',
+                    'l3_cli/src': 'tree',
+                    'l3_cli/Cargo.toml': 'blob',
+                    'l3_cli/CHANGELOG.md': 'blob',
+                },
+            )
+            await userStory.configureRoutes(page)
 
             await login(page)
             await page.goto('/watches')
@@ -470,186 +141,18 @@ test.describe('PathSearchInput', () => {
         })
 
         test('keyboard nav autocomplete menu', async ({ page }) => {
-            await UserStory.login('eighty4')
-                // for configure page
-                .withAppInstallation({ id: 1234567, repos: 'all' })
-                // for verifying auth
-                .withGraphqlResponse('ViewerLogin', null, {
-                    viewer: { login: 'eighty4' },
-                })
-                // for configure page
-                .withGraphqlResponse('CheckSidelinesRepo', null, {
-                    viewer: {
-                        repository: {
-                            nameWithOwner: 'eighty4/.sidelines',
-                            homepageUrl: 'https://sidelines.dev',
-                            isPrivate: true,
-                        },
-                    },
-                })
-                // for sync refs shared worker
-                .withGraphqlResponse('CollectRepoHeadOids', null, {
-                    viewer: {
-                        repositories: {
-                            nodes: [
-                                {
-                                    name: 'l3',
-                                    owner: { login: 'eighty4' },
-                                    defaultBranchRef: {
-                                        target: {
-                                            history: {
-                                                edges: [
-                                                    {
-                                                        node: {
-                                                            oid: '6773aaca',
-                                                        },
-                                                    },
-                                                ],
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                            pageInfo: {
-                                endCursor: 'asdf',
-                                hasNextPage: false,
-                            },
-                        },
-                    },
-                })
-                .withGraphqlResponse(
-                    'QueryRepoObjects',
-                    {
-                        owner: 'eighty4',
-                        name: 'l3',
-                        objExpr: 'HEAD:',
-                    },
-                    {
-                        repository: {
-                            object: {
-                                __typename: 'Tree',
-                                entries: [
-                                    {
-                                        name: 'l3_base',
-                                        type: 'tree',
-                                    },
-                                    {
-                                        name: 'l3_cli',
-                                        type: 'tree',
-                                    },
-                                    {
-                                        name: 'README.md',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 201,
-                                            isBinary: false,
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                )
-                .withGraphqlResponse(
-                    'QueryRepoObjects',
-                    {
-                        owner: 'eighty4',
-                        name: 'l3',
-                        objExpr: 'HEAD:l3_base',
-                    },
-                    {
-                        repository: {
-                            object: {
-                                __typename: 'Tree',
-                                entries: [
-                                    {
-                                        name: 'src',
-                                        type: 'tree',
-                                    },
-                                    {
-                                        name: 'Cargo.toml',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 405,
-                                            isBinary: false,
-                                        },
-                                    },
-                                    {
-                                        name: 'CHANGELOG.md',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 404,
-                                            isBinary: false,
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                )
-                .withGraphqlResponse(
-                    'QueryRepoObjects',
-                    {
-                        owner: 'eighty4',
-                        name: 'l3',
-                        objExpr: 'HEAD:l3_cli',
-                    },
-                    {
-                        repository: {
-                            object: {
-                                __typename: 'Tree',
-                                entries: [
-                                    {
-                                        name: 'src',
-                                        type: 'tree',
-                                    },
-                                    {
-                                        name: 'Cargo.toml',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 405,
-                                            isBinary: false,
-                                        },
-                                    },
-                                    {
-                                        name: 'CHANGELOG.md',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 404,
-                                            isBinary: false,
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                )
-                .withGraphqlResponse(
-                    'QueryRepoObjects',
-                    {
-                        owner: 'eighty4',
-                        name: 'l3',
-                        objExpr: 'HEAD:l3_cli/src',
-                    },
-                    {
-                        repository: {
-                            object: {
-                                __typename: 'Tree',
-                                entries: [
-                                    {
-                                        name: 'lib.rs',
-                                        type: 'blob',
-                                        object: {
-                                            byteSize: 201,
-                                            isBinary: false,
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                )
-                .configureRoutes(page)
+            const userStory = UserStory.login('eighty4')
+            apiResponsesForPageSetup(userStory)
+            graphqlResponsesForRepoObjects(
+                userStory,
+                { owner: 'eighty4', name: 'l3' },
+                {
+                    '': 'tree',
+                    l3_cli: 'tree',
+                    'l3_cli/CHANGELOG.md': 'blob',
+                },
+            )
+            await userStory.configureRoutes(page)
 
             await login(page)
             await page.goto('/watches')
@@ -673,6 +176,121 @@ test.describe('PathSearchInput', () => {
         })
     })
 })
+
+function apiResponsesForPageSetup(userStory: UserStory) {
+    // for configure page
+    userStory
+        .withAppInstallation({ id: 1234567, repos: 'all' })
+        // for verifying auth
+        .withGraphqlResponse('ViewerLogin', null, {
+            viewer: { login: 'eighty4' },
+        })
+        // for configure page
+        .withGraphqlResponse('CheckSidelinesRepo', null, {
+            viewer: {
+                repository: {
+                    nameWithOwner: 'eighty4/.sidelines',
+                    homepageUrl: 'https://sidelines.dev',
+                    isPrivate: true,
+                },
+            },
+        })
+        // for sync refs shared worker
+        .withGraphqlResponse('CollectRepoHeadOids', null, {
+            viewer: {
+                repositories: {
+                    nodes: [
+                        {
+                            name: 'l3',
+                            owner: { login: 'eighty4' },
+                            defaultBranchRef: {
+                                target: {
+                                    history: {
+                                        edges: [
+                                            {
+                                                node: {
+                                                    oid: '6773aaca',
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            },
+                        },
+                    ],
+                    pageInfo: {
+                        endCursor: 'asdf',
+                        hasNextPage: false,
+                    },
+                },
+            },
+        })
+}
+
+function graphqlResponsesForRepoObjects(
+    userStory: UserStory,
+    { owner, name }: RepositoryId,
+    repoObjects: Record<string, 'blob' | 'tree'>,
+) {
+    for (const [path, kind] of Object.entries(repoObjects)) {
+        if (kind === 'blob') {
+            userStory.withGraphqlResponse(
+                'QueryRepoObjects',
+                { owner, name, objExpr: 'HEAD:' + path },
+                {
+                    repository: {
+                        object: {
+                            __typename: 'Blob',
+                            byteSize: 201,
+                            isBinary: false,
+                        },
+                    },
+                },
+            )
+        } else {
+            userStory.withGraphqlResponse(
+                'QueryRepoObjects',
+                { owner, name, objExpr: 'HEAD:' + path },
+                {
+                    repository: {
+                        object: {
+                            __typename: 'Tree',
+                            entries: Object.keys(repoObjects)
+                                .filter(p => {
+                                    if (p === path) return false
+                                    const dirpath = dirname(p)
+                                    if (dirpath === '.') {
+                                        return path === ''
+                                    } else {
+                                        return dirpath === path
+                                    }
+                                })
+                                .map(p => {
+                                    if (repoObjects[p] === 'blob') {
+                                        return {
+                                            type: 'blob',
+                                            name: basename(p),
+                                            object: {
+                                                blob: {
+                                                    byteSize: 405,
+                                                    isBinary: false,
+                                                },
+                                            },
+                                        }
+                                    } else {
+                                        return {
+                                            type: 'tree',
+                                            name: basename(p),
+                                        }
+                                    }
+                                }),
+                        },
+                    },
+                },
+            )
+        }
+    }
+}
 
 test.describe('FileBrowser', () => {})
 

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import type { RepoBranchReference } from '@sidelines/github'
 import type { RepositoryId } from '@sidelines/model'
 import {
     parseCargoToml,
@@ -7,7 +8,6 @@ import {
     parseWorkspaceInCargoToml,
 } from './parseCargoToml.ts'
 import { TestFindPackagesApi } from '../_testFindPackages.ts'
-import type { RepoBranchReference } from '../../../repository/getRepoDefaultBranch.ts'
 
 const repo = { name: 'maestro' } as RepositoryId
 const branchRef = { headOid: 'abcdefg' } as RepoBranchReference

@@ -1,26 +1,48 @@
-import type { RepositoryId } from '@sidelines/model'
+import type { RepoHeadRef, RepositoryId } from '@sidelines/model'
 import {
     connectToDb,
     DB_STORE_REPO_HEADS,
+    DB_STORE_REPO_SYNCING,
     DB_STORE_SYNC_LOG,
-    DB_STORE_SYNC_TASKS,
 } from '../database.ts'
 
-type SyncRecord = {
-    when: Date
-}
-
+// DB_STORE_REPO_HEADS
 type RepoHeadRecord = {
     nameWithOwner: string
+    defaultBranch: string
     sha: string
 }
 
-export type SyncTask = 'packages' | 'watches'
-
+// DB_STORE_REPO_SYNCING
 type SyncTasksRecord = {
     when: Date
     nameWithOwner: string
     tasks: Record<SyncTask, boolean>
+}
+
+// DB_STORE_SYNC_LOG
+type SyncRecord = {
+    when: Date
+}
+
+export type SyncTask = 'packages' | 'watches'
+
+export async function getTimeSinceLastSync(): Promise<number | null> {
+    return new Promise(async (res, rej) => {
+        const db = await connectToDb()
+        const request: IDBRequest<IDBCursorWithValue | null> = db
+            .transaction(DB_STORE_SYNC_LOG, 'readonly')
+            .objectStore(DB_STORE_SYNC_LOG)
+            .openCursor(null, 'prev')
+        request.onsuccess = () => {
+            if (request.result?.value) {
+                res((request.result.value as SyncRecord).when.getTime())
+            } else {
+                res(null)
+            }
+        }
+        request.onerror = rej
+    })
 }
 
 export type RepoUpdate = {
@@ -29,62 +51,52 @@ export type RepoUpdate = {
     to: string
 }
 
-export async function getTimeSinceLastSync(): Promise<number | null> {
-    return new Promise(async (res, rej) => {
-        const db = await connectToDb()
-        const request: IDBRequest<IDBCursor | null> = db
-            .transaction(DB_STORE_SYNC_LOG, 'readonly')
-            .objectStore(DB_STORE_SYNC_LOG)
-            .openKeyCursor(null, 'prev')
-        request.onsuccess = () =>
-            res(
-                request?.result?.key
-                    ? (request.result.key as SyncRecord['when']).getTime()
-                    : null,
-            )
-        request.onerror = rej
-    })
-}
-
-export type HeadRef = {
-    repo: RepositoryId
-    sha: string
-}
-
-export function syncRefs(headRefs: Array<HeadRef>): Promise<Array<RepoUpdate>> {
-    const reposToRefs: Record<string, HeadRef> = {}
+export function syncRefs(
+    headRefs: Array<RepoHeadRef>,
+): Promise<Array<RepoUpdate>> {
+    const reposToRefs: Record<string, RepoHeadRef> = {}
     for (const headRef of headRefs) {
         const { owner, name } = headRef.repo
-        reposToRefs[`${owner}/${name}`]
+        reposToRefs[`${owner}/${name}`] = headRef
     }
     return new Promise(async (res, rej) => {
         const db = await connectToDb()
         const tx = db.transaction(
-            [DB_STORE_REPO_HEADS, DB_STORE_SYNC_LOG, DB_STORE_SYNC_TASKS],
+            [DB_STORE_REPO_HEADS, DB_STORE_REPO_SYNCING, DB_STORE_SYNC_LOG],
             'readwrite',
         )
         const repoHeadsStore = tx.objectStore(DB_STORE_REPO_HEADS)
-        const syncTasksStore = tx.objectStore(DB_STORE_SYNC_TASKS)
+        const syncTasksStore = tx.objectStore(DB_STORE_REPO_SYNCING)
         const syncLogStore = tx.objectStore(DB_STORE_SYNC_LOG)
 
         const updates: Array<RepoUpdate> = []
-        tx.oncomplete = () => res(updates)
-        tx.onerror = () => rej()
+        tx.oncomplete = () => {
+            console.log('syncRefs tx complete', updates)
+            res(updates)
+        }
+        tx.onerror = e => {
+            console.log('syncRefs tx error', e)
+            rej()
+        }
 
         const repoHeadsReq: IDBRequest<IDBCursorWithValue | null> =
             repoHeadsStore.openCursor()
+
         repoHeadsReq.onsuccess = () => {
             const cursor: IDBCursorWithValue | null = repoHeadsReq.result
             if (cursor) {
                 const record = cursor.value as RepoHeadRecord
                 if (reposToRefs[record.nameWithOwner]) {
-                    const { repo, sha } = reposToRefs[record.nameWithOwner]
+                    const { repo, defaultBranch, sha } =
+                        reposToRefs[record.nameWithOwner]
+                    console.log(record.nameWithOwner, record.sha, sha)
                     if (sha === record.sha) {
                         delete reposToRefs[record.nameWithOwner]
                     } else {
                         updates.push({ repo, from: record.sha, to: sha })
                         const updatedRecord: RepoHeadRecord = {
                             ...record,
+                            defaultBranch,
                             sha,
                         }
                         cursor.update(updatedRecord)
@@ -92,14 +104,17 @@ export function syncRefs(headRefs: Array<HeadRef>): Promise<Array<RepoUpdate>> {
                 }
                 cursor.continue()
             } else {
-                for (const [nameWithOwner, { sha }] of Object.entries(
-                    reposToRefs,
-                )) {
+                for (const [
+                    nameWithOwner,
+                    { repo, defaultBranch, sha },
+                ] of Object.entries(reposToRefs)) {
                     const record: RepoHeadRecord = {
                         nameWithOwner,
+                        defaultBranch,
                         sha,
                     }
                     repoHeadsStore.add(record)
+                    updates.push({ repo, to: sha })
                 }
                 const when = new Date()
                 syncLogStore.put({ when })

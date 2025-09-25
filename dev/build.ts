@@ -45,10 +45,23 @@ export const webpages: Record<string, string> = {
 //
 // maps entrypoint src to url
 export const workers: Record<string, string> = {
-    './workers/syncRefs.ts': '/lib/sidelines/workers/syncRefs.js',
+    // sync loop and scheduling
+    './workers/syncing/syncPackages.ts':
+        '/lib/sidelines/workers/syncPackages.js',
+    './workers/syncing/syncRefs.ts': '/lib/sidelines/workers/syncRefs.js',
+    './workers/syncing/syncWatches.ts': '/lib/sidelines/workers/syncWatches.js',
+
+    // data apis
     './workers/userData.ts': '/lib/sidelines/workers/userData.js',
-    './workers/ghActions.ts': '/lib/sidelines/workers/ghActions.js',
     './workers/watches.ts': '/lib/sidelines/workers/watches.js',
+
+    // gh webhook <-> websocket or sse streaming
+    // './workers/eventStream.ts': '/lib/sidelines/workers/eventStream.js',
+
+    // gh action workflow validation
+    './workers/ghActions.ts': '/lib/sidelines/workers/ghActions.js',
+
+    // monaco
     './node_modules/monaco-editor/esm/vs/editor/editor.worker.js':
         '/lib/monaco/workers/main.js',
     './node_modules/monaco-editor/esm/vs/language/css/css.worker.js':
