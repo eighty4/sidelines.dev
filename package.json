@@ -2,7 +2,7 @@
   "name": "@sidelines/webapp",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.15.0",
+  "packageManager": "pnpm@10.18.3",
   "workspaces": [
     "libs/*"
   ],
@@ -26,20 +26,20 @@
     "@sidelines/pageload": "workspace:*",
     "@sidelines/server": "workspace:*",
     "@sidelines/ui": "workspace:*",
-    "monaco-editor": "^0.52.2",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "monaco-editor": "^0.54.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.54.2",
-    "@types/node": "^22.13.4",
-    "@types/react": "^19.1.10",
-    "@types/react-dom": "^19.0.3",
-    "esbuild": "0.25.9",
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^24.7.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "esbuild": "0.25.11",
     "graphql": "^16.11.0",
     "parse5": "^8.0.0",
     "prettier": "^3.5.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.9.3"
   }
 }

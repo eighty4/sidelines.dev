@@ -2,7 +2,14 @@
   "extends": ["./tsconfig.common.json"],
   "compilerOptions": {
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "lib": ["ESNext", "DOM", "DOM.AsyncIterable", "DOM.Iterable", "WebWorker"],
+    "target": "ES2022",
+    "paths": {
+      "$testing/*": ["./testing/*"]
+    },
+    "rewriteRelativeImportExtensions": false,
+    "noUncheckedIndexedAccess": false
   },
   "include": [
     "dev/**/*.ts",
