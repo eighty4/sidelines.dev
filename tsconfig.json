@@ -15,6 +15,7 @@
     "dev/**/*.ts",
     "pages/**/*.ts",
     "pages/**/*.tsx",
+    "testing/**/*.ts",
     "workers/**/*.ts",
     "global.d.ts"
   ],
