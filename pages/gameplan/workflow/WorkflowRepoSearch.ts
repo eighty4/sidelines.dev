@@ -9,7 +9,7 @@ import type {
     ActionsCallToActionsUpdate,
     CicdCallToAction,
     WorkflowCallToAction,
-} from '../../../workers/ghActions.ts'
+} from '../../workers/ghActions.ts'
 
 export type CallToAction =
     | {
@@ -74,7 +74,7 @@ export class WorkflowRepoSearch {
 
     #launchGhActionsWorker = (repo: string) => {
         const w = (this.#workers[repo] = new Worker(
-            sidelines.worker.GH_ACTIONS,
+            '../../workers/ghActions.ts',
         ))
         w.onmessage = this.#onGhActionsWorkerMessage
         const request: ActionsCallToActionsRequest = {

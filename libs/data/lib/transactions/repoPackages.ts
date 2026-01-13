@@ -1,8 +1,9 @@
-import {
-    getRepoDefaultBranch,
-    type RepoBranchReference,
-} from '@sidelines/github'
-import type { RepositoryId, RepositoryPackage } from '@sidelines/model'
+import { getRepoDefaultBranch } from '@sidelines/github'
+import type {
+    BranchRef,
+    RepositoryId,
+    RepositoryPackage,
+} from '@sidelines/model'
 import { findRepoPackages } from '@sidelines/packages/findRepoPackages'
 import { connectToDb, DB_STORE_REPO_PACKAGES } from '../database.ts'
 
@@ -18,33 +19,33 @@ export async function readRepoPackages(
     ghToken: string,
     repo: RepositoryId,
 ): Promise<Array<RepositoryPackage> | 'repo-not-found'> {
-    const branchRef = await getRepoDefaultBranch(ghToken, repo)
-    if (branchRef === 'repo-not-found') {
+    const defaultBranch = await getRepoDefaultBranch(ghToken, repo)
+    if (defaultBranch === 'repo-not-found') {
         return 'repo-not-found'
     }
     const nameWithOwner = `${repo.owner}/${repo.name}`
-    const fromDb = await readFromDb(nameWithOwner, branchRef)
+    const fromDb = await readFromDb(nameWithOwner, defaultBranch)
     if (fromDb) {
         return fromDb
     }
-    const fromApi = await findRepoPackages(ghToken, repo, branchRef)
+    const fromApi = await findRepoPackages(ghToken, repo, defaultBranch)
     if (fromApi === 'repo-not-found') {
         return 'repo-not-found'
     }
-    await writeToDb(nameWithOwner, branchRef, fromApi)
+    await writeToDb(nameWithOwner, defaultBranch, fromApi)
     return fromApi
 }
 
 async function readFromDb(
     nameWithOwner: string,
-    branchRef: RepoBranchReference,
+    defaultBranch: BranchRef,
 ): Promise<Array<RepositoryPackage> | null> {
     const db = await connectToDb()
     return new Promise((res, rej) => {
         const tx = db.transaction([DB_STORE_REPO_PACKAGES], 'readonly')
         const req: IDBRequest<PackagesRecord | undefined> = tx
             .objectStore(DB_STORE_REPO_PACKAGES)
-            .get([nameWithOwner, branchRef.headOid])
+            .get([nameWithOwner, defaultBranch.headOid])
 
         req.onsuccess = () => res(req.result?.packages || null)
 
@@ -57,13 +58,13 @@ async function readFromDb(
 
 async function writeToDb(
     nameWithOwner: string,
-    branchRef: RepoBranchReference,
+    defaultBranch: BranchRef,
     packages: Array<RepositoryPackage>,
 ): Promise<void> {
     const record: PackagesRecord = {
         nameWithOwner,
-        commitHash: branchRef.headOid,
-        committedWhen: branchRef.committedDate,
+        commitHash: defaultBranch.headOid,
+        committedWhen: defaultBranch.committedDate,
         packages,
     }
     const db = await connectToDb()

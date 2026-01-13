@@ -1,4 +1,3 @@
-import { createReadStream } from 'node:fs'
 import {
     createServer,
     type IncomingHttpHeaders,
@@ -6,89 +5,20 @@ import {
     type OutgoingHttpHeaders,
     type ServerResponse,
 } from 'node:http'
-import { extname, join as fsJoin } from 'node:path'
 import {
     createRoutes,
     hasServerEnvValues,
     type HttpMethod,
     type RequestHandler,
 } from '@sidelines/server/routes'
-import { isProductionBuild } from './flags.ts'
 
-export type FrontendFetcher = (
-    url: URL,
-    headers: Headers,
-    res: ServerResponse,
-) => void
+const PORT = 3333
 
-export function createEsbuildFilesFetcher(
-    esbuildPort: number,
-): FrontendFetcher {
-    return (url: URL, _headers: Headers, res: ServerResponse) => {
-        fetch(`http://127.0.0.1:${esbuildPort}${url.pathname}`).then(
-            fetchResponse => {
-                res.writeHead(
-                    fetchResponse.status,
-                    convertHeadersFromFetch(fetchResponse.headers),
-                )
-                fetchResponse.bytes().then(data => res.end(data))
-            },
-        )
-    }
-}
+createWebServer().listen(PORT, () => {
+    console.log('sidelines.dev api routes running on port', PORT)
+})
 
-export function createFrontendFilesFetcher(
-    dir: string,
-    files: Set<string>,
-): FrontendFetcher {
-    return (url: URL, _headers: Headers, res: ServerResponse) => {
-        if (!files.has(url.pathname)) {
-            res.writeHead(404)
-            res.end()
-        } else {
-            const mimeType = resolveMimeType(url)
-            res.setHeader('Content-Type', mimeType)
-            const reading = createReadStream(
-                mimeType === 'text/html'
-                    ? fsJoin(dir, url.pathname, 'index.html')
-                    : fsJoin(dir, url.pathname),
-            )
-            reading.pipe(res)
-            reading.on('error', err => {
-                console.error(
-                    `${url.pathname} file read ${reading.path} error ${err.message}`,
-                )
-                res.statusCode = 500
-                res.end()
-            })
-        }
-    }
-}
-
-function resolveMimeType(url: URL): string {
-    switch (extname(url.pathname)) {
-        case '':
-            return 'text/html'
-        case '.js':
-            return 'text/javascript'
-        case '.json':
-            return 'application/json'
-        case '.css':
-            return 'text/css'
-        case '.svg':
-            return 'image/svg+xml'
-        case '.png':
-            return 'image/png'
-        default:
-            console.warn('? mime type for', url.pathname)
-            if (!isProductionBuild()) process.exit(1)
-            return 'application/octet-stream'
-    }
-}
-
-export function createWebServer(
-    frontendFetcher: FrontendFetcher,
-): ReturnType<typeof createServer> {
+export function createWebServer(): ReturnType<typeof createServer> {
     if (!hasServerEnvValues(process.env)) {
         throw Error('missing env vars for web server')
     }
@@ -112,7 +42,8 @@ export function createWebServer(
                 res.writeHead(405)
                 res.end()
             } else {
-                frontendFetcher(url, convertHeadersToFetch(req.headers), res)
+                res.writeHead(404)
+                res.end()
             }
         }
     })

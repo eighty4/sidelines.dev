@@ -31,7 +31,12 @@ export type WatchRpcRes = GetAllWatchesRes | GetRepoWatchesRes
 
 export class WatchesApi extends WorkerClient {
     constructor() {
-        super(sidelines.worker.WATCHES)
+        super(
+            new Worker('./watches.ts', {
+                name: 'sidelines.dev watches',
+            }),
+            'Worker(watches.ts)',
+        )
     }
 
     createWatch(repo: RepositoryId, path: string) {

@@ -2,7 +2,7 @@ import type { RepositoryId } from '@sidelines/model'
 import { type FC } from 'react'
 import { RecentNav } from './RecentNav.tsx'
 import { SearchInput } from './SearchInput.tsx'
-import type { UserDataClient } from '../../../../workers/UserDataClient.ts'
+import type { UserDataClient } from '../../../workers/UserDataClient.ts'
 
 interface ProjectNavbarProps {
     repo: RepositoryId

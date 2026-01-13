@@ -1,8 +1,9 @@
-import {
-    getMultipleRepoObjectContents,
-    type RepoBranchReference,
-} from '@sidelines/github'
-import type { RepositoryId, RepositoryPackage } from '@sidelines/model'
+import { getMultipleRepoObjectContents } from '@sidelines/github'
+import type {
+    BranchRef,
+    RepositoryId,
+    RepositoryPackage,
+} from '@sidelines/model'
 import { type FindPackagesApi, FindPackagesApiImpl } from './findPackagesApi.ts'
 import { parsePubspecYaml } from './dart/parsePubspecYaml.ts'
 import { parseGoMod } from './go/parseGoMod.ts'
@@ -16,7 +17,7 @@ import { parseBuildZig } from './zig/parseBuildZig.ts'
 export async function findRepoPackages(
     ghToken: string,
     repo: RepositoryId,
-    branchRef: RepoBranchReference,
+    branchRef: BranchRef,
 ): Promise<Array<RepositoryPackage> | 'repo-not-found'> {
     // todo matrixQueryRepoObjects
     //  variant of queryRepoObjects where files are matrixed with repos

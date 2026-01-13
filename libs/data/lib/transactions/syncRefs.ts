@@ -1,4 +1,4 @@
-import type { RepoHeadRef, RepositoryId } from '@sidelines/model'
+import type { RepoDefaultBranch, RepositoryId } from '@sidelines/model'
 import {
     connectToDb,
     DB_STORE_REPO_HEADS,
@@ -52,12 +52,11 @@ export type RepoUpdate = {
 }
 
 export function syncRefs(
-    headRefs: Array<RepoHeadRef>,
+    refs: Array<RepoDefaultBranch>,
 ): Promise<Array<RepoUpdate>> {
-    const reposToRefs: Record<string, RepoHeadRef> = {}
-    for (const headRef of headRefs) {
-        const { owner, name } = headRef.repo
-        reposToRefs[`${owner}/${name}`] = headRef
+    const reposToRefs: Record<string, RepoDefaultBranch> = {}
+    for (const ref of refs) {
+        reposToRefs[`${ref.repo.owner}/${ref.repo.name}`] = ref
     }
     return new Promise(async (res, rej) => {
         const db = await connectToDb()
@@ -87,17 +86,20 @@ export function syncRefs(
             if (cursor) {
                 const record = cursor.value as RepoHeadRecord
                 if (reposToRefs[record.nameWithOwner]) {
-                    const { repo, defaultBranch, sha } =
+                    const { repo, defaultBranch } =
                         reposToRefs[record.nameWithOwner]
-                    console.log(record.nameWithOwner, record.sha, sha)
-                    if (sha === record.sha) {
+                    if (defaultBranch.headOid === record.sha) {
                         delete reposToRefs[record.nameWithOwner]
                     } else {
-                        updates.push({ repo, from: record.sha, to: sha })
+                        updates.push({
+                            repo,
+                            from: record.sha,
+                            to: defaultBranch.headOid,
+                        })
                         const updatedRecord: RepoHeadRecord = {
                             ...record,
-                            defaultBranch,
-                            sha,
+                            defaultBranch: defaultBranch.name,
+                            sha: defaultBranch.headOid,
                         }
                         cursor.update(updatedRecord)
                     }
@@ -106,15 +108,15 @@ export function syncRefs(
             } else {
                 for (const [
                     nameWithOwner,
-                    { repo, defaultBranch, sha },
+                    { repo, defaultBranch },
                 ] of Object.entries(reposToRefs)) {
                     const record: RepoHeadRecord = {
                         nameWithOwner,
-                        defaultBranch,
-                        sha,
+                        defaultBranch: defaultBranch.name,
+                        sha: defaultBranch.headOid,
                     }
                     repoHeadsStore.add(record)
-                    updates.push({ repo, to: sha })
+                    updates.push({ repo, to: defaultBranch.headOid })
                 }
                 const when = new Date()
                 syncLogStore.put({ when })

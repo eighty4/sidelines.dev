@@ -10,7 +10,7 @@ import { WorkspaceEditor } from './editor/WorkspaceEditor.tsx'
 import { ProjectNavbar } from './navbar/ProjectNavbar.tsx'
 import { expectUserDataClient } from '../../expectUserData.ts'
 import { logout } from '../../nav.ts'
-import { UserDataClient } from '../../../workers/UserDataClient.ts'
+import { UserDataClient } from '../../workers/UserDataClient.ts'
 
 type ProjectPageProps = {
     repo: RepositoryId

@@ -1,24 +1,6 @@
-import type { RepositoryId } from '@sidelines/model'
+import type { BranchRef, RepositoryId } from '@sidelines/model'
+import { mapBranchRef } from '../_mapGraphToModel.ts'
 import { queryGraphqlApi } from '../request.ts'
-
-export type RepoBranchReference = {
-    committedDate: Date
-    headOid: string
-    name: string
-}
-
-function resultFromData(data: any): RepoBranchReference | 'repo-not-found' {
-    if (!data.repository) {
-        return 'repo-not-found'
-    }
-    const name = data.repository.defaultBranchRef.name
-    const headOid =
-        data.repository.defaultBranchRef.target.history.edges[0].node.oid
-    const committedDate = new Date(
-        data.repository.defaultBranchRef.target.history.edges[0].node.committedDate,
-    )
-    return { committedDate, headOid, name }
-}
 
 function repoQuery() {
     return `defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { committedDate, oid } } } } } } }`
@@ -27,7 +9,7 @@ function repoQuery() {
 export async function getRepoDefaultBranch(
     ghToken: string,
     repo: RepositoryId,
-): Promise<RepoBranchReference | 'repo-not-found'> {
+): Promise<BranchRef | 'repo-not-found'> {
     const query = `query { repository(owner: "${repo.owner}", name: "${repo.name}") { ${repoQuery()} } }`
     const json = await queryGraphqlApi(ghToken, query, null)
     return resultFromData(json.data)
@@ -37,8 +19,15 @@ export async function getRepoDefaultBranch(
 export async function getViewerRepoDefaultBranch(
     ghToken: string,
     repo: string,
-): Promise<RepoBranchReference | 'repo-not-found'> {
+): Promise<BranchRef | 'repo-not-found'> {
     const query = `query { viewer { repository(name: "${repo}") { ${repoQuery()} } } }`
     const json = await queryGraphqlApi(ghToken, query, null)
     return resultFromData(json.data)
+}
+
+function resultFromData(data: any): BranchRef | 'repo-not-found' {
+    if (!data.repository) {
+        return 'repo-not-found'
+    }
+    return mapBranchRef(data.repository.defaultBranchRef)
 }

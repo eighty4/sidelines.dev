@@ -1,7 +1,7 @@
 import type { RepositoryId, RepoWatches } from '@sidelines/model'
 import { type FC, useEffect, useState } from 'react'
 import { AlarmOff } from '../WatchSvgs.tsx'
-import type { WatchesApi } from '../../../workers/WatchesApi.ts'
+import type { WatchesApi } from '../../workers/WatchesApi.ts'
 import { GitHubAvatar } from './GitHubAvatar.tsx'
 
 export type WatchIndexProps = {

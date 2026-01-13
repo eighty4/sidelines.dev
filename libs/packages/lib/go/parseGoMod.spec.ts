@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { RepoBranchReference } from '@sidelines/github'
-import type { RepositoryId } from '@sidelines/model'
+import type { BranchRef, RepositoryId } from '@sidelines/model'
 import { extractName, parseGoMod } from './parseGoMod.ts'
 import { TestFindPackagesApi } from '../_testFindPackages.ts'
 
@@ -15,7 +14,7 @@ test('extract module name from go.mod', () => {
 
 const repo: RepositoryId = { owner: 'eighty4', name: 'maestro' }
 
-const branchRef: RepoBranchReference = {
+const branchRef: BranchRef = {
     headOid: 'abcdefgXXX',
     name: '',
     committedDate: new Date(),

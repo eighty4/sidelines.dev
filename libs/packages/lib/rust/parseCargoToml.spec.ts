@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { RepoBranchReference } from '@sidelines/github'
-import type { RepositoryId } from '@sidelines/model'
+import type { BranchRef, RepositoryId } from '@sidelines/model'
 import {
     parseCargoToml,
     parsePackageInCargoToml,
@@ -10,7 +9,7 @@ import {
 import { TestFindPackagesApi } from '../_testFindPackages.ts'
 
 const repo = { name: 'maestro' } as RepositoryId
-const branchRef = { headOid: 'abcdefg' } as RepoBranchReference
+const branchRef = { headOid: 'abcdefg' } as BranchRef
 
 test('rust package .name .version and .publish in [package]', async () => {
     const toml = `[package]\nname = "cquill"\nversion = "0.0.1"\npublish = false`

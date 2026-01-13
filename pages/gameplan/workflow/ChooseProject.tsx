@@ -9,7 +9,7 @@ import {
     useState,
 } from 'react'
 import { navToProject } from '../../nav.ts'
-import type { UserDataClient } from '../../../workers/UserDataClient.ts'
+import type { UserDataClient } from '../../workers/UserDataClient.ts'
 
 export interface ChooseProjectProps {
     userData: UserDataClient

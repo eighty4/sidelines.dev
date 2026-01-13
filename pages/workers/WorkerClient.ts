@@ -9,9 +9,9 @@ export class WorkerClient {
     #responses: Subject<any> = new Subject()
     #w: Worker
 
-    constructor(p: string) {
-        this.#name = p.replace('/lib/sidelines/workers/', '')
-        this.#w = new Worker(p)
+    constructor(w: Worker, name: string = 'WorkerClient') {
+        this.#name = name
+        this.#w = w
         this.#w.onmessage = (e: MessageEvent<any>) =>
             this.#responses.next(e.data)
     }

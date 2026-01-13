@@ -1,7 +1,10 @@
 import type { Environment } from 'monaco-editor'
 
+// todo keep in sync with package deps
+const MONACO_VERSION = '0.54.0'
+
 function getWorkerURL(name: string) {
-    return `/lib/monaco/${name}-${sidelines.env.MONACO_VERSION}.js`
+    return `/lib/monaco/${name}-${MONACO_VERSION}.js`
 }
 
 export const MonacoEnvironment: Environment = {

@@ -6,7 +6,7 @@ import { type FC, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { getUserDataClient } from '../expectUserData.ts'
 import { loginRedirectUrl } from '../nav.ts'
-import type { UserDataClient } from '../../workers/UserDataClient.ts'
+import type { UserDataClient } from '../workers/UserDataClient.ts'
 
 type ProjectPageProps = {
     repo: RepositoryId

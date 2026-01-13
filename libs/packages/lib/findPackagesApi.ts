@@ -2,15 +2,14 @@ import {
     getHighestSemverTag,
     getMultipleRepoObjectContents,
     getRepoObjectContent,
-    type RepoBranchReference,
 } from '@sidelines/github'
-import type { RepositoryId } from '@sidelines/model'
+import type { BranchRef, RepositoryId } from '@sidelines/model'
 
 export abstract class FindPackagesApi {
     readonly #repo: RepositoryId
-    readonly #branchRef: RepoBranchReference
+    readonly #branchRef: BranchRef
 
-    protected constructor(repo: RepositoryId, branchRef: RepoBranchReference) {
+    protected constructor(repo: RepositoryId, branchRef: BranchRef) {
         this.#repo = repo
         this.#branchRef = branchRef
     }
@@ -63,11 +62,7 @@ export class FindPackagesApiImpl extends FindPackagesApi {
     readonly #repo: RepositoryId
     readonly #tagCache: Record<string, Promise<string | 'tag-not-found'>> = {}
 
-    constructor(
-        ghToken: string,
-        repo: RepositoryId,
-        branchRef: RepoBranchReference,
-    ) {
+    constructor(ghToken: string, repo: RepositoryId, branchRef: BranchRef) {
         super(repo, branchRef)
         this.#ghToken = ghToken
         this.#repo = repo

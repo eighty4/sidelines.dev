@@ -7,7 +7,7 @@ onDomInteractive(async () => {
     if (userData === null) {
         createLink(loginRedirectUrl, 'Login')
     } else {
-        const sw = new SharedWorker(sidelines.worker.SYNC_REFS, {
+        const sw = new SharedWorker('../workers/syncing/syncRefs.ts', {
             name: 'sidelines.dev events',
         })
         sw.port.postMessage({ kind: 'init', ghToken: userData.ghToken })

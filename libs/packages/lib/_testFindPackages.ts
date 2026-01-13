@@ -1,5 +1,4 @@
-import type { RepoBranchReference } from '@sidelines/github'
-import type { RepositoryId } from '@sidelines/model'
+import type { BranchRef, RepositoryId } from '@sidelines/model'
 import { FindPackagesApi } from './findPackagesApi.ts'
 
 export class TestFindPackagesApi extends FindPackagesApi {
@@ -8,7 +7,7 @@ export class TestFindPackagesApi extends FindPackagesApi {
 
     constructor(
         repo: RepositoryId,
-        branchRef: RepoBranchReference,
+        branchRef: BranchRef,
         contents: Record<string, string>,
         tags: Record<string, string>,
     ) {

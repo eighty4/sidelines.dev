@@ -1,7 +1,7 @@
 import { createJsonCache, type SessionCache } from '@sidelines/data/storage'
 import type { RepositoryId } from '@sidelines/model'
 import { BehaviorSubject, map, Observable } from 'rxjs'
-import type { UserDataClient } from '../../../workers/UserDataClient.ts'
+import type { UserDataClient } from '../../workers/UserDataClient.ts'
 
 type RepoTreePath = {
     // abs path from repo root excluding name of file or dir

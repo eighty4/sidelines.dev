@@ -1,11 +1,12 @@
-import type { RepoHeadRef, RepositoryId } from '@sidelines/model'
+import type { RepoDefaultBranch, RepositoryId } from '@sidelines/model'
+import { mapBranchRef } from '../_mapGraphToModel.ts'
 import { queryGraphqlApi } from '../request.ts'
 
 export async function collectRepoHeadOids(
     ghToken: string,
     repos: Array<RepositoryId>,
-): Promise<Array<RepoHeadRef>> {
-    const oidQ = `defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { oid } } } } } } }`
+): Promise<Array<RepoDefaultBranch>> {
+    const oidQ = `defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { committedDate, oid } } } } } } }`
     const nodes: Array<string> = []
     for (let i = 0; i < repos.length; i++) {
         const r = repos[i]
@@ -36,18 +37,17 @@ export async function collectRepoHeadOids(
 
     // collect results by nameWithOwner to dedupe explicit repos
     // that get picked up by OWNER or COLLABORATOR
-    const result: Record<string, RepoHeadRef> = {}
+    const result: Record<string, RepoDefaultBranch> = {}
 
     // collect explicit repos from their `r0..` aliased node
     for (let i = 0; i < repos.length; i++) {
         const res = json.data['r' + i]
         if (res) {
             const repo = repos[i]
-            result[`${repo.owner}/${repo.name}`] = {
+            result[`${repo.owner}/${repo.name}`] = mapRepoDefaultBranch(
                 repo,
-                defaultBranch: res.defaultBranchRef.name,
-                sha: res.defaultBranchRef.target.history.edges[0].node.oid,
-            }
+                res.defaultBranchRef,
+            )
         }
     }
 
@@ -55,11 +55,10 @@ export async function collectRepoHeadOids(
     repositories.nodes.forEach((repo: any) => {
         const nameWithOwner = `${repo.owner.login}/${repo.name}`
         if (!result[nameWithOwner]) {
-            result[nameWithOwner] = {
-                repo: { owner: repo.owner.login, name: repo.name },
-                defaultBranch: repo.defaultBranchRef.name,
-                sha: repo.defaultBranchRef.target.history.edges[0].node.oid,
-            }
+            result[nameWithOwner] = mapRepoDefaultBranch(
+                { owner: repo.owner.login, name: repo.name },
+                repo.defaultBranch,
+            )
         }
     })
 
@@ -75,4 +74,11 @@ export async function collectRepoHeadOids(
     }
 
     return Object.values(result)
+}
+
+function mapRepoDefaultBranch(
+    repo: RepositoryId,
+    defaultBranchRef: any,
+): RepoDefaultBranch {
+    return { repo, defaultBranch: mapBranchRef(defaultBranchRef) }
 }

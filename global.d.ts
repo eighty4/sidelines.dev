@@ -1,5 +1,4 @@
 import 'react'
-import type { SidelinesGlobal } from './dev/define.ts'
 
 declare module 'react' {
     interface CSSProperties {
@@ -8,5 +7,8 @@ declare module 'react' {
 }
 
 declare global {
-    var sidelines: SidelinesGlobal
+    var dank: {
+        IS_PROD: boolean
+        IS_DEV: boolean
+    }
 }

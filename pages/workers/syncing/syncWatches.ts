@@ -1,8 +1,8 @@
-import type { SyncWatchesInit } from './syncMessaging.ts'
+import type { SyncRefsInit } from './syncMessaging.ts'
 
 declare const self: DedicatedWorkerGlobalScope
 
-onmessage = (_e: MessageEvent<SyncWatchesInit>) => {
+onmessage = (_e: MessageEvent<SyncRefsInit>) => {
     syncWatches()
         .then(() => {})
         .catch(e => {

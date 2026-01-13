@@ -7,10 +7,15 @@ export type Repository = {
 
 export type RepositoryId = Pick<Repository, 'owner' | 'name'>
 
-export type RepoHeadRef = {
+export type RepoDefaultBranch = {
     repo: RepositoryId
-    defaultBranch: string
-    sha: string
+    defaultBranch: BranchRef
+}
+
+export type BranchRef = {
+    name: string
+    committedDate: Date
+    headOid: string
 }
 
 export type RepoWatches = { repo: RepositoryId; paths: Array<string> }

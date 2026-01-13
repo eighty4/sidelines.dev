@@ -7,7 +7,7 @@ import { FilePreview } from './FilePreview.tsx'
 import { PathSearchInput, type SearchLocation } from './PathSearchInput.tsx'
 import { WatchSplash } from './WatchSplash.tsx'
 import { WatchToggle } from './WatchToggle.tsx'
-import { WatchesApi } from '../../../workers/WatchesApi.ts'
+import { WatchesApi } from '../../workers/WatchesApi.ts'
 import { WatchListing } from './WatchListing.tsx'
 import type { RepoWatches } from '@sidelines/model'
 
@@ -108,7 +108,7 @@ onDomInteractive(() => {
     }
 })
 
-if (sidelines.IS_DEV) {
+if (dank.IS_DEV) {
     function addWatches(count: 5) {
         const stock = [
             'bytecodealliance/wasm-tools/crates/wasm-metadata',

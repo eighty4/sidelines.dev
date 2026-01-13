@@ -1,7 +1,7 @@
+import type { BranchRef } from '@sidelines/model'
 import {
     createCommitOnBranch,
     getViewerRepoDefaultBranch,
-    type RepoBranchReference,
 } from '../../index.ts'
 import { restPostForJson, restPostForResponse } from '../../request.ts'
 
@@ -61,7 +61,7 @@ async function generateNotesRepoFromTemplate(ghToken: string): Promise<void> {
 async function pollForDefaultBranchAfterCreatingRepo(
     ghToken: string,
     repo: string,
-): Promise<RepoBranchReference> {
+): Promise<BranchRef> {
     const DELAY_MS = 200
     const INTERVAL_MS = 50
     const TIMEOUT_MS = 5000
@@ -69,10 +69,10 @@ async function pollForDefaultBranchAfterCreatingRepo(
     const timeout: Promise<'timeout'> = new Promise(res =>
         setTimeout(() => res('timeout'), TIMEOUT_MS),
     )
-    let fetching: Promise<RepoBranchReference | 'repo-not-found'>
+    let fetching: Promise<BranchRef | 'repo-not-found'>
     while (true) {
         fetching = getViewerRepoDefaultBranch(ghToken, repo)
-        let branch: 'timeout' | RepoBranchReference | 'repo-not-found'
+        let branch: 'timeout' | BranchRef | 'repo-not-found'
         branch = await Promise.race([timeout, fetching])
         if (branch === 'timeout') {
             throw Error('timed out')

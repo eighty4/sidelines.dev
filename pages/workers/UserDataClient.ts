@@ -24,7 +24,9 @@ export class UserDataClient {
     constructor(ghToken: string, ghLogin: string) {
         this.ghToken = ghToken
         this.ghLogin = ghLogin
-        this.#w = new Worker(sidelines.worker.USER_DATA)
+        this.#w = new Worker('./userData.ts', {
+            name: 'sidelines.dev user data',
+        })
         this.#w.onmessage = (e: MessageEvent<UserDataRpcResponse>) =>
             this.#responses.next(e.data)
     }
