@@ -10,8 +10,8 @@ importers:
   .:
     dependencies:
       '@eighty4/dank':
-        specifier: 0.0.4-1
-        version: 0.0.4-1
+        specifier: 0.0.4-2
+        version: 0.0.4-2
       '@eighty4/model-t':
         specifier: 0.0.5-4
         version: 0.0.5-4
@@ -147,8 +147,9 @@ importers:
 
 packages:
 
-  '@eighty4/dank@0.0.4-1':
-    resolution: {integrity: sha512-b3FilMOIU/fiu2S61euSBAkwUHvs7uRDCmawfkztXbnwiGmm2hinkzxXbM1/HPsS+ml3D62CbWAJiDKOcOe+3w==}
+  '@eighty4/dank@0.0.4-2':
+    resolution: {integrity: sha512-osLdqb6qUO6Z+DVf4uFf7BzvEUi1ftKz/JzKzDY6+VG+HvQubGr+mNHllJg3/ZeuwC790kDA28tcHZh6ttwetQ==}
+    engines: {node: '>=24'}
     hasBin: true
 
   '@eighty4/model-t@0.0.5-4':
@@ -417,7 +418,7 @@ packages:
 
 snapshots:
 
-  '@eighty4/dank@0.0.4-1':
+  '@eighty4/dank@0.0.4-2':
     dependencies:
       esbuild: 0.25.11
       mime: 4.1.0
