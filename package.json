@@ -19,7 +19,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@eighty4/dank": "0.0.4-2",
+    "@eighty4/dank": "0.0.5-4",
     "@eighty4/model-t": "0.0.5-4",
     "@sidelines/data": "workspace:*",
     "@sidelines/github": "workspace:*",

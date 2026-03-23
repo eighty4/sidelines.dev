@@ -18,6 +18,10 @@ export default defineConfig(({ mode }) => {
         pages['/_data'] = './_dev/data/Data.html'
     }
     return {
+        devPages: {
+            '/__components': './_dev/components/Components.html',
+            '/__data': './_dev/data/Data.html',
+        },
         pages,
         esbuild: {
             loaders: {
