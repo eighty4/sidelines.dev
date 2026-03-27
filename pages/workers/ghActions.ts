@@ -3,7 +3,7 @@ import {
     type GHWorkflow,
     type GHWorkflowSchemaError,
 } from '@eighty4/model-t'
-import { getRepoDirContent, isWorkflowPassing } from '@sidelines/github'
+import { getViewerRepoDirContent, isWorkflowPassing } from '@sidelines/github'
 import type { RepositoryObject } from '@sidelines/model'
 
 declare const self: DedicatedWorkerGlobalScope
@@ -94,7 +94,7 @@ async function checkRepoWorkflows(
     ghLogin: string,
     repo: string,
 ) {
-    const workflowDirFiles = await getRepoDirContent(
+    const workflowDirFiles = await getViewerRepoDirContent(
         ghToken,
         repo,
         '.github/workflows',

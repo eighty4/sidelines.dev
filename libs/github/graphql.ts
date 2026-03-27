@@ -125,29 +125,30 @@ function collectVariablesType(
         const varName = definition.variable.name.value
         if (definition.type.kind === 'NonNullType') {
             if (definition.type.type.kind === 'NamedType') {
-                if (definition.type.type.name.value === 'String') {
-                    vars.push(`    ${varName}: string`)
-                    continue
-                }
-                if (definition.type.type.name.value === 'Int') {
-                    vars.push(`    ${varName}: number`)
-                    continue
-                }
+                vars.push(
+                    `    ${varName}: ${tsType(definition.type.type.name.value)}`,
+                )
+                continue
             }
         } else if (definition.type.kind === 'NamedType') {
-            if (definition.type.name.value === 'String') {
-                vars.push(`    ${varName}?: string`)
-                continue
-            }
-            if (definition.type.name.value === 'Int') {
-                vars.push(`    ${varName}: number`)
-                continue
-            }
+            vars.push(`    ${varName}?: ${tsType(definition.type.name.value)}`)
+            continue
         }
         throw Error('unresolved type of ' + varName)
     }
     vars.push('}')
     return vars.join('\n')
+}
+
+function tsType(gqlType: string): string {
+    switch (gqlType) {
+        case 'String':
+            return 'string'
+        case 'Int':
+            return 'number'
+        default:
+            throw TypeError()
+    }
 }
 
 function minify(gql: string): string {

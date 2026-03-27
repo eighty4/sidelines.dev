@@ -8,10 +8,16 @@ export async function doesViewerRepoExist(
     ghToken: string,
     repo: string,
 ): Promise<boolean> {
-    const json = await queryGraphqlApi<ViewerRepoExistsVars>(
+    const json = await queryGraphqlApi<ViewerRepoExistsVars, GraphData>(
         ghToken,
         ViewerRepoExists,
         { repo },
     )
     return !!json.data.viewer.repository
+}
+
+type GraphData = {
+    viewer: {
+        repository: { nameWithOwner: string } | null
+    }
 }

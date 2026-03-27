@@ -6,31 +6,20 @@ export async function collectRepoHeadOids(
     ghToken: string,
     repos: Array<RepositoryId>,
 ): Promise<Array<RepoDefaultBranch>> {
-    const oidQ = `defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { committedDate, oid } } } } } } }`
-    const nodes: Array<string> = []
-    for (let i = 0; i < repos.length; i++) {
-        const r = repos[i]
-        nodes.push(
-            `r${i}: repository(owner: "${r.owner}", name: "${r.name}") { ${oidQ} }`,
-        )
-    }
-    const repoQ = `nodes { name owner { login } ${oidQ} } pageInfo { endCursor hasNextPage }`
-    nodes.push(
-        `viewer { repositories (ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER], first: 100) { ${repoQ} } }`,
+    const query = buildFirstPageQuery(repos)
+    const json = await queryGraphqlApi<null, FirstPageGraphData>(
+        ghToken,
+        query,
+        null,
     )
-    const query = `query CollectRepoHeadOids { ${nodes.join(' ')} }`
-    const json = await queryGraphqlApi(ghToken, query, null)
 
     // immediately kick off fetching next page while parsing first
     const { repositories } = json.data.viewer
-    let nextPageQ: ((cursor: string) => string) | null = null
     let fetchingNextPage: Promise<any> | null = null
     if (repositories.pageInfo.hasNextPage) {
-        nextPageQ = (c: string) =>
-            `viewer { repositories (ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER], first: 100, after: "${c}") { ${repoQ} } }`
-        fetchingNextPage = queryGraphqlApi(
+        fetchingNextPage = queryGraphqlApi<null, ViewerRepoCursorGraphData>(
             ghToken,
-            nextPageQ(repositories.pageInfo.endCursor),
+            buildViewerRepoCursorQuery(repositories.pageInfo.endCursor),
             null,
         )
     }
@@ -41,7 +30,7 @@ export async function collectRepoHeadOids(
 
     // collect explicit repos from their `r0..` aliased node
     for (let i = 0; i < repos.length; i++) {
-        const res = json.data['r' + i]
+        const res = json.data[`r${i}`]
         if (res) {
             const repo = repos[i]
             result[`${repo.owner}/${repo.name}`] = mapRepoDefaultBranch(
@@ -65,15 +54,86 @@ export async function collectRepoHeadOids(
     if (fetchingNextPage) {
         const json = await fetchingNextPage
         if (json.data.repositories.pageInfo.hasNextPage) {
-            fetchingNextPage = queryGraphqlApi(
+            fetchingNextPage = queryGraphqlApi<null, ViewerRepoCursorGraphData>(
                 ghToken,
-                nextPageQ!(repositories.pageInfo.endCursor),
+                buildViewerRepoCursorQuery(repositories.pageInfo.endCursor),
                 null,
             )
         }
     }
 
     return Object.values(result)
+}
+
+type RepoDefaultBranchHeadOid = {
+    defaultBranchRef: {
+        name: string
+        target: {
+            history: {
+                edges: Array<{
+                    node: {
+                        committedDate: string
+                        oid: string
+                    }
+                }>
+            }
+        }
+    }
+}
+
+type RepoPath = {
+    name: string
+    owner: {
+        login: string
+    }
+}
+
+type FirstPageGraphData = {
+    [key: `r${number}`]: RepoDefaultBranchHeadOid
+    viewer: {
+        repositories: {
+            nodes: Array<RepoPath & RepoDefaultBranchHeadOid>
+            pageInfo: {
+                hasNextPage: boolean
+                endCursor: string
+            }
+        }
+    }
+}
+
+type ViewerRepoCursorGraphData = {
+    nodes: Array<RepoDefaultBranchHeadOid>
+    pageInfo: {
+        hasNextPage: boolean
+        endCursor: string
+    }
+}
+
+function buildOidQuery(): string {
+    return `defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { committedDate, oid } } } } } } }`
+}
+
+function buildViewerRepoPagingQuery(): string {
+    return `nodes { name owner { login } ${buildOidQuery()} } pageInfo { endCursor hasNextPage }`
+}
+
+function buildFirstPageQuery(repos: Array<RepositoryId>): string {
+    const oidQ = buildOidQuery()
+    const nodes: Array<string> = []
+    for (let i = 0; i < repos.length; i++) {
+        const r = repos[i]
+        nodes.push(
+            `r${i}: repository(owner: "${r.owner}", name: "${r.name}") { ${oidQ} }`,
+        )
+    }
+    nodes.push(
+        `viewer { repositories (ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER], first: 100) { ${buildViewerRepoPagingQuery()} } }`,
+    )
+    return `query CollectRepoHeadOids { ${nodes.join(' ')} }`
+}
+
+function buildViewerRepoCursorQuery(cursor: string): string {
+    return `viewer { repositories (ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER], first: 100, after: "${cursor}") { ${buildViewerRepoPagingQuery()} } }`
 }
 
 function mapRepoDefaultBranch(

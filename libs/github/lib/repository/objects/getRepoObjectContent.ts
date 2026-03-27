@@ -16,6 +16,14 @@ export async function getRepoObjectContent(
         }
       }
   }`
-    const json = await queryGraphqlApi(ghToken, query, null)
+    const json = await queryGraphqlApi<null, GraphData>(ghToken, query, null)
     return json.data.repository?.object?.text || null
+}
+
+type GraphData = {
+    repository: null | {
+        object: null | {
+            text: string
+        }
+    }
 }

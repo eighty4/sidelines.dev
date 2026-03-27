@@ -10,7 +10,7 @@ export async function getHighestSemverTag(
     tagPrefix?: string | null,
 ): Promise<string | 'repo-not-found' | 'tag-not-found'> {
     const query = `{ repository(owner: "${repo.owner}", name: "${repo.name}") { refs( query: "${tagPrefix ? tagPrefix : ''}v" refPrefix: "refs/tags/" last: 1 ) { edges { node { name } } } } }`
-    const json = await queryGraphqlApi(ghToken, query, null)
+    const json = await queryGraphqlApi<null, GraphData>(ghToken, query, null)
     if (!json.data.repository) {
         return 'repo-not-found'
     }
@@ -18,4 +18,16 @@ export async function getHighestSemverTag(
         return 'tag-not-found'
     }
     return json.data.repository.refs.edges[0].node.name
+}
+
+type GraphData = {
+    repository: {
+        refs: {
+            edges: Array<{
+                node: {
+                    name: string
+                }
+            }>
+        }
+    }
 }

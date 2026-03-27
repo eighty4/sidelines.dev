@@ -1,13 +1,17 @@
-import { NotFoundError, UnauthorizedError } from './responses.ts'
+import {
+    NotFoundError,
+    UnauthorizedError,
+    type GraphqlResponse,
+} from './responses.ts'
 
-export async function queryGraphqlApi<T>(
+export async function queryGraphqlApi<VARS, DATA>(
     ghToken: string,
     query: string,
-    variables: T | null,
+    variables: VARS,
     opts?: {
         signal?: AbortSignal
     },
-): Promise<any> {
+): Promise<GraphqlResponse<DATA>> {
     const body = JSON.stringify(variables ? { query, variables } : { query })
     const headers = new Headers({
         'Content-Type': 'application/json',

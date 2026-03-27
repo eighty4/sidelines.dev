@@ -11,7 +11,7 @@ export async function searchRepoNames(
     term: string,
 ): Promise<SearchRepoNamesResult> {
     const query = `{ search(query: "user:${owner} in:name ${term}", type: REPOSITORY, first: 5) { nodes { ... on Repository { name }}}}`
-    const json = await queryGraphqlApi(ghToken, query, null)
+    const json = await queryGraphqlApi<null, GraphData>(ghToken, query, null)
     return {
         term,
         matches: json.data.search.nodes.length
@@ -19,5 +19,13 @@ export async function searchRepoNames(
                   (datum: { name: string }) => datum.name,
               )
             : [],
+    }
+}
+
+type GraphData = {
+    search: {
+        nodes: Array<{
+            name: string
+        }>
     }
 }

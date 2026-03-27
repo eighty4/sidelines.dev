@@ -7,6 +7,11 @@
       "types": "./lib_types/index.d.ts",
       "node": "./lib_js/index.js",
       "import": "./lib/index.ts"
+    },
+    "./api/*": {
+      "types": "./lib_types/*.ts",
+      "node": "./lib_js/*.js",
+      "import": "./lib/*.ts"
     }
   },
   "scripts": {
@@ -14,9 +19,11 @@
     "fmt:graphql": "pnpm exec prettier --config ../../.prettierrc.ts --write \"**/gql.ts\""
   },
   "dependencies": {
-    "@sidelines/model": "workspace:*"
+    "@sidelines/model": "workspace:*",
+    "semver": "^7.7.4"
   },
   "devDependencies": {
+    "@types/semver": "^7.7.1",
     "graphql": "^16.11.0"
   }
 }

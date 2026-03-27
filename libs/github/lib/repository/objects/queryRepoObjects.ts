@@ -41,7 +41,7 @@ export async function queryRepoObject(
     },
 ): Promise<RepoObject | 'repo-not-found'> {
     path = path || ''
-    const json = await queryGraphqlApi<QueryRepoObjectsVars>(
+    const json = await queryGraphqlApi<QueryRepoObjectsVars, any>(
         ghToken,
         QueryRepoObjects,
         { owner: repo.owner, name: repo.name, objExpr: `HEAD:${path || ''}` },
@@ -68,7 +68,12 @@ export async function queryMultipleRepoObjects(
             `obj${i}: object(expression: "HEAD:${p}") { __typename ... on Blob { byteSize isBinary } ... on Tree { entries { name type object { ... on Blob { byteSize isBinary } } } } }`,
     )
     const query = `query QueryMultipleRepoObjects($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { ${objectQs.join(' ')} } }`
-    const json = await queryGraphqlApi(ghToken, query, repo, opts)
+    const json = await queryGraphqlApi<RepositoryId, any>(
+        ghToken,
+        query,
+        repo,
+        opts,
+    )
     if (!json.data.repository) {
         return 'repo-not-found'
     }

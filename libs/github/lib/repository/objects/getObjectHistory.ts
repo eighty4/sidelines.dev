@@ -1,3 +1,7 @@
+import {
+    ViewerRepoObjectHistory,
+    type ViewerRepoObjectHistoryVars,
+} from './gql.ts'
 import type { Pageable } from '../../paging.ts'
 import { queryGraphqlApi } from '../../request.ts'
 
@@ -16,34 +20,18 @@ export async function getObjectHistory(
     pageSize: number,
     cursor?: string,
 ): Promise<Pageable<ObjectHistory>> {
-    const query = `{
-      viewer {
-        repository(name: "${repo}") {
-          ref(qualifiedName: "${branch}") {
-            target {
-              ... on Commit {
-                history(first:${pageSize}, path: "${path}", after: ${!!cursor ? `"${cursor}"` : 'null'}) {
-                  nodes {
-                    oid
-                    author {
-                      name
-                    }
-                    message
-                    authoredDate
-                  }
-                  pageInfo {
-                    hasNextPage
-                    endCursor
-                  }
-                  totalCount
-                }
-              }
-            }
-          }
-        }
-      }
-    }`
-    const json = await queryGraphqlApi(ghToken, query, null)
+    const vars = {
+        repo,
+        branch,
+        path,
+        pageSize,
+        cursor: cursor || `'null'`,
+    }
+    const json = await queryGraphqlApi<ViewerRepoObjectHistoryVars, GraphData>(
+        ghToken,
+        ViewerRepoObjectHistory,
+        vars,
+    )
     if (!json.data.viewer.repository?.ref?.target?.history) {
         throw new Error(
             `repo ${repo} branch ${branch} path ${path} object history not found`,
@@ -65,5 +53,31 @@ export async function getObjectHistory(
                 authoredDate: node.authoredDate,
             }
         }),
+    }
+}
+
+type GraphData = {
+    viewer: {
+        repository: null | {
+            ref: null | {
+                target: null | {
+                    history: null | {
+                        nodes: Array<{
+                            oid: string
+                            author: {
+                                name: string
+                            }
+                            message: string
+                            authoredDate: string
+                        }>
+                        totalCount: number
+                        pageInfo: {
+                            hasNextPage: boolean
+                            endCursor: string
+                        }
+                    }
+                }
+            }
+        }
     }
 }

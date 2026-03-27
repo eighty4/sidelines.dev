@@ -10,7 +10,11 @@ export type SidelinesRepoProblem = 'bad-url' | 'not-private'
 export async function checkSidelinesRepo(
     ghToken: string,
 ): Promise<boolean | Set<SidelinesRepoProblem>> {
-    const json = await queryGraphqlApi(ghToken, CheckSidelinesRepo, null)
+    const json = await queryGraphqlApi<null, GraphData>(
+        ghToken,
+        CheckSidelinesRepo,
+        null,
+    )
     if (!json.data.viewer.repository) {
         return false
     }
@@ -23,4 +27,13 @@ export async function checkSidelinesRepo(
     if (homepageUrl !== GREAT_URL) problems.add('bad-url')
     if (!isPrivate) problems.add('not-private')
     return problems
+}
+
+type GraphData = {
+    viewer: {
+        repository: {
+            homepageUrl: string
+            isPrivate: boolean
+        }
+    }
 }

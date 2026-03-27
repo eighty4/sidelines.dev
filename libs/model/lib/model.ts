@@ -88,3 +88,49 @@ export type RepositoryObject =
           name: string
           size: number
       }
+
+export class RepositoryValues<T> {
+    #data: Record<string, Record<string, T | null>> = {}
+
+    static #hasValue(value: any): boolean {
+        return !(value === null || typeof value === 'undefined')
+    }
+
+    get data(): Record<string, Record<string, T | null>> {
+        return this.#data
+    }
+
+    getValue(repo: RepositoryId): T | null {
+        const ownerRepos = this.#data[repo.owner]
+        if (ownerRepos) {
+            const value = ownerRepos[repo.name]
+            if (RepositoryValues.#hasValue(value)) {
+                return value
+            }
+        }
+        return null
+    }
+
+    hasValue(repo: RepositoryId): boolean {
+        const ownerRepos = this.#data[repo.owner]
+        if (ownerRepos) {
+            return RepositoryValues.#hasValue(ownerRepos[repo.name])
+        } else {
+            return false
+        }
+    }
+
+    removeValue(repo: RepositoryId) {
+        const ownerRepos = this.#data[repo.owner]
+        if (ownerRepos) {
+            ownerRepos[repo.name] = null
+        }
+    }
+
+    setValue(repo: RepositoryId, value: T) {
+        if (!this.#data[repo.owner]) {
+            this.#data[repo.owner] = {}
+        }
+        this.#data[repo.owner][repo.name] = value
+    }
+}

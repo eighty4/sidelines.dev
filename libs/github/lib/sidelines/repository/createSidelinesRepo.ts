@@ -1,4 +1,4 @@
-import type { BranchRef } from '@sidelines/model'
+import type { BranchRef, RepositoryId } from '@sidelines/model'
 import {
     createCommitOnBranch,
     getViewerRepoDefaultBranch,
@@ -20,20 +20,23 @@ export async function createSidelinesRepo(
     await generateNotesRepoFromTemplate(ghToken)
     await updateSidelinesRepoHomepage(ghToken, owner)
     if (repo) {
+        const sidelinesRepoId: RepositoryId = {
+            owner,
+            name: '.sidelines',
+        }
         const branch = await pollForDefaultBranchAfterCreatingRepo(
             ghToken,
-            '.sidelines',
+            sidelinesRepoId.name,
         )
-        await createCommitOnBranch({
-            ghToken,
-            owner,
-            repo: '.sidelines',
+        await createCommitOnBranch(ghToken, {
+            repo: sidelinesRepoId,
             commitMessage: `add ${owner}/${repo} notes README.md`,
             branch,
             additions: [
                 {
-                    path: `${repo}/README.md`,
-                    contents: btoa(`# ${owner}/${repo}`),
+                    dirpath: repo,
+                    filename: 'README.md',
+                    content: btoa(`# ${owner}/${repo}`),
                 },
             ],
         })

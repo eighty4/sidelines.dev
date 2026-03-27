@@ -1,4 +1,8 @@
-import { collectPagedQueryResults } from '../paging.ts'
+import { pageQueryWithVars } from '../paging.ts'
+import {
+    ViewerReposActivityData,
+    type ViewerReposActivityDataVars,
+} from './gql.ts'
 
 export type RepoActivityData = {
     name: string
@@ -9,35 +13,32 @@ export type RepoActivityData = {
 export async function collectRepoActivityData(
     ghToken: string,
 ): Promise<Array<RepoActivityData>> {
-    const reposPerPage = 5
-    return await collectPagedQueryResults(
+    const pageSize = 5
+    return await pageQueryWithVars<
+        GraphData,
+        RepoActivityData,
+        ViewerReposActivityDataVars
+    >(
         ghToken,
-        reposPerPage,
-        pagingParams => `{
-      viewer {
-        repositories(
-          ${pagingParams},
-          affiliations: [OWNER]
-        ) {
-          nodes {
-            ... on Repository {
-              name
-              stargazerCount
-              updatedAt
-            }
-          }
-          pageInfo {
-            endCursor
-            hasNextPage
-          }
-        }
-      }
-    }`,
-        result => {
-            return result.data.viewer.repositories.nodes
-        },
-        result => {
-            return result.data.viewer.repositories.pageInfo
-        },
+        data => data.viewer.repositories.nodes,
+        data => data.viewer.repositories.pageInfo,
+        ViewerReposActivityData,
+        cursor => ({ cursor, pageSize }),
     )
+}
+
+type GraphData = {
+    viewer: {
+        repositories: {
+            nodes: Array<{
+                name: string
+                stargazerCount: number
+                updatedAt: string
+            }>
+            pageInfo: {
+                endCursor: string
+                hasNextPage: boolean
+            }
+        }
+    }
 }
