@@ -1,17 +1,20 @@
-import { connectToDb, DB_OBJECT_STORES } from '@sidelines/data/indexeddb/dev'
-import { onDomInteractive } from '@sidelines/pageload/ready'
 import {
     type ChangeEvent,
     type CSSProperties,
     type FC,
+    Fragment,
+    type ReactElement,
+    use,
     useEffect,
     useState,
 } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
+    connectToDbs,
     getDbStoreMetadata,
     queryDbStore,
     queryDbStoreIndex,
+    type Database,
     type StoreMetadata,
 } from './db.ts'
 import {
@@ -32,69 +35,119 @@ import {
 type ViewState =
     | {
           kind: 'db'
-          table: string
-          index?: string
+          db: string
+          store: string
       }
     | {
           kind: 'fs'
           path: string
       }
 
-const DataPage: FC = () => {
-    const [db, setDb] = useState<IDBDatabase | 'connecting'>('connecting')
+type DataPageProps = {
+    dbs: Array<Database>
+}
+
+const DataPage: FC<DataPageProps> = ({ dbs }) => {
     const [view, setView] = useState<ViewState | null>(null)
 
-    useEffect(() => {
-        connectToDb().then(setDb).catch(console.error)
-    }, [])
-
-    let main
-    if (view?.kind === 'db' && db !== 'connecting') {
-        main = <StoreView db={db} storeName={view.table} />
-    } else if (view?.kind === 'fs') {
-        main = <FileView path={view.path} />
-    }
-
-    function onOpenTable(table: string) {
-        setView({ kind: 'db', table })
+    function onOpenObjectStore(db: string, store: string) {
+        setView({ kind: 'db', db, store })
     }
 
     function onOpenFile(path: string) {
         setView({ kind: 'fs', path })
     }
 
-    const openStore = view?.kind === 'db' ? view.table : null
-    const openFilePath = view?.kind === 'fs' ? view.path : null
+    function openView(): ReactElement | null {
+        if (view?.kind === 'db') {
+            const db = dbs.find(db => db.name === view.db)
+            if (db) {
+                return <StoreView opening={db.open} storeName={view.store} />
+            }
+        } else if (view?.kind === 'fs') {
+            return <FileView path={view.path} />
+        }
+        return null
+    }
+
+    function openObjectStore(db: Database): string | null {
+        if (view?.kind === 'db' && view.db === db.name) {
+            return view.store
+        } else {
+            return null
+        }
+    }
+
+    function openFilePath(): string | null {
+        return view?.kind === 'fs' ? view.path : null
+    }
 
     return (
         <>
             <nav id="debug-index">
-                <div className="header">
-                    <DatabaseSvg /> IndexedDB
-                </div>
-                {DB_OBJECT_STORES.map(store => {
-                    const classes =
-                        openStore === store ? 'db-store open' : 'db-store'
-                    return (
-                        <div
-                            key={store}
-                            className={classes}
-                            onClick={() => onOpenTable(store)}
-                        >
-                            {store}
-                        </div>
-                    )
-                })}
+                {dbs.map(db => (
+                    <Fragment key={db.name}>
+                        <DatabaseIndexHeader db={db} />
+                        <DatabaseStoreIndex
+                            db={db}
+                            openObjectStore={openObjectStore(db)}
+                            onOpenObjectStore={onOpenObjectStore}
+                        />
+                    </Fragment>
+                ))}
                 <div className="header">
                     <DownloadSvg /> OPFS
                 </div>
                 <FileIndex
                     onOpenFile={onOpenFile}
-                    openFilePath={openFilePath}
+                    openFilePath={openFilePath()}
                 />
             </nav>
-            <main id="debug-view">{main}</main>
+            <main id="debug-view">{openView()}</main>
         </>
+    )
+}
+
+type DatabaseIndexHeaderProps = {
+    db: Database
+}
+
+const DatabaseIndexHeader: FC<DatabaseIndexHeaderProps> = ({ db }) => {
+    return (
+        <div className="header">
+            <DatabaseSvg /> {db.name}{' '}
+            <span className="version">v{db.version}</span>
+        </div>
+    )
+}
+
+type DatabaseStoreIndexProps = {
+    db: Database
+    onOpenObjectStore: (db: string, store: string) => void
+    openObjectStore: string | null
+}
+
+const DatabaseStoreIndex: FC<DatabaseStoreIndexProps> = ({
+    db,
+    onOpenObjectStore,
+    openObjectStore,
+}) => {
+    const stores = use(db.stores)
+
+    return (
+        <Fragment>
+            {stores.map(store => (
+                <div
+                    key={store}
+                    className={
+                        store === openObjectStore ? 'db-store open' : 'db-store'
+                    }
+                    onClick={() => onOpenObjectStore(db.name, store)}
+                >
+                    {store}
+                </div>
+            ))}
+        </Fragment>
     )
 }
 
@@ -191,10 +244,11 @@ const FileView: FC<{ path: string }> = ({ path }) => {
     }
 }
 
-const StoreView: FC<{ db: IDBDatabase; storeName: string }> = ({
-    db,
+const StoreView: FC<{ opening: Promise<IDBDatabase>; storeName: string }> = ({
+    opening,
     storeName,
 }) => {
+    const db = use(opening)
     const [store, setStore] = useState<StoreMetadata | 'loading'>('loading')
     const [indexed, setIndexed] = useState<string | false | null>(null)
     const [direction, setDirection] = useState<IDBCursorDirection>('next')
@@ -384,6 +438,16 @@ function toStringForTable(datum: unknown): string {
     }
 }
 
+function onDomInteractive(fn: () => void) {
+    if (document.readyState !== 'loading') {
+        fn()
+    } else {
+        document.addEventListener('DOMContentLoaded', fn, { once: true })
+    }
+}
+
 onDomInteractive(async () => {
-    createRoot(document.getElementById('root')!).render(<DataPage />)
+    const connectingToDbs = connectToDbs()
+    const root = document.getElementById('root') as HTMLElement
+    createRoot(root).render(<DataPage dbs={await connectingToDbs} />)
 })

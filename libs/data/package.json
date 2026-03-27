@@ -13,11 +13,6 @@
       "node": "./lib_js/transactions/*.js",
       "default": "./lib/transactions/*.ts"
     },
-    "./indexeddb/dev": {
-      "types": "./lib_types/database.d.ts",
-      "node": "./lib_js/database.js",
-      "default": "./lib/database.ts"
-    },
     "./storage": {
       "types": "./lib_types/storage.d.ts",
       "node": "./lib_js/storage.js",

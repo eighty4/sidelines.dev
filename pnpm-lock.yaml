@@ -10,8 +10,8 @@ importers:
   .:
     dependencies:
       '@eighty4/dank':
-        specifier: 0.0.5-4
-        version: 0.0.5-4
+        specifier: 0.0.5-5
+        version: 0.0.5-5
       '@eighty4/model-t':
         specifier: 0.0.5-4
         version: 0.0.5-4
@@ -94,7 +94,13 @@ importers:
       '@sidelines/model':
         specifier: workspace:*
         version: link:../model
+      semver:
+        specifier: ^7.7.4
+        version: 7.7.4
     devDependencies:
+      '@types/semver':
+        specifier: ^7.7.1
+        version: 7.7.1
       graphql:
         specifier: ^16.11.0
         version: 16.11.0
@@ -136,6 +142,24 @@ importers:
         specifier: ^19.2.0
         version: 19.2.0(react@19.2.0)
 
+  libs/upkeep:
+    dependencies:
+      '@eighty4/model-t':
+        specifier: 0.0.5-4
+        version: 0.0.5-4
+      '@sidelines/data':
+        specifier: workspace:*
+        version: link:../data
+      '@sidelines/github':
+        specifier: workspace:*
+        version: link:../github
+      '@sidelines/model':
+        specifier: workspace:*
+        version: link:../model
+      semver:
+        specifier: ^7.7.4
+        version: 7.7.4
+
   server:
     dependencies:
       '@sidelines/data':
@@ -147,8 +171,8 @@ importers:
 
 packages:
 
-  '@eighty4/dank@0.0.5-4':
-    resolution: {integrity: sha512-s0d88BFqnYOnFdoF2BCXQs2h9bQlNfBL9B6BlxaDqpOH8ZKckEnNwUAqlgB9JMzyZqXJ7v3Bb7nAvYgUb9p0HA==}
+  '@eighty4/dank@0.0.5-5':
+    resolution: {integrity: sha512-XVAbmPR/MDm07BZcU9x8nVMZWAL8Ombgj+xbt2fpX+BTrjvdA7WX2+oWw3AJHPIWUxSm+V213je+JRPrWsuNNg==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -328,6 +352,9 @@ packages:
   '@types/react@19.2.2':
     resolution: {integrity: sha512-6mDvHUFSjyT2B2yeNx2nUgMxh9LtOWvkhIU3uePn2I2oyNymUAX1NIsdgviM4CH+JSrp2D2hsMvJOkxY+0wNRA==}
 
+  '@types/semver@7.7.1':
+    resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
+
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
 
@@ -405,6 +432,11 @@ packages:
   scheduler@0.27.0:
     resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
 
+  semver@7.7.4:
+    resolution: {integrity: sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA==}
+    engines: {node: '>=10'}
+    hasBin: true
+
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
@@ -418,7 +450,7 @@ packages:
 
 snapshots:
 
-  '@eighty4/dank@0.0.5-4':
+  '@eighty4/dank@0.0.5-5':
     dependencies:
       esbuild: 0.25.11
       mime: 4.1.0
@@ -522,6 +554,8 @@ snapshots:
     dependencies:
       csstype: 3.1.3
 
+  '@types/semver@7.7.1': {}
+
   argparse@2.0.1: {}
 
   csstype@3.1.3: {}
@@ -603,6 +637,8 @@ snapshots:
       tslib: 2.8.1
 
   scheduler@0.27.0: {}
+
+  semver@7.7.4: {}
 
   tslib@2.8.1: {}
 

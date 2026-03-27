@@ -113,6 +113,11 @@ body {
         height: 1.4rem;
         padding-left: var(--gap);
         gap: var(--gap);
+
+        & .version {
+            font-size: 0.8rem;
+            color: #777;
+        }
     }
 
     & .db-store {

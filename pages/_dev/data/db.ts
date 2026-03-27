@@ -1,3 +1,29 @@
+export type Database = {
+    name: string
+    open: Promise<IDBDatabase>
+    stores: Promise<Array<string>>
+    version: number
+}
+
+export async function connectToDbs(): Promise<Array<Database>> {
+    const dbNames = await indexedDB.databases()
+    const dbs: Array<Database | null> = dbNames.map(({ name, version }) => {
+        if (!name || typeof version === 'undefined') {
+            return null
+        }
+        const open = new Promise<IDBDatabase>((res, rej) => {
+            const opening = indexedDB.open(name, version)
+            opening.onsuccess = () => res(opening.result)
+            opening.onerror = rej
+        })
+        const stores = open.then(db => Array.from(db.objectStoreNames))
+        return { name, open, stores, version }
+    })
+    return dbs
+        .filter(db => db !== null)
+        .sort((db1, db2) => db1.name.localeCompare(db2.name))
+}
+
 export type StoreMetadata = {
     store: string
     // IDBObjectStore.keyPaths

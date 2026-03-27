@@ -31,17 +31,6 @@ const DB_STORE_REPO_SYNCING_KEY = ['when', 'nameWithOwner', 'task']
 export const DB_STORE_SYNC_LOG = 'sync-log'
 const DB_STORE_SYNC_LOG_KEY = ['when']
 
-export const DB_OBJECT_STORES = [
-    DB_STORE_READ_COMMITS,
-    DB_STORE_READ_WATCHES,
-    DB_STORE_REPO_NAV,
-    DB_STORE_REPO_FILES,
-    DB_STORE_REPO_HEADS,
-    DB_STORE_REPO_PACKAGES,
-    DB_STORE_REPO_SYNCING,
-    DB_STORE_SYNC_LOG,
-]
-
 function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
     console.log('upgrading db from', oldVersion)
     while (oldVersion < DB_VERSION) {
