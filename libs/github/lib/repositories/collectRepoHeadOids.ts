@@ -1,5 +1,4 @@
 import type { RepoDefaultBranch, RepositoryId } from '@sidelines/model'
-import { mapBranchRef } from '../_mapGraphToModel.ts'
 import { queryGraphqlApi } from '../request.ts'
 
 export async function collectRepoHeadOids(
@@ -15,6 +14,7 @@ export async function collectRepoHeadOids(
 
     // immediately kick off fetching next page while parsing first
     const { repositories } = json.data.viewer
+    console.log(json.data)
     let fetchingNextPage: Promise<any> | null = null
     if (repositories.pageInfo.hasNextPage) {
         fetchingNextPage = queryGraphqlApi<null, ViewerRepoCursorGraphData>(
@@ -41,12 +41,12 @@ export async function collectRepoHeadOids(
     }
 
     // collect OWNER and COLLABORATOR repos
-    repositories.nodes.forEach((repo: any) => {
+    repositories.nodes.forEach((repo: RepoPath & RepoDefaultBranchHeadOid) => {
         const nameWithOwner = `${repo.owner.login}/${repo.name}`
         if (!result[nameWithOwner]) {
             result[nameWithOwner] = mapRepoDefaultBranch(
                 { owner: repo.owner.login, name: repo.name },
-                repo.defaultBranch,
+                repo.defaultBranchRef,
             )
         }
     })
@@ -138,7 +138,16 @@ function buildViewerRepoCursorQuery(cursor: string): string {
 
 function mapRepoDefaultBranch(
     repo: RepositoryId,
-    defaultBranchRef: any,
+    defaultBranchRef: RepoDefaultBranchHeadOid['defaultBranchRef'],
 ): RepoDefaultBranch {
-    return { repo, defaultBranch: mapBranchRef(defaultBranchRef) }
+    console.log(repo, defaultBranchRef)
+    const commit = defaultBranchRef.target.history.edges[0].node
+    return {
+        repo,
+        defaultBranch: {
+            name: defaultBranchRef.name,
+            headOid: commit.oid,
+            committedDate: new Date(commit.committedDate),
+        },
+    }
 }

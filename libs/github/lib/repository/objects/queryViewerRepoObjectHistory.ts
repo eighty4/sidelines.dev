@@ -12,7 +12,7 @@ export type ObjectHistory = {
     authoredDate: string
 }
 
-export async function getObjectHistory(
+export async function queryViewerRepoObjectHistory(
     ghToken: string,
     repo: string,
     branch: string,
@@ -45,7 +45,7 @@ export async function getObjectHistory(
             hasNextPage: pageInfo.hasNextPage,
             endCursor: pageInfo.endCursor,
         },
-        data: nodes.map((node: any) => {
+        data: nodes.map((node: HistoryNodeGraphData) => {
             return {
                 oid: node.oid,
                 authorName: node.author.name,
@@ -62,14 +62,7 @@ type GraphData = {
             ref: null | {
                 target: null | {
                     history: null | {
-                        nodes: Array<{
-                            oid: string
-                            author: {
-                                name: string
-                            }
-                            message: string
-                            authoredDate: string
-                        }>
+                        nodes: Array<HistoryNodeGraphData>
                         totalCount: number
                         pageInfo: {
                             hasNextPage: boolean
@@ -80,4 +73,13 @@ type GraphData = {
             }
         }
     }
+}
+
+type HistoryNodeGraphData = {
+    oid: string
+    author: {
+        name: string
+    }
+    message: string
+    authoredDate: string
 }

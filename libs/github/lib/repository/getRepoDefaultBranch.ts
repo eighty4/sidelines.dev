@@ -1,5 +1,4 @@
 import type { BranchRef, RepositoryId } from '@sidelines/model'
-import { mapBranchRef } from '../_mapGraphToModel.ts'
 import { queryGraphqlApi } from '../request.ts'
 
 function repoQuery() {
@@ -11,7 +10,7 @@ export async function getRepoDefaultBranch(
     repo: RepositoryId,
 ): Promise<BranchRef | 'repo-not-found'> {
     const query = `query { repository(owner: "${repo.owner}", name: "${repo.name}") { ${repoQuery()} } }`
-    const json = await queryGraphqlApi(ghToken, query, null)
+    const json = await queryGraphqlApi<null, QueryRepo>(ghToken, query, null)
     return resultFromData(json.data)
 }
 
@@ -21,13 +20,48 @@ export async function getViewerRepoDefaultBranch(
     repo: string,
 ): Promise<BranchRef | 'repo-not-found'> {
     const query = `query { viewer { repository(name: "${repo}") { ${repoQuery()} } } }`
-    const json = await queryGraphqlApi(ghToken, query, null)
-    return resultFromData(json.data)
+    const json = await queryGraphqlApi<null, QueryViewerRepo>(
+        ghToken,
+        query,
+        null,
+    )
+    return resultFromData(json.data.viewer)
 }
 
-function resultFromData(data: any): BranchRef | 'repo-not-found' {
+type QueryRepo = RepoGraphData
+
+type QueryViewerRepo = {
+    viewer: RepoGraphData
+}
+
+type RepoGraphData = {
+    repository: {
+        defaultBranchRef: {
+            name: string
+            target: {
+                history: {
+                    edges: Array<{
+                        node: {
+                            name: string
+                            headOid: string
+                            committedDate: string
+                        }
+                    }>
+                }
+            }
+        }
+    }
+}
+
+function resultFromData(data: RepoGraphData): BranchRef | 'repo-not-found' {
     if (!data.repository) {
         return 'repo-not-found'
     }
-    return mapBranchRef(data.repository.defaultBranchRef)
+    const dbr = data.repository.defaultBranchRef
+    const commit = dbr.target.history.edges[0].node
+    return {
+        name: dbr.name,
+        headOid: commit.headOid,
+        committedDate: new Date(commit.committedDate),
+    }
 }
