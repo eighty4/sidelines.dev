@@ -1,4 +1,4 @@
-import { getRepoDefaultBranch } from '@sidelines/github'
+import queryRepoDefaultBranch from '@sidelines/github/repository/queryRepoDefaultBranch'
 import type {
     BranchRef,
     RepositoryId,
@@ -19,7 +19,7 @@ export async function readRepoPackages(
     ghToken: string,
     repo: RepositoryId,
 ): Promise<Array<RepositoryPackage> | 'repo-not-found'> {
-    const defaultBranch = await getRepoDefaultBranch(ghToken, repo)
+    const defaultBranch = await queryRepoDefaultBranch(ghToken, repo)
     if (defaultBranch === 'repo-not-found') {
         return 'repo-not-found'
     }

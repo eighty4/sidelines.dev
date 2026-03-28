@@ -1,4 +1,4 @@
-import { queryGraphqlApi } from './request.ts'
+import queryGraphqlApi from './queryGraphqlApi.ts'
 
 // reusable type for pageable query responses
 export type Pageable<T> = {

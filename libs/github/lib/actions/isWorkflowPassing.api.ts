@@ -1,4 +1,4 @@
-import { getWorkflowRuns } from './getWorkflowRuns.ts'
+import { getWorkflowRuns } from './getWorkflowRuns.api.ts'
 
 export async function isWorkflowPassing(
     ghToken: string,

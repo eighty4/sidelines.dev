@@ -1,4 +1,4 @@
-import { createSidelinesRepo } from '@sidelines/github'
+import { createSidelinesRepo } from '@sidelines/github/sidelines/repository/createSidelinesRepo'
 import type { RepositoryId } from '@sidelines/model'
 import { InitializingError } from '@sidelines/ui'
 import { type FC, useState } from 'react'

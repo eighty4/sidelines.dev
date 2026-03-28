@@ -1,4 +1,4 @@
-import { getMultipleRepoObjectContents } from '@sidelines/github'
+import queryRepoMultipleObjectsContents from '@sidelines/github/repository/objects/queryRepoMultipleObjectsContents'
 import type {
     BranchRef,
     RepositoryId,
@@ -24,7 +24,7 @@ export async function findRepoPackages(
     //  support retrieving blobs or only checking if they exist
     //   use to check presence of JS package manager files
     //   and that build.zig exists (content is not necessary)
-    const cats = await getMultipleRepoObjectContents(
+    const cats = await queryRepoMultipleObjectsContents(
         ghToken,
         repo,
         [

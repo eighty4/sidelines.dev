@@ -1,4 +1,4 @@
-query CheckSidelinesRepo {
+query QCheckSidelinesRepo {
     viewer {
         repository(name: ".sidelines") {
             homepageUrl

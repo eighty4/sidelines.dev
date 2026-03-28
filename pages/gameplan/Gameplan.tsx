@@ -1,4 +1,4 @@
-import { collectRepoHeadOids, UnauthorizedError } from '@sidelines/github'
+import { UnauthorizedError } from '@sidelines/github'
 import { expectGhLogin, expectGhToken } from '@sidelines/pageload/session'
 import { onDomInteractive } from '@sidelines/pageload/ready'
 import { type FC } from 'react'
@@ -24,7 +24,6 @@ onDomInteractive(async () => {
     try {
         const ghToken = expectGhToken()
         const ghLogin = await expectGhLogin(ghToken)
-        collectRepoHeadOids(ghToken, [])
         createRoot(document.getElementById('root')!).render(
             <Gameplan ghToken={ghToken} ghLogin={ghLogin} />,
         )

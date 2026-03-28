@@ -1,7 +1,7 @@
-import { pageQueryWithVars } from '../paging.ts'
+import { pageQueryWithVars } from '../pagingGraphqlQueries.ts'
 import {
-    ViewerReposActivityData,
-    type ViewerReposActivityDataVars,
+    QViewerReposActivityData,
+    type QViewerReposActivityDataVars,
 } from './gql.ts'
 
 export type RepoActivityData = {
@@ -10,19 +10,19 @@ export type RepoActivityData = {
     updatedAt: string
 }
 
-export async function collectRepoActivityData(
+export async function queryRepoActivityData(
     ghToken: string,
 ): Promise<Array<RepoActivityData>> {
     const pageSize = 5
     return await pageQueryWithVars<
         GraphData,
         RepoActivityData,
-        ViewerReposActivityDataVars
+        QViewerReposActivityDataVars
     >(
         ghToken,
         data => data.viewer.repositories.nodes,
         data => data.viewer.repositories.pageInfo,
-        ViewerReposActivityData,
+        QViewerReposActivityData,
         cursor => ({ cursor, pageSize }),
     )
 }

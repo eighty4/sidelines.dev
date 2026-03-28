@@ -8,15 +8,15 @@
       "node": "./lib_js/index.js",
       "import": "./lib/index.ts"
     },
-    "./api/*": {
-      "types": "./lib_types/*.ts",
-      "node": "./lib_js/*.js",
-      "import": "./lib/*.ts"
+    "./*": {
+      "types": "./lib_types/*.api.ts",
+      "node": "./lib_js/*.api.js",
+      "import": "./lib/*.api.ts"
     }
   },
   "scripts": {
     "graphql": "node graphql.ts && pnpm fmt:graphql",
-    "fmt:graphql": "pnpm exec prettier --config ../../.prettierrc.ts --write \"**/gql.ts\""
+    "fmt:graphql": "pnpm exec prettier --config ../../.prettierrc.ts --write \"**/gql.ts\" --log-level warn"
   },
   "dependencies": {
     "@sidelines/model": "workspace:*",

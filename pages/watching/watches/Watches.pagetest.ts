@@ -182,11 +182,11 @@ function apiResponsesForPageSetup(userStory: UserStory) {
     userStory
         .withAppInstallation({ id: 1234567, repos: 'all' })
         // for verifying auth
-        .withGraphqlResponse('ViewerLogin', null, {
+        .withGraphqlResponse('QViewerLogin', null, {
             viewer: { login: 'eighty4' },
         })
         // for configure page
-        .withGraphqlResponse('CheckSidelinesRepo', null, {
+        .withGraphqlResponse('QCheckSidelinesRepo', null, {
             viewer: {
                 repository: {
                     nameWithOwner: 'eighty4/.sidelines',
@@ -196,7 +196,7 @@ function apiResponsesForPageSetup(userStory: UserStory) {
             },
         })
         // for sync refs shared worker
-        .withGraphqlResponse('CollectRepoHeadOids', null, {
+        .withGraphqlResponse('QViewerRepoDefaultBranch', null, {
             viewer: {
                 repositories: {
                     nodes: [
@@ -235,7 +235,7 @@ function graphqlResponsesForRepoObjects(
     for (const [path, kind] of Object.entries(repoObjects)) {
         if (kind === 'blob') {
             userStory.withGraphqlResponse(
-                'QueryRepoObjects',
+                'QRepoObject',
                 { owner, name, objExpr: 'HEAD:' + path },
                 {
                     repository: {
@@ -249,7 +249,7 @@ function graphqlResponsesForRepoObjects(
             )
         } else {
             userStory.withGraphqlResponse(
-                'QueryRepoObjects',
+                'QRepoObject',
                 { owner, name, objExpr: 'HEAD:' + path },
                 {
                     repository: {

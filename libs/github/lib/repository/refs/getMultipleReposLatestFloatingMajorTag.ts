@@ -1,6 +1,6 @@
 import { RepositoryValues, type RepositoryId } from '@sidelines/model'
-import { queryGraphqlApi } from '../../request.ts'
 import { findLatestFloatingMajorTag } from './_findLatestFloatingMajorTag.ts'
+import queryGraphqlApi from '../../queryGraphqlApi.ts'
 
 export async function getMultipleReposLatestFloatingMajorTag(
     ghToken: string,

@@ -1,2 +1,2 @@
-export const CheckSidelinesRepo: string =
-    'query CheckSidelinesRepo { viewer { repository(name: ".sidelines") { homepageUrl isPrivate nameWithOwner } } }'
+export const QCheckSidelinesRepo: string =
+    'query QCheckSidelinesRepo { viewer { repository(name: ".sidelines") { homepageUrl isPrivate nameWithOwner } } }'

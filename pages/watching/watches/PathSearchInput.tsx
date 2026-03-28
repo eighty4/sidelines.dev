@@ -1,4 +1,5 @@
-import { queryRepoObject, type RepoObject } from '@sidelines/github'
+import queryRepoObject from '@sidelines/github/repository/objects/queryRepoObject'
+import { type RepoObject } from '@sidelines/github/repository/objects/types'
 import type { RepositoryId } from '@sidelines/model'
 import {
     type FC,

@@ -1,4 +1,7 @@
-import { searchRepoNames, type SearchRepoNamesResult } from '@sidelines/github'
+import {
+    searchRepoNames,
+    type SearchRepoNamesResult,
+} from '@sidelines/github/repositories/searchRepoNames'
 import type { RepositoryId } from '@sidelines/model'
 import { useEffect, useMemo, useRef, useState, type FC } from 'react'
 import { navToProject } from '../../../nav.ts'

@@ -1,5 +1,6 @@
 import { getCookie, GH_TOKEN } from '@sidelines/data/cookie'
-import { getUserLogin, UnauthorizedError } from '@sidelines/github'
+import { UnauthorizedError } from '@sidelines/github'
+import { queryUserLogin } from '@sidelines/github/user/queryUserLogin'
 
 export async function authorizedRequest(req: Request): Promise<false | string> {
     const cookie = req.headers.get('cookie')
@@ -11,7 +12,7 @@ export async function authorizedRequest(req: Request): Promise<false | string> {
         return false
     }
     try {
-        return await getUserLogin(token)
+        return await queryUserLogin(token)
     } catch (e) {
         if (e instanceof UnauthorizedError) {
             return false

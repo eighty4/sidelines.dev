@@ -1,4 +1,4 @@
-import { type TreeEntryInfo } from '@sidelines/github'
+import type { TreeEntryInfo } from '@sidelines/github/repository/objects/types'
 import { type FC, type MouseEvent } from 'react'
 
 export type FileBrowserProps = {

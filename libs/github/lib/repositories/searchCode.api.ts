@@ -1,4 +1,4 @@
-import { restGetJson } from '../request.ts'
+import restGetJson from '../restGetJson.ts'
 
 export type SearchQuery = {
     kind?: 'in:file' | 'in:path' | 'in:file,path'

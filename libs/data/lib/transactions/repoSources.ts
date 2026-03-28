@@ -1,8 +1,6 @@
-import {
-    getRepoDefaultBranch,
-    getRepoDirListing,
-    getRepoObjectContent,
-} from '@sidelines/github'
+import queryRepoDefaultBranch from '@sidelines/github/repository/queryRepoDefaultBranch'
+import queryRepoDirListing from '@sidelines/github/repository/objects/queryRepoDirListing'
+import queryRepoObjectContent from '@sidelines/github/repository/objects/queryRepoObjectContent'
 import type {
     BranchRef,
     RepositoryId,
@@ -25,7 +23,7 @@ export async function readRepoContent({
     ghToken,
     repo,
 }: ReadRepoContent): Promise<string | 'file-not-found' | 'repo-not-found'> {
-    const defaultBranch = await getRepoDefaultBranch(ghToken, repo)
+    const defaultBranch = await queryRepoDefaultBranch(ghToken, repo)
     if (defaultBranch === 'repo-not-found') {
         return 'repo-not-found'
     }
@@ -42,7 +40,7 @@ export async function readRepoContent({
     if (fromFile !== null) {
         return fromFile
     }
-    const fromApi = await getRepoObjectContent(
+    const fromApi = await queryRepoObjectContent(
         ghToken,
         repo,
         dirpath ? `${dirpath}/${filename}` : filename,
@@ -123,13 +121,13 @@ export async function readRepoListing({
     repo,
     dirpath,
 }: ReadRepoListing): Promise<Array<RepositoryObject> | 'repo-not-found'> {
-    const branchRef = await getRepoDefaultBranch(ghToken, repo)
+    const branchRef = await queryRepoDefaultBranch(ghToken, repo)
     if (branchRef === 'repo-not-found') {
         return 'repo-not-found'
     }
     const db = await connectToDb()
     await readDirListingFromDb(db, repo, branchRef, dirpath)
-    return await getRepoDirListing(ghToken, repo, dirpath)
+    return await queryRepoDirListing(ghToken, repo, dirpath)
 }
 
 type RepoListingRecord = {

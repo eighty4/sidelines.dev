@@ -1,1 +1,1 @@
-export const ViewerLogin: string = 'query ViewerLogin { viewer { login } }'
+export const QViewerLogin: string = 'query QViewerLogin { viewer { login } }'

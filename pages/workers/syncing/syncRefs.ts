@@ -3,7 +3,7 @@ import {
     getTimeSinceLastSync,
     syncRefs,
 } from '@sidelines/data/indexeddb/tx/syncRefs'
-import { collectRepoHeadOids } from '@sidelines/github'
+import { queryMultipleRepoHeadOids } from '@sidelines/github/repositories/queryMultipleRepoHeadOids'
 
 declare let self: SharedWorkerGlobalScope
 
@@ -70,7 +70,7 @@ async function sync() {
     }
     console.log('SYNC')
     const watchedRepos = await getReposWithWatches()
-    const headRefs = await collectRepoHeadOids(ghToken, watchedRepos)
+    const headRefs = await queryMultipleRepoHeadOids(ghToken, watchedRepos)
     console.log('syncing', headRefs.length, 'repos')
     const syncUpdates = await syncRefs(headRefs)
     console.log('updated', syncUpdates.length, 'repos')

@@ -1,6 +1,7 @@
 import { getGhTokenCookie } from '@sidelines/data/cookie'
 import { createCache } from '@sidelines/data/storage'
-import { getUserLogin, UnauthorizedError } from '@sidelines/github'
+import { UnauthorizedError } from '@sidelines/github'
+import { queryUserLogin } from '@sidelines/github/user/queryUserLogin'
 
 const ghLoginCache = createCache(sessionStorage, 'sld.user.gh.login')
 
@@ -16,7 +17,7 @@ export function expectGhToken(): string {
 export async function expectGhLogin(ghToken: string): Promise<string> {
     let ghLogin = ghLoginCache.read()
     if (ghLogin === null) {
-        ghLoginCache.write((ghLogin = await getUserLogin(ghToken)))
+        ghLoginCache.write((ghLogin = await queryUserLogin(ghToken)))
     }
     return ghLogin
 }

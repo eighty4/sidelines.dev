@@ -1,4 +1,4 @@
-import { doesViewerRepoExist } from '@sidelines/github'
+import { queryDoesViewerRepoExist } from '@sidelines/github/repository/queryDoesViewerRepoExist'
 import type { RepositoryId } from '@sidelines/model'
 import { InitializingError } from '@sidelines/ui'
 import {
@@ -52,7 +52,7 @@ export const ChooseProject: FC<ChooseProjectProps> = ({ userData }) => {
 
     async function onButtonClick(): Promise<void> {
         try {
-            if (await doesViewerRepoExist(userData.ghToken, repo)) {
+            if (await queryDoesViewerRepoExist(userData.ghToken, repo)) {
                 navToProject({ owner: userData.ghLogin, name: repo })
             } else {
                 setClicked(false)

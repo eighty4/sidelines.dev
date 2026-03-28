@@ -1,11 +1,11 @@
 import { NotFoundError } from '../responses.ts'
-import { getViewerRepoDirContent } from '../repository/objects/getViewerRepoDirContent.ts'
+import { queryViewerRepoDirContent } from '../repository/objects/queryViewerRepoDirContent.api.ts'
 
 export async function queryViewerRepoWorkflowContents(
     ghToken: string,
     repo: string,
 ): Promise<Record<string, string> | NotFoundError> {
-    const result = await getViewerRepoDirContent(
+    const result = await queryViewerRepoDirContent(
         ghToken,
         repo,
         '.github/workflows',

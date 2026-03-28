@@ -1,7 +1,7 @@
 import type { RepositoryId } from '@sidelines/model'
-import { queryGraphqlApi } from '../../request.ts'
+import queryGraphqlApi from '../../queryGraphqlApi.ts'
 
-export async function getMultipleRepoObjectContents(
+export default async function queryRepoMultipleObjectsContents(
     ghToken: string,
     repo: RepositoryId,
     paths: Array<string>,

@@ -1,4 +1,4 @@
-query ViewerLogin {
+query QViewerLogin {
     viewer {
         login
     }

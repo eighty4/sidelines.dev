@@ -1,25 +1,19 @@
 import {
-    ViewerRepoObjectHistory,
-    type ViewerRepoObjectHistoryVars,
+    QViewerRepoObjectHistory,
+    type QViewerRepoObjectHistoryVars,
 } from './gql.ts'
-import type { Pageable } from '../../paging.ts'
-import { queryGraphqlApi } from '../../request.ts'
+import type { RepoObjectHistory } from './types.api.ts'
+import type { Pageable } from '../../pagingGraphqlQueries.ts'
+import queryGraphqlApi from '../../queryGraphqlApi.ts'
 
-export type ObjectHistory = {
-    oid: string
-    authorName: string
-    message: string
-    authoredDate: string
-}
-
-export async function queryViewerRepoObjectHistory(
+export default async function queryViewerRepoObjectHistory(
     ghToken: string,
     repo: string,
     branch: string,
     path: string,
     pageSize: number,
     cursor?: string,
-): Promise<Pageable<ObjectHistory>> {
+): Promise<Pageable<RepoObjectHistory>> {
     const vars = {
         repo,
         branch,
@@ -27,9 +21,9 @@ export async function queryViewerRepoObjectHistory(
         pageSize,
         cursor: cursor || `'null'`,
     }
-    const json = await queryGraphqlApi<ViewerRepoObjectHistoryVars, GraphData>(
+    const json = await queryGraphqlApi<QViewerRepoObjectHistoryVars, GraphData>(
         ghToken,
-        ViewerRepoObjectHistory,
+        QViewerRepoObjectHistory,
         vars,
     )
     if (!json.data.viewer.repository?.ref?.target?.history) {

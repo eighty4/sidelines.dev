@@ -1,5 +1,5 @@
-# repo obj where objExpr should resolve to tree or blob
-query QueryRepoObjects($owner: String!, $name: String!, $objExpr: String!) {
+# repo obj where `objExpr` should resolve to tree or blob
+query QRepoObject($owner: String!, $name: String!, $objExpr: String!) {
     repository(owner: $owner, name: $name) {
         object(expression: $objExpr) {
             __typename
@@ -23,7 +23,17 @@ query QueryRepoObjects($owner: String!, $name: String!, $objExpr: String!) {
     }
 }
 
-query RepoDirListing($owner: String!, $name: String!, $objExpr: String!) {
+query QRepoObjectContent($owner: String!, $name: String!, $objExpr: String!) {
+    repository(owner: $owner, name: $name) {
+        object(expression: $objExpr) {
+            ... on Blob {
+                text
+            }
+        }
+    }
+}
+
+query QRepoDirListing($owner: String!, $name: String!, $objExpr: String!) {
     repository(owner: $owner, name: $name) {
         object(expression: $objExpr) {
             ... on Tree {
@@ -41,7 +51,7 @@ query RepoDirListing($owner: String!, $name: String!, $objExpr: String!) {
     }
 }
 
-query ViewerRepoDirContent($name: String!, $objExpr: String!) {
+query QViewerRepoDirContent($name: String!, $objExpr: String!) {
     viewer {
         repository(name: $name) {
             object(expression: $objExpr) {
@@ -62,7 +72,7 @@ query ViewerRepoDirContent($name: String!, $objExpr: String!) {
     }
 }
 
-query ViewerRepoObjectHistory(
+query QViewerRepoObjectHistory(
     $repo: String!
     $branch: String!
     $path: String!
@@ -96,7 +106,7 @@ query ViewerRepoObjectHistory(
     }
 }
 
-query _RepoObjectHistory(
+query _QRepoObjectHistory(
     $owner: String!
     $name: String!
     $branch: String!
@@ -124,16 +134,6 @@ query _RepoObjectHistory(
                         totalCount
                     }
                 }
-            }
-        }
-    }
-}
-
-query _RepoObjectContent($owner: String!, $name: String!, $objExpr: String!) {
-    repository(owner: $owner, name: $name) {
-        object(expression: $objExpr) {
-            ... on Blob {
-                text
             }
         }
     }

@@ -1,4 +1,4 @@
-import { restGetJson } from '../request.ts'
+import restGetJson from '../restGetJson.ts'
 
 export interface SidelinesAppInstallation {
     installationId: number

@@ -1,17 +1,20 @@
 import type { RepositoryId } from '@sidelines/model'
-import { RepoLatestTags, type RepoLatestTagsVars } from './gql.ts'
-import { queryGraphqlApi } from '../../request.ts'
+import { QRepoLatestTags, type QRepoLatestTagsVars } from './gql.ts'
+import queryGraphqlApi from '../../queryGraphqlApi.ts'
 import { NotFoundError } from '../../responses.ts'
 
 export async function getLatestTags(
     ghToken: string,
     repo: RepositoryId,
+    refQuery?: string,
 ): Promise<Array<string>> {
-    const json = await queryGraphqlApi<RepoLatestTagsVars, GraphData>(
+    const json = await queryGraphqlApi<QRepoLatestTagsVars, GraphData>(
         ghToken,
-        RepoLatestTags,
+        QRepoLatestTags,
         {
-            ...repo,
+            owner: repo.owner,
+            name: repo.name,
+            refQuery,
         },
     )
     if (!json.data.repository) {

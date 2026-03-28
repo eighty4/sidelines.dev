@@ -1,4 +1,4 @@
-query ViewerRepoExists($repo: String!) {
+query QViewerRepoExists($repo: String!) {
     viewer {
         repository(name: $repo) {
             nameWithOwner
@@ -6,7 +6,53 @@ query ViewerRepoExists($repo: String!) {
     }
 }
 
-query _ViewerRepoDefaultBranchHeadSha($repo: String!) {
+query QRepoDefaultBranch($owner: String!, $name: String!) {
+    repository(owner: $owner, name: $name) {
+        defaultBranchRef {
+            name
+            target {
+                ... on Commit {
+                    history(first: 1) {
+                        edges {
+                            node {
+                                ... on Commit {
+                                    committedDate
+                                    oid
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+query QViewerRepoDefaultBranch($repo: String!) {
+    viewer {
+        repository(name: $repo) {
+            defaultBranchRef {
+                name
+                target {
+                    ... on Commit {
+                        history(first: 1) {
+                            edges {
+                                node {
+                                    ... on Commit {
+                                        committedDate
+                                        oid
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+query _QViewerRepoDefaultBranchHeadSha($repo: String!) {
     viewer {
         repository(name: $repo) {
             defaultBranchRef {

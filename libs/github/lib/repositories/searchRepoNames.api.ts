@@ -1,4 +1,4 @@
-import { queryGraphqlApi } from '../request.ts'
+import queryGraphqlApi from '../queryGraphqlApi.ts'
 
 export interface SearchRepoNamesResult {
     term: string

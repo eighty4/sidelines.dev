@@ -1,8 +1,6 @@
-import {
-    getHighestSemverTag,
-    getMultipleRepoObjectContents,
-    getRepoObjectContent,
-} from '@sidelines/github'
+import queryRepoObjectContent from '@sidelines/github/repository/objects/queryRepoObjectContent'
+import queryRepoMultipleObjectsContents from '@sidelines/github/repository/objects/queryRepoMultipleObjectsContents'
+import queryRepoRefsHighestSemverTag from '@sidelines/github/repository/refs/queryRepoRefsHighestSemverTag'
 import type { BranchRef, RepositoryId } from '@sidelines/model'
 
 export abstract class FindPackagesApi {
@@ -23,17 +21,14 @@ export abstract class FindPackagesApi {
         paths: string | Array<string>,
     ): Promise<Record<string, string | null>>
 
-    // tagPrefix is arg for getHighestSemverTag
-    abstract getTag(tagPrefix?: string): Promise<string | 'tag-not-found'>
+    abstract getTag(tagPrefix?: string): Promise<string | null>
 
     // fallback to sha if tag-not-found
     async getTagOrSha(tagPrefix?: string): Promise<string> {
-        const tag = await this.getTag(tagPrefix)
-        if (tag === 'tag-not-found') {
-            return this.#branchRef.headOid.substring(0, 7)
-        } else {
-            return tag
-        }
+        return (
+            (await this.getTag(tagPrefix)) ||
+            this.#branchRef.headOid.substring(0, 7)
+        )
     }
 
     // given subdir paths relative to a root path relative to a repository root,
@@ -60,7 +55,7 @@ export abstract class FindPackagesApi {
 export class FindPackagesApiImpl extends FindPackagesApi {
     readonly #ghToken: string
     readonly #repo: RepositoryId
-    readonly #tagCache: Record<string, Promise<string | 'tag-not-found'>> = {}
+    readonly #tagCache: Record<string, Promise<string | null>> = {}
 
     constructor(ghToken: string, repo: RepositoryId, branchRef: BranchRef) {
         super(repo, branchRef)
@@ -73,14 +68,14 @@ export class FindPackagesApiImpl extends FindPackagesApi {
     ): Promise<Record<string, string | null>> {
         if (typeof paths === 'string') {
             return {
-                [paths]: await getRepoObjectContent(
+                [paths]: await queryRepoObjectContent(
                     this.#ghToken,
                     this.#repo,
                     paths,
                 ),
             }
         } else {
-            const result = await getMultipleRepoObjectContents(
+            const result = await queryRepoMultipleObjectsContents(
                 this.#ghToken,
                 this.#repo,
                 paths,
@@ -92,15 +87,20 @@ export class FindPackagesApiImpl extends FindPackagesApi {
         }
     }
 
-    async getTag(tagPrefix: string = ''): Promise<string | 'tag-not-found'> {
-        if (typeof this.#tagCache[tagPrefix] === 'undefined') {
-            this.#tagCache[tagPrefix] = getHighestSemverTag(
+    async getTag(tagPrefix?: string): Promise<string | null> {
+        const tagCacheKey = tagPrefix || ''
+        if (typeof this.#tagCache[tagCacheKey] === 'undefined') {
+            this.#tagCache[tagCacheKey] = queryRepoRefsHighestSemverTag(
                 this.#ghToken,
                 this.#repo,
-                tagPrefix || null,
+                tagPrefix,
             )
         }
-        return await this.#tagCache[tagPrefix]
+        try {
+            return await this.#tagCache[tagCacheKey]
+        } catch (e) {
+            return null
+        }
     }
 }
 

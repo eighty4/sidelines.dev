@@ -1,5 +1,5 @@
 import type { RepositoryId } from '@sidelines/model'
-import { queryGraphqlApi } from '../request.ts'
+import queryGraphqlApi from '../queryGraphqlApi.ts'
 
 export type CreateCommitInputs = {
     repo: RepositoryId

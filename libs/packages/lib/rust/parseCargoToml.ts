@@ -58,7 +58,7 @@ async function createPackage(
 ): Promise<Package<'rust'>> {
     return {
         name: pkg.name || findPackages.repo.name,
-        version: pkg.version || (await findPackages.getTagOrSha('')),
+        version: pkg.version || (await findPackages.getTagOrSha()),
         language: 'rust',
         configFile: 'Cargo.toml',
         path,

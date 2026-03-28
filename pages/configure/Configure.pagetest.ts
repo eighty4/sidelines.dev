@@ -7,10 +7,10 @@ test('/configure redirects to /gameplan when GH app and .sidelines repo are good
 }) => {
     await UserStory.login('eighty4')
         .withAppInstallation({ id: 1234567, repos: 'all' })
-        .withGraphqlResponse('ViewerLogin', null, {
+        .withGraphqlResponse('QViewerLogin', null, {
             viewer: { login: 'eighty4' },
         })
-        .withGraphqlResponse('CheckSidelinesRepo', null, {
+        .withGraphqlResponse('QCheckSidelinesRepo', null, {
             viewer: {
                 repository: {
                     nameWithOwner: 'eighty4/.sidelines',
@@ -20,7 +20,7 @@ test('/configure redirects to /gameplan when GH app and .sidelines repo are good
             },
         })
         // for sync refs shared worker
-        .withGraphqlResponse('CollectRepoHeadOids', null, {
+        .withGraphqlResponse('QViewerRepoDefaultBranch', null, {
             viewer: {
                 repositories: {
                     nodes: [
@@ -50,7 +50,7 @@ test('/configure redirects to /gameplan when GH app and .sidelines repo are good
 
 test('/configure notifies when GH app is not installed', async ({ page }) => {
     await UserStory.login('eighty4')
-        .withGraphqlResponse('ViewerLogin', null, {
+        .withGraphqlResponse('QViewerLogin', null, {
             viewer: { login: 'eighty4' },
         })
         .configureRoutes(page)
@@ -70,7 +70,7 @@ test('/configure notifies when GH app is not installed for all apps', async ({
 }) => {
     await UserStory.login('eighty4')
         .withAppInstallation({ id: 1234567, repos: 'selected' })
-        .withGraphqlResponse('ViewerLogin', null, {
+        .withGraphqlResponse('QViewerLogin', null, {
             viewer: { login: 'eighty4' },
         })
         .configureRoutes(page)
@@ -90,10 +90,10 @@ test('/configure notifies when GH app is not installed for all apps', async ({
 test('/configure notifies when .sidelines has bad url', async ({ page }) => {
     await UserStory.login('eighty4')
         .withAppInstallation({ id: 1234567, repos: 'all' })
-        .withGraphqlResponse('ViewerLogin', null, {
+        .withGraphqlResponse('QViewerLogin', null, {
             viewer: { login: 'eighty4' },
         })
-        .withGraphqlResponse('CheckSidelinesRepo', null, {
+        .withGraphqlResponse('QCheckSidelinesRepo', null, {
             viewer: {
                 repository: {
                     nameWithOwner: 'eighty4/.sidelines',
@@ -113,10 +113,10 @@ test('/configure notifies when .sidelines has bad url', async ({ page }) => {
 test('/configure notifies when .sidelines is not private', async ({ page }) => {
     await UserStory.login('eighty4')
         .withAppInstallation({ id: 1234567, repos: 'all' })
-        .withGraphqlResponse('ViewerLogin', null, {
+        .withGraphqlResponse('QViewerLogin', null, {
             viewer: { login: 'eighty4' },
         })
-        .withGraphqlResponse('CheckSidelinesRepo', null, {
+        .withGraphqlResponse('QCheckSidelinesRepo', null, {
             viewer: {
                 repository: {
                     nameWithOwner: 'eighty4/.sidelines',

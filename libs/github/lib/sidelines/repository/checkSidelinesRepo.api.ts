@@ -1,5 +1,5 @@
-import { CheckSidelinesRepo } from './gql.ts'
-import { queryGraphqlApi } from '../../request.ts'
+import { QCheckSidelinesRepo } from './gql.ts'
+import queryGraphqlApi from '../../queryGraphqlApi.ts'
 
 export type SidelinesRepoProblem = 'bad-url' | 'not-private'
 
@@ -12,7 +12,7 @@ export async function checkSidelinesRepo(
 ): Promise<boolean | Set<SidelinesRepoProblem>> {
     const json = await queryGraphqlApi<null, GraphData>(
         ghToken,
-        CheckSidelinesRepo,
+        QCheckSidelinesRepo,
         null,
     )
     if (!json.data.viewer.repository) {

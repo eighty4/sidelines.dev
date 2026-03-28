@@ -8,7 +8,7 @@ export async function parseBuildZig(
 ): Promise<Package<'zig'>> {
     const zon = buildManifest ? parseZon(buildManifest) : null
     const name = zon?.name || findPackages.repo.name
-    const version = zon?.version || (await findPackages.getTagOrSha(''))
+    const version = zon?.version || (await findPackages.getTagOrSha())
     return {
         name,
         version,

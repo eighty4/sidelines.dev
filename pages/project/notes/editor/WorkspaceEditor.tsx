@@ -1,4 +1,4 @@
-import { checkSidelinesRepo } from '@sidelines/github'
+import { checkSidelinesRepo } from '@sidelines/github/sidelines/repository/checkSidelinesRepo'
 import type { RepositoryId } from '@sidelines/model'
 import { type FC, useEffect, useState } from 'react'
 import { EditorPane } from './EditorPane.tsx'

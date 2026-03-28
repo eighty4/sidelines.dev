@@ -1,8 +1,8 @@
 import {
-    collectRepoActivityData,
-    searchCode,
+    queryRepoActivityData,
     type RepoActivityData,
-} from '@sidelines/github'
+} from '@sidelines/github/repositories/queryRepoActivityData'
+import { searchCode } from '@sidelines/github/repositories/searchCode'
 import {
     type Language,
     languageOfConfigFile,
@@ -121,7 +121,7 @@ async function getAllUserReposForOrderCriteria(
     ghLogin: string,
 ): Promise<Record<string, Repository>> {
     const repos: Array<Partial<Repository> & RepoActivityData> =
-        await collectRepoActivityData(ghToken)
+        await queryRepoActivityData(ghToken)
     const result: Record<string, Repository> = {}
     for (const repo of repos) {
         repo.owner = ghLogin

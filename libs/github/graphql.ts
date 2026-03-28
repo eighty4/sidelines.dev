@@ -80,6 +80,10 @@ await Promise.all(
 
             const queryName = definition.name.value
             if (queryName.startsWith('_')) continue
+            if (!queryName.startsWith('Q'))
+                throw Error(
+                    `prepend Q to query \`${queryName}\` in ${filename}`,
+                )
 
             if (definition.variableDefinitions?.length) {
                 gqlOut.push(

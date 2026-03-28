@@ -1,16 +1,16 @@
-import { ViewerRepoExists, type ViewerRepoExistsVars } from './gql.ts'
-import { queryGraphqlApi } from '../request.ts'
+import { QViewerRepoExists, type QViewerRepoExistsVars } from './gql.ts'
+import queryGraphqlApi from '../queryGraphqlApi.ts'
 
 // checks if user authed by ghToken has a repo within its personal account
 //
 // this will not resolve repos from the authed user's organizations
-export async function doesViewerRepoExist(
+export async function queryDoesViewerRepoExist(
     ghToken: string,
     repo: string,
 ): Promise<boolean> {
-    const json = await queryGraphqlApi<ViewerRepoExistsVars, GraphData>(
+    const json = await queryGraphqlApi<QViewerRepoExistsVars, GraphData>(
         ghToken,
-        ViewerRepoExists,
+        QViewerRepoExists,
         { repo },
     )
     return !!json.data.viewer.repository

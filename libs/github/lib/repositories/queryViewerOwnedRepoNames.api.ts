@@ -1,15 +1,15 @@
-import { pageQueryWithVars } from '../paging.ts'
-import { ViewerReposNames, type ViewerReposNamesVars } from './gql.ts'
+import { pageQueryWithVars } from '../pagingGraphqlQueries.ts'
+import { QViewerReposNames, type QViewerReposNamesVars } from './gql.ts'
 
-export async function pageViewerOwnedRepoNames(
+export default async function queryViewerOwnedRepoNames(
     ghToken: string,
     pageSize: number = 100,
 ): Promise<Array<string>> {
-    return await pageQueryWithVars<GraphData, string, ViewerReposNamesVars>(
+    return await pageQueryWithVars<GraphData, string, QViewerReposNamesVars>(
         ghToken,
         data => data.viewer.repositories.nodes.map(repoNode => repoNode.name),
         data => data.viewer.repositories.pageInfo,
-        ViewerReposNames,
+        QViewerReposNames,
         cursor => ({ cursor, pageSize }),
     )
 }

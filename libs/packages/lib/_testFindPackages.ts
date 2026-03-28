@@ -26,7 +26,7 @@ export class TestFindPackagesApi extends FindPackagesApi {
         return Promise.resolve(result)
     }
 
-    getTag(tagPrefix: string = ''): Promise<string | 'tag-not-found'> {
-        return Promise.resolve(this.#tags[tagPrefix] || 'tag-not-found')
+    getTag(tagPrefix: string = ''): Promise<string | null> {
+        return Promise.resolve(this.#tags[tagPrefix] || null)
     }
 }

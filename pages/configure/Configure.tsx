@@ -1,9 +1,9 @@
+import { UnauthorizedError } from '@sidelines/github'
+import { getAppInstallation } from '@sidelines/github/app/getAppInstallation'
 import {
     checkSidelinesRepo,
-    getAppInstallation,
     type SidelinesRepoProblem,
-    UnauthorizedError,
-} from '@sidelines/github'
+} from '@sidelines/github/sidelines/repository/checkSidelinesRepo'
 import { expectGhLogin, expectGhToken } from '@sidelines/pageload/session'
 import { onDomInteractive } from '@sidelines/pageload/ready'
 import { useEffect, useState, type FC } from 'react'

@@ -1,19 +1,19 @@
 import type { RepositoryObject } from '@sidelines/model'
-import { ViewerRepoDirContent, type ViewerRepoDirContentVars } from './gql.ts'
-import { queryGraphqlApi } from '../../request.ts'
-import { sortRepositoryObjects } from '../../responses.ts'
+import { sortRepositoryObjects } from './_queryRepoObjects.ts'
+import { QViewerRepoDirContent, type QViewerRepoDirContentVars } from './gql.ts'
+import queryGraphqlApi from '../../queryGraphqlApi.ts'
 
 // repo obj query where obj expr is expected to return a tree
 // and retrieves text of blob entries at that path
-export async function getViewerRepoDirContent(
+export async function queryViewerRepoDirContent(
     ghToken: string,
     repo: string,
     dirpath: string,
     ref: string = 'HEAD',
 ): Promise<Array<RepositoryObject> | 'repo-does-not-exist'> {
-    const json = await queryGraphqlApi<ViewerRepoDirContentVars, GraphData>(
+    const json = await queryGraphqlApi<QViewerRepoDirContentVars, GraphData>(
         ghToken,
-        ViewerRepoDirContent,
+        QViewerRepoDirContent,
         {
             name: repo,
             objExpr: `${ref}:${dirpath.length ? dirpath : `''`}`,

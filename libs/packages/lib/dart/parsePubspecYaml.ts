@@ -47,7 +47,7 @@ async function createPackage(
 ): Promise<Package<'dart'>> {
     const name = findStr(pubspecYaml, NAME) || findPackages.repo.name
     const version =
-        findStr(pubspecYaml, VERSION) || (await findPackages.getTagOrSha(''))
+        findStr(pubspecYaml, VERSION) || (await findPackages.getTagOrSha())
     return {
         name,
         version,

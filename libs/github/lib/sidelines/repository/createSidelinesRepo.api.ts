@@ -1,9 +1,8 @@
 import type { BranchRef, RepositoryId } from '@sidelines/model'
-import {
-    createCommitOnBranch,
-    getViewerRepoDefaultBranch,
-} from '../../index.ts'
-import { restPostForJson, restPostForResponse } from '../../request.ts'
+import { createCommitOnBranch } from '../../repository/mutationCreateCommitOnBranch.api.ts'
+import queryViewerRepoDefaultBranch from '../../repository/queryViewerRepoDefaultBranch.api.ts'
+import restPostForJson from '../../restPostForJson.ts'
+import restPostForResponse from '../../restPostForResponse.ts'
 
 // graphql mutation createCommitOnBranch requires a pre-existing ref
 // so we use a template repo to seed a commit at refs/head/main
@@ -74,7 +73,7 @@ async function pollForDefaultBranchAfterCreatingRepo(
     )
     let fetching: Promise<BranchRef | 'repo-not-found'>
     while (true) {
-        fetching = getViewerRepoDefaultBranch(ghToken, repo)
+        fetching = queryViewerRepoDefaultBranch(ghToken, repo)
         let branch: 'timeout' | BranchRef | 'repo-not-found'
         branch = await Promise.race([timeout, fetching])
         if (branch === 'timeout') {

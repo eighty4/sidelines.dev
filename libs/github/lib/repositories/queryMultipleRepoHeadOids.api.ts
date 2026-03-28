@@ -1,7 +1,7 @@
 import type { RepoDefaultBranch, RepositoryId } from '@sidelines/model'
-import { queryGraphqlApi } from '../request.ts'
+import queryGraphqlApi from '../queryGraphqlApi.ts'
 
-export async function collectRepoHeadOids(
+export async function queryMultipleRepoHeadOids(
     ghToken: string,
     repos: Array<RepositoryId>,
 ): Promise<Array<RepoDefaultBranch>> {

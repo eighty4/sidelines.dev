@@ -11,7 +11,7 @@
     "build:libs": "pnpm exec tsc --build",
     "clean": "rm -rf build && tsc --build --clean",
     "dev": "dank serve",
-    "fmt": "prettier --write .",
+    "fmt": "prettier --write . --log-level warn",
     "fmtcheck": "prettier --check .",
     "graphql": "pnpm --filter github graphql",
     "test": "pnpm test:unit && pnpm test:e2e",

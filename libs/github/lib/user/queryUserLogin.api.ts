@@ -1,10 +1,10 @@
-import { ViewerLogin } from './gql.ts'
-import { queryGraphqlApi } from '../request.ts'
+import { QViewerLogin } from './gql.ts'
+import queryGraphqlApi from '../queryGraphqlApi.ts'
 
-export async function getUserLogin(ghToken: string): Promise<string> {
+export async function queryUserLogin(ghToken: string): Promise<string> {
     const json = await queryGraphqlApi<null, GraphData>(
         ghToken,
-        ViewerLogin,
+        QViewerLogin,
         null,
     )
     return json.data.viewer.login
