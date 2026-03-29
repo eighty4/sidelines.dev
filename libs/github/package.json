@@ -2,6 +2,7 @@
   "name": "@sidelines/github",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./lib_types/index.d.ts",

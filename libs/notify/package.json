@@ -2,6 +2,7 @@
   "name": "@sidelines/notify",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "exports": {
     "./rx": {
       "types": "./lib_types/rx.d.ts",

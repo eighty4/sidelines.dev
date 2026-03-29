@@ -2,6 +2,7 @@
   "name": "@sidelines/model",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./lib_types/model.d.ts",

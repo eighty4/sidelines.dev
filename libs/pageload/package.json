@@ -2,6 +2,7 @@
   "name": "@sidelines/pageload",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "exports": {
     "./*": {
       "types": "./lib_types/*.d.ts",
