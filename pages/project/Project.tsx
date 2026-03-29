@@ -4,9 +4,9 @@ import { onDomInteractive } from '@sidelines/pageload/ready'
 import { expectRepoFromLocation } from '@sidelines/pageload/urls'
 import { type FC, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { UserDataClient } from 'Sidelines.dev/workers/userData/UserDataClient'
 import { getUserDataClient } from '../expectUserData.ts'
 import { loginRedirectUrl } from '../nav.ts'
-import type { UserDataClient } from '../workers/UserDataClient.ts'
 
 type ProjectPageProps = {
     repo: RepositoryId

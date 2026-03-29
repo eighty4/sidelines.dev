@@ -8,8 +8,8 @@ import {
     useEffect,
     useState,
 } from 'react'
+import { UserDataClient } from 'Sidelines.dev/workers/userData/UserDataClient'
 import { navToProject } from '../../nav.ts'
-import type { UserDataClient } from '../../workers/UserDataClient.ts'
 
 export interface ChooseProjectProps {
     userData: UserDataClient

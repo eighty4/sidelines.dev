@@ -10,8 +10,8 @@ importers:
   .:
     dependencies:
       '@eighty4/dank':
-        specifier: 0.0.5-5
-        version: 0.0.5-5
+        specifier: 0.0.5-6
+        version: 0.0.5-6
       '@eighty4/model-t':
         specifier: 0.0.5-4
         version: 0.0.5-4
@@ -142,24 +142,6 @@ importers:
         specifier: ^19.2.0
         version: 19.2.0(react@19.2.0)
 
-  libs/upkeep:
-    dependencies:
-      '@eighty4/model-t':
-        specifier: 0.0.5-4
-        version: 0.0.5-4
-      '@sidelines/data':
-        specifier: workspace:*
-        version: link:../data
-      '@sidelines/github':
-        specifier: workspace:*
-        version: link:../github
-      '@sidelines/model':
-        specifier: workspace:*
-        version: link:../model
-      semver:
-        specifier: ^7.7.4
-        version: 7.7.4
-
   server:
     dependencies:
       '@sidelines/data':
@@ -171,8 +153,8 @@ importers:
 
 packages:
 
-  '@eighty4/dank@0.0.5-5':
-    resolution: {integrity: sha512-XVAbmPR/MDm07BZcU9x8nVMZWAL8Ombgj+xbt2fpX+BTrjvdA7WX2+oWw3AJHPIWUxSm+V213je+JRPrWsuNNg==}
+  '@eighty4/dank@0.0.5-6':
+    resolution: {integrity: sha512-WcoX6ZTb0MONOL+1rFjjV//jvUreFnWIw0oLJVvxCeid2Qy0qJ5uSLsDq6277NeaEf32Cmg0DDMPipAUNxOboQ==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -450,7 +432,7 @@ packages:
 
 snapshots:
 
-  '@eighty4/dank@0.0.5-5':
+  '@eighty4/dank@0.0.5-6':
     dependencies:
       esbuild: 0.25.11
       mime: 4.1.0

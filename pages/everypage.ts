@@ -1,6 +1,6 @@
 import { getGhTokenCookie } from '@sidelines/data/cookie'
 // import { onLoadComplete } from '@sidelines/pageload/ready'
-import { SyncRefsClient } from './workers/syncing/SyncRefsClient.ts'
+import { SyncRefsClient } from 'Sidelines.dev/workers/syncing/SyncRefsClient'
 
 if (dank.IS_DEV) {
     if (location.hostname === 'localhost') {

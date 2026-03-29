@@ -5,18 +5,19 @@
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM", "DOM.AsyncIterable", "DOM.Iterable", "WebWorker"],
     "target": "ES2022",
-    "paths": {
-      "$testing/*": ["./testing/*"]
-    },
     "rewriteRelativeImportExtensions": false,
-    "noUncheckedIndexedAccess": false
+    "noUncheckedIndexedAccess": false,
+    "paths": {
+      "$testing/*": ["./testing/*"],
+      "Sidelines.dev/workers/*": ["./workers/*.ts"]
+    }
   },
   "include": [
     "dev/**/*.ts",
     "pages/**/*.ts",
     "pages/**/*.tsx",
     "testing/**/*.ts",
-    "pages/workers/**/*.ts",
+    "workers/**/*.ts",
     "global.d.ts"
   ],
   "exclude": ["node_modules"],

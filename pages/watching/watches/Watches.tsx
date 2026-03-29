@@ -1,15 +1,15 @@
 import { getGhTokenCookie } from '@sidelines/data/cookie'
+import type { RepoWatches } from '@sidelines/model'
 import { onDomInteractive } from '@sidelines/pageload/ready'
 import { type FC, useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { WatchesApi } from 'Sidelines.dev/workers/watches/WatchesApi'
 import { FileBrowser } from './FileBrowser.tsx'
 import { FilePreview } from './FilePreview.tsx'
 import { PathSearchInput, type SearchLocation } from './PathSearchInput.tsx'
+import { WatchListing } from './WatchListing.tsx'
 import { WatchSplash } from './WatchSplash.tsx'
 import { WatchToggle } from './WatchToggle.tsx'
-import { WatchesApi } from '../../workers/WatchesApi.ts'
-import { WatchListing } from './WatchListing.tsx'
-import type { RepoWatches } from '@sidelines/model'
 
 type WatchesProps = {
     ghToken: string

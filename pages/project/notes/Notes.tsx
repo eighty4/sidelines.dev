@@ -4,13 +4,13 @@ import { onDomInteractive } from '@sidelines/pageload/ready'
 import { expectRepoFromLocation } from '@sidelines/pageload/urls'
 import { type FC, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
+import { UserDataClient } from 'Sidelines.dev/workers/userData/UserDataClient'
 import { FileExplorer } from './FileExplorer.tsx'
 import { RepoSources } from './RepoSources.ts'
 import { WorkspaceEditor } from './editor/WorkspaceEditor.tsx'
 import { ProjectNavbar } from './navbar/ProjectNavbar.tsx'
 import { expectUserDataClient } from '../../expectUserData.ts'
 import { logout } from '../../nav.ts'
-import { UserDataClient } from '../../workers/UserDataClient.ts'
 
 type ProjectPageProps = {
     repo: RepositoryId

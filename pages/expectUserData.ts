@@ -1,7 +1,7 @@
 import { getCookie, GH_TOKEN } from '@sidelines/data/cookie'
 import { UnauthorizedError } from '@sidelines/github'
 import { expectGhLogin } from '@sidelines/pageload/session'
-import { UserDataClient } from './workers/UserDataClient.ts'
+import { UserDataClient } from 'Sidelines.dev/workers/userData/UserDataClient'
 
 export async function expectUserDataClient(): Promise<UserDataClient> {
     const userData = await getUserDataClient()

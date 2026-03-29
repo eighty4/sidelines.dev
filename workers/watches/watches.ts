@@ -5,7 +5,7 @@ import {
     getWatchesForRepo,
 } from '@sidelines/data/indexeddb/tx/readWatches'
 import type { WatchAsyncReq, WatchRpcReq, WatchRpcRes } from './WatchesApi.ts'
-import type { WorkerMsg } from './WorkerClient.ts'
+import type { WorkerMsg } from 'Sidelines.dev/workers/WorkerClient'
 
 declare const self: DedicatedWorkerGlobalScope
 

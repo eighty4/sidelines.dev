@@ -1,15 +1,15 @@
-import { type Observable, Subject } from 'rxjs'
 import { type Language, type Repository } from '@sidelines/model'
-import {
-    type PackageSearchResult,
-    searchForPackages,
-} from './searchForPackages.ts'
+import { type Observable, Subject } from 'rxjs'
 import type {
     ActionsCallToActionsRequest,
     ActionsCallToActionsUpdate,
     CicdCallToAction,
     WorkflowCallToAction,
-} from '../../workers/ghActions.ts'
+} from 'Sidelines.dev/workers/actions/validateWorkflows'
+import {
+    type PackageSearchResult,
+    searchForPackages,
+} from './searchForPackages.ts'
 
 export type CallToAction =
     | {
@@ -74,7 +74,7 @@ export class WorkflowRepoSearch {
 
     #launchGhActionsWorker = (repo: string) => {
         const w = (this.#workers[repo] = new Worker(
-            '../../workers/ghActions.ts',
+            '../../../workers/actions/validateWorkflows.ts',
         ))
         w.onmessage = this.#onGhActionsWorkerMessage
         const request: ActionsCallToActionsRequest = {
