@@ -2,9 +2,12 @@ import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
     buildSchema,
+    type DefinitionNode,
     type DocumentNode,
     GraphQLError,
     type GraphQLSchema,
+    type NameNode,
+    type OperationDefinitionNode,
     parse,
     validate,
     type VariableDefinitionNode,
@@ -14,6 +17,10 @@ const SRC_DIR = 'lib'
 const GRAPHQL_DIR = './queries'
 const GITHUB_SCHEMA = 'github.graphql'
 const GRAPHQL_IGNORE = [GITHUB_SCHEMA, 'README.md']
+
+type UsableOperation = OperationDefinitionNode & { name: NameNode } & {
+    loc: Location
+}
 
 // GitHub GraphQL schema to validate against
 const schema: GraphQLSchema = buildSchema(
@@ -68,38 +75,17 @@ if (abort) {
 
 const output: Record<string, string> = {}
 await Promise.all(
-    Object.entries(documents).map(async ([filename, ast]) => {
+    Object.entries(documents).map(async ([filename, ast], i) => {
         const gqlOut: Array<string> = []
         for (const definition of ast.definitions) {
-            if (definition.kind !== 'OperationDefinition')
-                throw Error('!operation')
-            if (definition.operation !== 'query')
-                throw Error('operation !query')
-            if (!definition.name) throw Error('missing name')
-            if (!definition.loc) throw Error('missing loc')
-
-            const queryName = definition.name.value
-            if (queryName.startsWith('_')) continue
-            if (!queryName.startsWith('Q'))
-                throw Error(
-                    `prepend Q to query \`${queryName}\` in ${filename}`,
-                )
-
-            if (definition.variableDefinitions?.length) {
-                gqlOut.push(
-                    collectVariablesType(
-                        queryName,
-                        definition.variableDefinitions,
-                    ),
-                )
+            if (isUsableOperation(definition, filename, i)) {
+                if (definition.name.value.startsWith('_')) continue
+                validateQueryName(definition.name.value, filename)
+                if (isDefinitionUsingVars(definition)) {
+                    gqlOut.push(buildVarsType(definition))
+                }
+                gqlOut.push(buildGqlString(definition))
             }
-            const query = minify(
-                definition.loc.source.body.substring(
-                    definition.loc.start,
-                    definition.loc.end,
-                ),
-            )
-            gqlOut.push(`export const ${queryName}: string = '${query}'`)
         }
         const dest = join(
             SRC_DIR,
@@ -120,12 +106,52 @@ for (const filename of Object.keys(output).sort()) {
     )
 }
 
-function collectVariablesType(
-    queryName: string,
-    definitions: ReadonlyArray<VariableDefinitionNode>,
+function isUsableOperation(
+    definition: DefinitionNode,
+    filename: string,
+    index: number,
+): definition is UsableOperation {
+    if (definition.kind !== 'OperationDefinition')
+        throw Error(`node ${index} is not an operation in ${filename}`)
+    if (!definition.name)
+        throw Error(`operation ${index} is missing name in ${filename}`)
+    if (!definition.loc)
+        throw Error(
+            `operation \`${definition.name.value}\` is missing loc in ${filename}`,
+        )
+    return true
+}
+
+function validateQueryName(queryName: string, filename: string) {
+    if (!queryName.startsWith('Q'))
+        throw Error(`prepend Q to query \`${queryName}\` in ${filename}`)
+}
+
+function isDefinitionUsingVars(
+    definition: OperationDefinitionNode,
+): definition is UsableOperation & {
+    variableDefinitions: Array<VariableDefinitionNode>
+} {
+    return !!definition.variableDefinitions?.length
+}
+
+function buildGqlString(definition: UsableOperation) {
+    const query = minify(
+        definition.loc.source.body.substring(
+            definition.loc.start,
+            definition.loc.end,
+        ),
+    )
+    return `export const ${definition.name.value}: string = '${query}'`
+}
+
+function buildVarsType(
+    operation: OperationDefinitionNode & { name: NameNode } & {
+        variableDefinitions: Array<VariableDefinitionNode>
+    },
 ): string {
-    const vars: Array<string> = [`export type ${queryName}Vars = {`]
-    for (const definition of definitions) {
+    const vars: Array<string> = [`export type ${operation.name.value}Vars = {`]
+    for (const definition of operation.variableDefinitions) {
         const varName = definition.variable.name.value
         if (definition.type.kind === 'NonNullType') {
             if (definition.type.type.kind === 'NamedType') {
