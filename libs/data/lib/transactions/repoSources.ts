@@ -7,6 +7,9 @@ import type {
     RepositoryObject,
 } from '@sidelines/model'
 import { connectToDb, DB_STORE_REPO_FILES } from '../database.ts'
+import { opfsLookupDir, opfsReadFile, opfsWriteFile } from '../opfs.ts'
+
+const OPFS_PREFIX = 'REPO_SRCS'
 
 export type ReadRepoContent = {
     ghToken: string
@@ -36,7 +39,8 @@ export async function readRepoContent({
         'from',
         dirpath,
     )
-    const fromFile = await readFile(repo, defaultBranch, dirpath, filename)
+    const dirHandle = await lookupRepoSourceDir(repo, defaultBranch, dirpath)
+    const fromFile = await opfsReadFile(dirHandle, filename)
     if (fromFile !== null) {
         return fromFile
     }
@@ -48,66 +52,31 @@ export async function readRepoContent({
     if (fromApi === null) {
         return 'file-not-found'
     }
-    await writeFile(repo, defaultBranch, dirpath, filename, fromApi)
+    await opfsWriteFile(dirHandle, filename, fromApi)
     return fromApi
 }
 
-async function lookupDir(
+async function lookupRepoSourceDir(
     repo: RepositoryId,
     defaultBranch: BranchRef,
     dirpath: string | null,
 ): Promise<FileSystemDirectoryHandle> {
-    let dirHandle = await navigator.storage.getDirectory()
-    const dirOpts = { create: true }
-    dirHandle = await dirHandle.getDirectoryHandle(repo.owner, dirOpts)
-    dirHandle = await dirHandle.getDirectoryHandle(repo.name, dirOpts)
-    dirHandle = await dirHandle.getDirectoryHandle(
-        defaultBranch.headOid,
-        dirOpts,
-    )
-    if (dirpath !== null) {
-        for (const dirpathPortion of dirpath.split('/')) {
-            dirHandle = await dirHandle.getDirectoryHandle(
-                dirpathPortion,
-                dirOpts,
-            )
-        }
+    if (dirpath === null) {
+        return await opfsLookupDir(
+            OPFS_PREFIX,
+            repo.owner,
+            repo.name,
+            defaultBranch.headOid,
+        )
+    } else {
+        return await opfsLookupDir(
+            OPFS_PREFIX,
+            repo.owner,
+            repo.name,
+            defaultBranch.headOid,
+            ...dirpath.split('/'),
+        )
     }
-    return dirHandle
-}
-
-async function readFile(
-    repo: RepositoryId,
-    defaultBranch: BranchRef,
-    dirpath: string | null,
-    filename: string,
-): Promise<string | null> {
-    const dirHandle = await lookupDir(repo, defaultBranch, dirpath)
-    try {
-        const fileHandle = await dirHandle.getFileHandle(filename)
-        const file = await fileHandle.getFile()
-        return await file.text()
-    } catch (e) {
-        if (e instanceof DOMException && e.name === 'NotFoundError') {
-            return null
-        } else {
-            throw e
-        }
-    }
-}
-
-async function writeFile(
-    repo: RepositoryId,
-    defaultBranch: BranchRef,
-    dirpath: string | null,
-    filename: string,
-    content: string,
-): Promise<void> {
-    const dirHandle = await lookupDir(repo, defaultBranch, dirpath)
-    const fileHandle = await dirHandle.getFileHandle(filename, { create: true })
-    const fileWritable = await fileHandle.createWritable()
-    await fileWritable.write(content)
-    await fileWritable.close()
 }
 
 export type ReadRepoListing = {

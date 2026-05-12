@@ -21,10 +21,11 @@
   },
   "dependencies": {
     "@sidelines/model": "workspace:*",
-    "semver": "^7.7.4"
+    "semver": "^7.8.0"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
     "@types/semver": "^7.7.1",
-    "graphql": "^16.11.0"
+    "graphql": "catalog:"
   }
 }

@@ -1,8 +1,8 @@
 export type QRepoLatestTagsVars = {
     owner: string
     name: string
-    refQuery?: string
-    tags?: number
+    refQuery?: string | null
+    tags?: number | null
 }
 
 export const QRepoLatestTags: string =

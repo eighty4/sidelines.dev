@@ -15,5 +15,7 @@
     "@sidelines/github": "workspace:*",
     "@sidelines/model": "workspace:*"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "catalog:"
+  }
 }

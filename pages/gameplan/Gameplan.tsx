@@ -1,18 +1,22 @@
 import { UnauthorizedError } from '@sidelines/github'
-import { expectGhLogin, expectGhToken } from '@sidelines/pageload/session'
 import { onDomInteractive } from '@sidelines/pageload/ready'
+import { expectGhLogin, expectGhToken } from '@sidelines/pageload/session'
 import { type FC } from 'react'
 import { createRoot } from 'react-dom/client'
+import JobApiClient from 'Sidelines.dev/workers/jobs/JobApiClient'
+import { JobList } from './JobList.tsx'
 import { logout } from '../nav.ts'
 
 interface GameplanPageProps {
     ghToken: string
     ghLogin: string
+    jobApiClient: JobApiClient
 }
 
-const Gameplan: FC<GameplanPageProps> = () => {
+const Gameplan: FC<GameplanPageProps> = ({ jobApiClient }) => {
     return (
         <div id="view">
+            <JobList jobApiClient={jobApiClient} />
             <div id="reading-cta" onClick={() => location.assign('/watches')}>
                 Go to Watches
             </div>
@@ -21,18 +25,27 @@ const Gameplan: FC<GameplanPageProps> = () => {
 }
 
 onDomInteractive(async () => {
+    let ghToken: string
+    let ghLogin: string
     try {
-        const ghToken = expectGhToken()
-        const ghLogin = await expectGhLogin(ghToken)
-        createRoot(document.getElementById('root')!).render(
-            <Gameplan ghToken={ghToken} ghLogin={ghLogin} />,
-        )
+        ghToken = expectGhToken()
+        ghLogin = await expectGhLogin(ghToken)
+        console.log('authed', ghLogin, 'for page')
     } catch (e) {
         if (e instanceof UnauthorizedError) {
+            console.log('unauthorized for page, redirecting to logout')
             logout()
             return
         } else {
             throw e
         }
     }
+    const jobApiClient = new JobApiClient(ghToken)
+    createRoot(document.getElementById('root')!).render(
+        <Gameplan
+            ghToken={ghToken}
+            ghLogin={ghLogin}
+            jobApiClient={jobApiClient}
+        />,
+    )
 })

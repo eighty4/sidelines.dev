@@ -1,4 +1,8 @@
-import { defineConfig, devices } from '@playwright/test'
+import {
+    defineConfig,
+    devices,
+    type PlaywrightTestConfig,
+} from '@playwright/test'
 
 type TestMode = 'localDev' | 'localPreview'
 
@@ -12,7 +16,7 @@ const modes: Record<TestMode, TestConfig> = {
         baseURL: 'http://127.0.0.1:3000',
         webServer: {
             command: 'pnpm dev',
-            reuseExistingServer: true,
+            reuseExistingServer: !process.env.CI,
         },
     },
     localPreview: {
@@ -32,36 +36,49 @@ const mode: TestConfig = process.env.TARGET_URL?.length
 
 export default defineConfig({
     outputDir: '.playwright/results',
-    projects: [
-        {
-            name: 'database',
-            testDir: 'libs/data/lib/transactions',
-            testMatch: '*.dbtest.ts',
-        },
-        {
-            name: 'pages',
-            testDir: 'pages',
-            testMatch: '*.pagetest.ts',
-        },
-    ],
+    testDir: 'tests',
+    testMatch: '*.test.ts',
+    projects: projects(),
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
-    workers: process.env.CI ? 1 : undefined,
+    workers: process.env.CI ? 2 : undefined,
     reporter: [['html', { outputFolder: '.playwright/report' }]],
     use: {
         baseURL: mode.baseURL,
         serviceWorkers: 'block',
         trace: 'on-first-retry',
     },
-    webServer: mode.webServer
-        ? {
-              command: mode.webServer.command,
-              env: {},
-              url: mode.baseURL,
-              reuseExistingServer: mode.webServer.reuseExistingServer,
-              stdout: 'pipe',
-              stderr: 'pipe',
-          }
-        : undefined,
+    webServer: webServer(),
 })
+
+function projects(): PlaywrightTestConfig['projects'] {
+    return [
+        {
+            name: 'chromium',
+            use: { ...devices['Desktop Chrome'] },
+        },
+        {
+            name: 'firefox',
+            use: { ...devices['Desktop Firefox'] },
+        },
+        {
+            name: 'webkit',
+            use: { ...devices['Desktop Safari'] },
+        },
+    ]
+}
+
+function webServer(): PlaywrightTestConfig['webServer'] {
+    if (mode.webServer) {
+        const { command, reuseExistingServer } = mode.webServer
+        return {
+            command,
+            env: {},
+            url: mode.baseURL,
+            reuseExistingServer,
+            stdout: 'pipe',
+            stderr: 'pipe',
+        }
+    }
+}

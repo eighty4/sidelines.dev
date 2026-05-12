@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { UserStory } from '$testing/github/UserStory.ts'
-import { login } from '$testing/sidelines/login.ts'
+import { login } from './login.ts'
+import screenshotOnFailure from './screenshotOnFailure.ts'
+import { UserStory } from './github/UserStory.ts'
+
+test.afterEach(screenshotOnFailure)
 
 test('/configure redirects to /gameplan when GH app and .sidelines repo are good', async ({
     page,
@@ -46,6 +49,7 @@ test('/configure redirects to /gameplan when GH app and .sidelines repo are good
         .configureRoutes(page)
 
     await login(page)
+    await expect(page).toHaveURL('/gameplan')
 })
 
 test('/configure notifies when GH app is not installed', async ({ page }) => {

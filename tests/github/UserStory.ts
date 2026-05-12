@@ -1,5 +1,7 @@
-import type { Page } from '@playwright/test'
+import type { Page, Route } from '@playwright/test'
 import { GraphqlResponses } from './graphQuerying.ts'
+
+type FulfillOpts = Parameters<Route['fulfill']>[0]
 
 type UserAppInstallation = {
     id: number
@@ -53,14 +55,39 @@ async function routeGitHubAuth(page: Page) {
     await page.route('/github/redirect/user/login', async route => {
         const ghToken = 'ght'
         const expiresIn = 1000 * 60 * 60 * 24
-        await route.fulfill({
+        const fulfill: FulfillOpts = {
             status: 302,
             headers: {
                 Location: 'http://127.0.0.1:3000/configure',
                 'Set-Cookie': `ght=${ghToken}; Secure; SameSite=Strict; Path=/; Max-Age=${expiresIn}`,
             },
-        })
+        }
+        if (isWebKit(page)) {
+            await fauxLogin(fulfill, page)
+        } else {
+            await route.fulfill(fulfill)
+        }
     })
+}
+
+function isWebKit(page: Page): boolean {
+    return page.context().browser()?.browserType().name() === 'webkit'
+}
+
+// webkit cannot use page.route with 301/302
+async function fauxLogin(fulfill: FulfillOpts, page: Page) {
+    const headers = fulfill?.headers
+    if (!headers) throw Error()
+    if (!headers['Location']) throw Error()
+    const cookie = headers['Set-Cookie']
+    if (!cookie) throw Error()
+    await page.evaluate(
+        ght => {
+            document.cookie = 'ght=' + ght
+        },
+        cookie.substring(cookie.indexOf('=') + 1, cookie.indexOf(';')),
+    )
+    await page.goto(headers['Location'])
 }
 
 // todo verify do named queries still use {data: {viewer: {}}} or is it namespaced by the query name?
@@ -70,6 +97,12 @@ async function routeGitHubGraphqlQuery(
     graphqlResponses: GraphqlResponses,
 ) {
     await page.route('https://api.github.com/graphql', async (route, req) => {
+        const headers = await req.allHeaders()
+        if (headers['authorization'] !== 'Bearer ght') {
+            await route.fulfill({
+                status: 401,
+            })
+        }
         const { query, variables } = req.postDataJSON()
         await route.fulfill({
             json: {

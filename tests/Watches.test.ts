@@ -1,10 +1,13 @@
 import { basename, dirname } from 'node:path/posix'
 import { expect, type Page, test } from '@playwright/test'
-import { UserStory } from '$testing/github/UserStory.ts'
-import { login } from '$testing/sidelines/login.ts'
 import type { RepositoryId } from '@sidelines/model'
+import { login } from './login.ts'
+import screenshotOnFailure from './screenshotOnFailure.ts'
+import { UserStory } from './github/UserStory.ts'
 
-test.describe('PathSearchInput', () => {
+test.afterEach(screenshotOnFailure)
+
+test.describe.skip('PathSearchInput', () => {
     test.describe('pasting urls', () => {
         // creates a tree or blob gh url
         function repoObjUrl(

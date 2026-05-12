@@ -6,8 +6,6 @@ export function buildProjectUrl(repo: RepositoryId): string {
 
 export const loginRedirectUrl = '/github/redirect/user/login'
 
-export const logoutRedirectUrl = '/logout'
-
 export function getAppUrl(): string {
     const appName =
         location.host === 'sidelines.dev'
@@ -21,7 +19,11 @@ export function getAppInstallationConfigureUrl(installationId: number): string {
 }
 
 export function logout() {
-    location.assign(logoutRedirectUrl)
+    const form = document.createElement('form')
+    form.action = '/logout'
+    form.method = 'POST'
+    document.body.append(form)
+    form.submit()
 }
 
 export function navToProject(repo: RepositoryId) {

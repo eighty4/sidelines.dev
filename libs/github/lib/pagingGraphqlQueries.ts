@@ -16,9 +16,9 @@ export async function pageQueryWithVars<GRAPH_DATA, EXTRACTED_DATA, VARS>(
     extractData: (data: GRAPH_DATA) => Array<EXTRACTED_DATA>,
     extractPageInfo: (data: GRAPH_DATA) => Pageable<any>['pageInfo'],
     query: string,
-    varsBuilder: (cursor: string) => VARS,
+    varsBuilder: (cursor: string | null) => VARS,
 ): Promise<Array<EXTRACTED_DATA>> {
-    let cursor = `'null'`
+    let cursor = null
     let hasNextPage = true
     const results: Array<EXTRACTED_DATA> = []
 

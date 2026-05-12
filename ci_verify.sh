@@ -60,3 +60,8 @@ pnpm build:libs
 pnpm test
 pnpm build
 pnpm fmtcheck
+
+if [ -n "$(git status libs/github/lib/**/gql.ts --porcelain)" ]; then
+    echo "a \`gql.ts\` has local changes after \`pnpm graphql\`"
+    exit 1
+fi

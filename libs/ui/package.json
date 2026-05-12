@@ -8,8 +8,8 @@
     "./monaco": "./src/monaco/monaco.ts"
   },
   "peerDependencies": {
-    "monaco-editor": "^0.54.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "monaco-editor": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   }
 }

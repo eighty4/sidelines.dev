@@ -1,6 +1,8 @@
 import { getGhTokenCookie } from '@sidelines/data/cookie'
 // import { onLoadComplete } from '@sidelines/pageload/ready'
-import { SyncRefsClient } from 'Sidelines.dev/workers/syncing/SyncRefsClient'
+import startJobSchedulingWorker from 'Sidelines.dev/workers/jobs/startJobsSWorker'
+import startSyncRefsWorker from 'Sidelines.dev/workers/syncing/startSyncRefsWorker'
+import { PageSideWorkerLauncher } from 'Sidelines.dev/workers/WorkerLaunch'
 
 if (dank.IS_DEV) {
     if (location.hostname === 'localhost') {
@@ -35,14 +37,17 @@ if (dank.IS_DEV) {
 //     onLoadComplete(registerServiceWorker)
 // }
 
-registerSyncWorker()
+registerSharedWorkers()
 
-function registerSyncWorker() {
+function registerSharedWorkers() {
     const ghToken = getGhTokenCookie(document.cookie)
     if (!ghToken) {
         return
     }
-    new SyncRefsClient(ghToken)
+    const workerLauncher = new PageSideWorkerLauncher()
+    window.addEventListener('beforeunload', () => workerLauncher.shutdown())
+    startJobSchedulingWorker(ghToken)
+    startSyncRefsWorker(ghToken)
 }
 
 // recent chrome versions do not HTTP cache service workers

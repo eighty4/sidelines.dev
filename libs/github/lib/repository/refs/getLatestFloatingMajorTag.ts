@@ -1,6 +1,6 @@
 import type { RepositoryId } from '@sidelines/model'
+import { findLatestFloatingMajorTag } from './floatingMajorTag.api.ts'
 import { getLatestTags } from './getLatestTags.ts'
-import { findLatestFloatingMajorTag } from './_findLatestFloatingMajorTag.ts'
 
 // returns the highest `v6`-style git tag
 export async function getLatestFloatingMajorTag(

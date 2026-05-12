@@ -20,6 +20,7 @@ export type ServerEnv = {
 
 export function hasServerEnvValues(obj: any): obj is ServerEnv {
     return (
+        typeof obj.GH_APP_ID === 'string' &&
         typeof obj.GH_CLIENT_ID === 'string' &&
         typeof obj.GH_CLIENT_SECRET === 'string' &&
         typeof obj.WEBAPP_ADDRESS === 'string'
@@ -36,7 +37,7 @@ const routeFactories: RouteFactories = {
     '/github/redirect/user/authorized': { GET: createLoginAndRedirectRoute },
     '/github/redirect/user/login': { GET: createRedirectToLoginRoute },
 
-    '/logout': { GET: createLogoutRoute },
+    '/logout': { POST: createLogoutRoute },
 }
 
 export function createRoutes(env: ServerEnv): RoutesByMethod {

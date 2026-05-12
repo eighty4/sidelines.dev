@@ -1,0 +1,92 @@
+name: CI verify
+run-name: 'CI: ${{ github.ref }}'
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: 25
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    needs:
+      - build-app
+      - check-fmt-and-codegen
+      - unit-test
+      - e2e-test
+    steps:
+      - run: echo 'Look what hell made'
+
+  build-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+          run_install: true
+      - run: pnpm build:libs
+      - run: pnpm build
+
+  check-fmt-and-codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+          run_install: true
+      - run: pnpm fmtcheck
+      - run: pnpm graphql
+      - run: if [ -n "$(git status libs/github/lib/**/gql.ts --porcelain)" ]; then exit 1; fi
+
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+          run_install: true
+      - run: pnpm build:libs
+      - run: pnpm test:unit
+
+  e2e-test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+          run_install: true
+      - run: pnpm build:libs
+      - run: echo -e "GH_APP_ID=a\nGH_CLIENT_ID=b\nGH_CLIENT_SECRET=c\nWEBAPP_ADDRESS=http://127.0.0.1:3000\n" > .env.local
+      - name: playwright install
+        run: pnpm exec playwright install --with-deps
+      - name: playwright test
+        env:
+          CI: true
+        run: pnpm test:e2e
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: playwright-local
+          path: .playwright/report/
+          retention-days: 3

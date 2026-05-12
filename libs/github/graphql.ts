@@ -161,7 +161,9 @@ function buildVarsType(
                 continue
             }
         } else if (definition.type.kind === 'NamedType') {
-            vars.push(`    ${varName}?: ${tsType(definition.type.name.value)}`)
+            vars.push(
+                `    ${varName}?: ${tsType(definition.type.name.value)} | null`,
+            )
             continue
         }
         throw Error('unresolved type of ' + varName)

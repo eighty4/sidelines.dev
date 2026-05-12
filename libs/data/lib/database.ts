@@ -1,5 +1,14 @@
-const DB_NAME = 'sidelines-dev6'
+const DB_NAME = 'sidelines-dev9'
 const DB_VERSION = 1
+
+export const DB_STORE_REPO_JOBS = 'repo-jobs'
+const DB_STORE_REPO_JOBS_KEY = 'jobExecId'
+
+export const DB_STORE_REPO_JOB_TASKS = 'repo-job-tasks'
+const DB_STORE_REPO_JOB_TASKS_KEY = ['jobExecId', 'repo']
+
+export const DB_STORE_COMMIT_REVIEW = 'commit-review'
+const DB_STORE_COMMIT_REVIEW_KEY = ['reviewId']
 
 export const DB_STORE_READ_COMMITS = 'read-commits'
 // const DB_STORE_READ_COMMITS_KEY = ['']
@@ -35,6 +44,15 @@ function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
     console.log('upgrading db from', oldVersion)
     while (oldVersion < DB_VERSION) {
         if (oldVersion === 0) {
+            db.createObjectStore(DB_STORE_REPO_JOBS, {
+                keyPath: DB_STORE_REPO_JOBS_KEY,
+            })
+            db.createObjectStore(DB_STORE_REPO_JOB_TASKS, {
+                keyPath: DB_STORE_REPO_JOB_TASKS_KEY,
+            })
+            db.createObjectStore(DB_STORE_COMMIT_REVIEW, {
+                keyPath: DB_STORE_COMMIT_REVIEW_KEY,
+            })
             db.createObjectStore(DB_STORE_REPO_NAV, {
                 keyPath: DB_STORE_REPO_NAV_KEY,
             }).createIndex(DB_INDEX_REPO_NAV_WHEN, DB_INDEX_REPO_NAV_WHEN_KEY)

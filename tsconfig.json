@@ -8,17 +8,17 @@
     "rewriteRelativeImportExtensions": false,
     "noUncheckedIndexedAccess": false,
     "paths": {
-      "$testing/*": ["./testing/*"],
       "Sidelines.dev/workers/*": ["./workers/*.ts"]
-    }
+    },
+    "types": ["@types/node"]
   },
   "include": [
-    "dev/**/*.ts",
     "pages/**/*.ts",
     "pages/**/*.tsx",
-    "testing/**/*.ts",
+    "tests/**/*.ts",
     "workers/**/*.ts",
-    "global.d.ts"
+    "global.d.ts",
+    "*.ts"
   ],
   "exclude": ["node_modules"],
   "references": [

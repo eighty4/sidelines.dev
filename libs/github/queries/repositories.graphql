@@ -1,4 +1,4 @@
-query QViewerReposNames($pageSize: Int!, $cursor: String!) {
+query QViewerReposNames($pageSize: Int!, $cursor: String) {
     viewer {
         repositories(affiliations: [OWNER], first: $pageSize, after: $cursor) {
             nodes {
@@ -14,9 +14,9 @@ query QViewerReposNames($pageSize: Int!, $cursor: String!) {
     }
 }
 
-query QViewerReposActivityData($pageSize: Int!, $cursor: String!) {
+query QViewerReposActivityData($pageSize: Int!, $cursor: String) {
     viewer {
-        repositories(first: $pageSize, after: $cursor, affiliations: [OWNER]) {
+        repositories(affiliations: [OWNER], first: $pageSize, after: $cursor) {
             nodes {
                 ... on Repository {
                     name

@@ -1,15 +1,12 @@
 @import '../global.css';
 @import './workflow/ChooseWorkflow.css';
 
-body,
-#root,
 #view {
-    height: 100%;
-}
-
-#view {
+    height: 100vh;
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5rem;
 
     width: 800px;
     margin: 0 auto;
@@ -39,5 +36,10 @@ body,
         position: sticky;
         top: 0;
         right: 0;
+    }
+}
+
+.job-list {
+    & .job-list-item {
     }
 }

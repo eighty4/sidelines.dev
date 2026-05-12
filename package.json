@@ -2,7 +2,7 @@
   "name": "@sidelines/webapp",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@11.1.0",
   "workspaces": [
     "libs/*"
   ],
@@ -19,7 +19,6 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@eighty4/dank": "0.0.5-6",
     "@eighty4/model-t": "0.0.5-4",
     "@sidelines/data": "workspace:*",
     "@sidelines/github": "workspace:*",
@@ -28,20 +27,21 @@
     "@sidelines/pageload": "workspace:*",
     "@sidelines/server": "workspace:*",
     "@sidelines/ui": "workspace:*",
-    "monaco-editor": "^0.54.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "monaco-editor": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.56.0",
-    "@types/node": "^24.7.2",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
-    "esbuild": "0.25.11",
-    "graphql": "^16.11.0",
-    "parse5": "^8.0.0",
-    "prettier": "^3.5.3",
-    "typescript": "^5.9.3"
+    "@eighty4/dank": "0.0.5-7",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "catalog:",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "esbuild": "0.28.0",
+    "graphql": "catalog:",
+    "parse5": "^8.0.1",
+    "prettier": "^3.8.3",
+    "typescript": "catalog:"
   }
 }

@@ -1,3 +1,15 @@
 packages:
   - libs/*
   - server
+
+allowBuilds:
+  esbuild: true
+
+catalogs:
+  default:
+    '@types/node': ^25.6.2
+    graphql: ^16.14.0
+    monaco-editor: ^0.55.1
+    react: ^19.2.6
+    react-dom: ^19.2.6
+    typescript: ^6.0.3
