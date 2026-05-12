@@ -12,6 +12,11 @@ export type RepoDefaultBranch = {
     defaultBranch: BranchRef
 }
 
+export type SyncedRepoDefaultBranch = RepoDefaultBranch & {
+    from?: string
+    to: string
+}
+
 export type BranchRef = {
     name: string
     committedDate: Date

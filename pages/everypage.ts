@@ -1,7 +1,7 @@
 import { getGhTokenCookie } from '@sidelines/data/cookie'
 // import { onLoadComplete } from '@sidelines/pageload/ready'
 import startJobSchedulingWorker from 'Sidelines.dev/workers/jobs/startJobsSWorker'
-import startSyncRefsWorker from 'Sidelines.dev/workers/syncing/startSyncRefsWorker'
+import startSyncRefsWorker from 'Sidelines.dev/workers/syncing/startSyncRefsSWorker'
 import { PageSideWorkerLauncher } from 'Sidelines.dev/workers/WorkerLaunch'
 
 if (dank.IS_DEV) {

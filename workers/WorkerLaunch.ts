@@ -1,25 +1,25 @@
 import { isMessageObject } from './messaging.ts'
 
-type WorkerLaunchId = 'JOB_upgradeWorkflowActions'
+export type WorkerLaunchId =
+    | 'JOB_upgradeWorkflowActions'
+    | 'SYNC_packages'
+    | 'SYNC_watches'
 
-type WorkerLaunchChannels = {
-    pages: BroadcastChannel
-    sharedWorkers: BroadcastChannel
-    close(): void
-}
-
-function createChannels(): WorkerLaunchChannels {
-    const pages = new BroadcastChannel('sidelines.worker-pool.pages')
-    const sharedWorkers = new BroadcastChannel(
-        'sidelines.worker-pool.sharedWorkers',
-    )
-    return {
-        pages,
-        sharedWorkers,
-        close() {
-            pages.close()
-            sharedWorkers.close()
-        },
+function createWorkerFromLaunchId(workerId: WorkerLaunchId): Worker {
+    switch (workerId) {
+        case 'JOB_upgradeWorkflowActions':
+            return new Worker(
+                './jobs/forEachViewerOwnedRepo/UpgradeWorkflowActions.ts',
+                { name: 'Sidelines.dev - upgrade GitHub workflow actions' },
+            )
+        case 'SYNC_packages':
+            return new Worker('./syncing/SyncPackagesDWorker.ts', {
+                name: 'Sidelines.dev - sync packages',
+            })
+        case 'SYNC_watches':
+            return new Worker('./syncing/SyncWatchesDWorker.ts', {
+                name: 'Sidelines.dev - sync watches',
+            })
     }
 }
 
@@ -36,19 +36,19 @@ type LaunchedWorker = {
     startedWhen: Date
 }
 
-type WorkerToPageMessage =
-    | {
-          kind: 'request'
-          requestId: string
-      }
-    | {
-          kind: 'launch'
-          pageId: string
-          workerId: WorkerLaunchId
-          payload: any
-      }
+type SharedWorkerToPageMessage = {
+    kind: 'launch'
+    pageId: string
+    workerId: WorkerLaunchId
+    payload: any
+}
 
-type PageToWorkerMessage =
+type SharedWorkerToAllPagesMessage = {
+    kind: 'request'
+    requestId: string
+}
+
+type PageToSharedWorkerMessage =
     | {
           kind: 'available'
           pageId: string
@@ -79,24 +79,45 @@ function isLaunchedWorkerMessage(data: unknown): data is LaunchedWorkerMessage {
     }
 }
 
-function isWorkerToPageMessage(data: unknown): data is WorkerToPageMessage {
+function isSharedWorkerToAllPagesMessage(
+    data: unknown,
+): data is SharedWorkerToAllPagesMessage {
     if (!isMessageObject(data)) {
         return false
     }
     switch (data.kind) {
         case 'request':
-        case 'launch':
             return true
         default:
             console.warn(
-                'WorkerLaunch isWorkerToPageMessage invalid',
+                'WorkerLaunch isSharedWorkerToAllPagesMessage invalid',
                 data.kind,
             )
             return false
     }
 }
 
-function isPageToWorkerMessage(data: unknown): data is PageToWorkerMessage {
+function isSharedWorkerToPageMessage(
+    data: unknown,
+): data is SharedWorkerToPageMessage {
+    if (!isMessageObject(data)) {
+        return false
+    }
+    switch (data.kind) {
+        case 'launch':
+            return true
+        default:
+            console.warn(
+                'WorkerLaunch isSharedWorkerToPageMessage invalid',
+                data.kind,
+            )
+            return false
+    }
+}
+
+function isPageToSharedWorkerMessage(
+    data: unknown,
+): data is PageToSharedWorkerMessage {
     if (!isMessageObject(data)) {
         return false
     }
@@ -106,20 +127,45 @@ function isPageToWorkerMessage(data: unknown): data is PageToWorkerMessage {
             return true
         default:
             console.warn(
-                'WorkerLaunch isPageToWorkerMessage invalid',
+                'WorkerLaunch isPageToSharedWorkerMessage invalid',
                 data.kind,
             )
             return false
     }
 }
 
+class WorkerLaunchPageChannels {
+    readonly allPages: BroadcastChannel = new BroadcastChannel(
+        'sidelines.WorkerLaunch.pages',
+    )
+    readonly page: BroadcastChannel
+    readonly sharedWorker: BroadcastChannel = new BroadcastChannel(
+        'sidelines.WorkerLaunch.sharedWorker',
+    )
+
+    constructor(pageId: string) {
+        this.page = new BroadcastChannel(
+            `sidelines.WorkerLaunch.page.${pageId}`,
+        )
+    }
+
+    close() {
+        this.allPages.close()
+        this.page.close()
+        this.sharedWorker.close()
+    }
+}
+
 export class PageSideWorkerLauncher {
-    #broadcast = createChannels()
+    #channels: WorkerLaunchPageChannels
     #pageId = crypto.randomUUID()
     #running: Array<LaunchedWorker> = []
 
     constructor() {
-        this.#broadcast.pages.onmessage = this.#onWorkerLaunchMessage
+        this.#channels = new WorkerLaunchPageChannels(this.#pageId)
+        this.#channels.allPages.onmessage =
+            this.#onSharedWorkerToAllPagesMessage
+        this.#channels.page.onmessage = this.#onSharedWorkerToPageMessage
     }
 
     shutdown() {
@@ -127,22 +173,12 @@ export class PageSideWorkerLauncher {
             kind: 'closing',
             pageId: this.#pageId,
         })
-        this.#broadcast.close()
-    }
-
-    #createWorker(workerId: WorkerLaunchId): Worker {
-        switch (workerId) {
-            case 'JOB_upgradeWorkflowActions':
-                return new Worker(
-                    './jobs/forEachViewerOwnedRepo/UpgradeWorkflowActions.ts',
-                    { name: 'Sidelines.dev - upgrade GitHub workflow actions' },
-                )
-        }
+        this.#channels.close()
     }
 
     #launch(workerId: WorkerLaunchId, payload: any) {
         console.log('WorkerLaunch launching', workerId, payload)
-        const w = this.#createWorker(workerId)
+        const w = createWorkerFromLaunchId(workerId)
         const launched = {
             id: workerId,
             w,
@@ -172,14 +208,17 @@ export class PageSideWorkerLauncher {
         }
     }
 
-    #onWorkerLaunchMessage = (e: MessageEvent<unknown>) => {
-        if (!isWorkerToPageMessage(e.data)) {
+    #onSharedWorkerToAllPagesMessage = (e: MessageEvent<unknown>) => {
+        if (!isSharedWorkerToAllPagesMessage(e.data)) {
             throw Error(
-                'WorkerLaunch #onWorkerLaunchMessage invalid msg: ' +
+                'WorkerLaunch #onSharedWorkerToAllPagesMessage invalid msg: ' +
                     JSON.stringify(e.data),
             )
         }
-        console.log('WorkerLaunch page received', e.data)
+        console.log(
+            'WorkerLaunch received SharedWorkerToAllPagesMessage',
+            e.data,
+        )
         switch (e.data.kind) {
             case 'request':
                 this.#postToSharedWorker({
@@ -188,17 +227,27 @@ export class PageSideWorkerLauncher {
                     requestId: e.data.requestId,
                 })
                 break
+        }
+    }
+
+    #onSharedWorkerToPageMessage = (e: MessageEvent<unknown>) => {
+        if (!isSharedWorkerToPageMessage(e.data)) {
+            throw Error(
+                'WorkerLaunch #onSharedWorkerToPageMessage invalid msg: ' +
+                    JSON.stringify(e.data),
+            )
+        }
+        console.log('WorkerLaunch received SharedWorkerToPageMessage', e.data)
+        switch (e.data.kind) {
             case 'launch':
-                if (this.#pageId === e.data.pageId) {
-                    this.#launch(e.data.workerId, e.data.payload)
-                }
+                this.#launch(e.data.workerId, e.data.payload)
                 break
         }
     }
 
-    #postToSharedWorker(reply: PageToWorkerMessage) {
-        console.log('WorkerLaunch page sending to shared worker', reply)
-        this.#broadcast.sharedWorkers.postMessage(reply)
+    #postToSharedWorker(reply: PageToSharedWorkerMessage) {
+        console.log('WorkerLaunch sending PageToSharedWorkerMessage', reply)
+        this.#channels.sharedWorker.postMessage(reply)
     }
 
     #removeLaunchedWorker(running: LaunchedWorker) {
@@ -210,41 +259,55 @@ export class PageSideWorkerLauncher {
     }
 }
 
+class WorkerLaunchSharedWorkerChannels {
+    readonly allPages: BroadcastChannel = new BroadcastChannel(
+        'sidelines.WorkerLaunch.pages',
+    )
+    readonly #pages: Record<string, BroadcastChannel> = {}
+    readonly sharedWorker: BroadcastChannel = new BroadcastChannel(
+        'sidelines.WorkerLaunch.sharedWorker',
+    )
+
+    page(pageId: string): BroadcastChannel {
+        const page = this.#pages[pageId]
+        if (page) {
+            return page
+        } else {
+            return (this.#pages[pageId] = new BroadcastChannel(
+                `sidelines.WorkerLaunch.page.${pageId}`,
+            ))
+        }
+    }
+
+    close() {
+        this.allPages.close()
+        Object.values(this.#pages).forEach(p => p.close())
+        this.sharedWorker.close()
+    }
+}
+
 export class SharedWorkerSideWorkerLauncher {
-    #broadcast = createChannels()
+    #channels = new WorkerLaunchSharedWorkerChannels()
     // map requestId uuid to payload
     #requests: Record<string, RequestedWorker> = {}
     // map pageId uuid to worker refs
     #running: Record<string, Array<RunningWorker>> = {}
 
     constructor() {
-        this.#broadcast.sharedWorkers.onmessage = (
-            e: MessageEvent<unknown>,
-        ) => {
-            if (isPageToWorkerMessage(e.data)) {
-                console.log('worker launch message', e.data)
-                switch (e.data.kind) {
-                    case 'available':
-                        this.#onPageAvailable(e.data)
-                        break
-                    case 'closing':
-                        this.#onPageClosing(e.data)
-                        break
-                }
-            }
-        }
+        this.#channels.sharedWorker.onmessage =
+            this.#onPageToSharedWorkerMessage
     }
 
     request(workerId: WorkerLaunchId, payload: any) {
         const requestId = crypto.randomUUID()
         this.#requests[requestId] = { workerId, payload }
-        this.#postToPages({
+        this.#channels.allPages.postMessage({
             kind: 'request',
             requestId,
-        })
+        } satisfies SharedWorkerToAllPagesMessage)
     }
 
-    #onPageAvailable(msg: PageToWorkerMessage & { kind: 'available' }) {
+    #onPageAvailable(msg: PageToSharedWorkerMessage & { kind: 'available' }) {
         const requested = this.#requests[msg.requestId]
         if (requested) {
             delete this.#requests[msg.requestId]
@@ -255,21 +318,34 @@ export class SharedWorkerSideWorkerLauncher {
                 ...requested,
                 pageId: msg.pageId,
             })
-            this.#postToPages({
+            this.#channels.page(msg.pageId).postMessage({
                 kind: 'launch',
                 pageId: msg.pageId,
                 payload: requested.payload,
                 workerId: requested.workerId,
-            })
+            } satisfies SharedWorkerToPageMessage)
         }
     }
 
-    #onPageClosing(msg: PageToWorkerMessage & { kind: 'closing' }) {
+    #onPageClosing(msg: PageToSharedWorkerMessage & { kind: 'closing' }) {
         console.log('WorkerLaunch.#onPageClosing', msg)
     }
 
-    #postToPages(reply: WorkerToPageMessage) {
-        console.log('WorkerLaunch shared worker sending to page', reply)
-        this.#broadcast.pages.postMessage(reply)
+    #onPageToSharedWorkerMessage = (e: MessageEvent<unknown>) => {
+        if (!isPageToSharedWorkerMessage(e.data)) {
+            throw Error(
+                'WorkerLaunch #onPageToSharedWorkerMessage invalid msg: ' +
+                    JSON.stringify(e.data),
+            )
+        }
+        console.log('WorkerLaunch received PageToSharedWorkerMessage', e.data)
+        switch (e.data.kind) {
+            case 'available':
+                this.#onPageAvailable(e.data)
+                break
+            case 'closing':
+                this.#onPageClosing(e.data)
+                break
+        }
     }
 }

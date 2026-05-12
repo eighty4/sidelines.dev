@@ -1,4 +1,7 @@
-import type { RepoDefaultBranch, RepositoryId } from '@sidelines/model'
+import type {
+    RepoDefaultBranch,
+    SyncedRepoDefaultBranch,
+} from '@sidelines/model'
 import {
     connectToDb,
     DB_STORE_REPO_HEADS,
@@ -45,15 +48,9 @@ export async function getTimeSinceLastSync(): Promise<number | null> {
     })
 }
 
-export type RepoUpdate = {
-    repo: RepositoryId
-    from?: string
-    to: string
-}
-
 export function syncRefs(
     refs: Array<RepoDefaultBranch>,
-): Promise<Array<RepoUpdate>> {
+): Promise<Array<SyncedRepoDefaultBranch>> {
     const reposToRefs: Record<string, RepoDefaultBranch> = {}
     for (const ref of refs) {
         reposToRefs[`${ref.repo.owner}/${ref.repo.name}`] = ref
@@ -68,7 +65,7 @@ export function syncRefs(
         const syncTasksStore = tx.objectStore(DB_STORE_REPO_SYNCING)
         const syncLogStore = tx.objectStore(DB_STORE_SYNC_LOG)
 
-        const updates: Array<RepoUpdate> = []
+        const updates: Array<SyncedRepoDefaultBranch> = []
         tx.oncomplete = () => {
             console.log('syncRefs tx complete', updates)
             res(updates)
@@ -93,6 +90,7 @@ export function syncRefs(
                     } else {
                         updates.push({
                             repo,
+                            defaultBranch,
                             from: record.sha,
                             to: defaultBranch.headOid,
                         })
@@ -116,7 +114,11 @@ export function syncRefs(
                         sha: defaultBranch.headOid,
                     }
                     repoHeadsStore.add(record)
-                    updates.push({ repo, to: defaultBranch.headOid })
+                    updates.push({
+                        repo,
+                        defaultBranch,
+                        to: defaultBranch.headOid,
+                    })
                 }
                 const when = new Date()
                 syncLogStore.put({ when })

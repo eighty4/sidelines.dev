@@ -1,10 +1,10 @@
-import type { RepoSyncRef, SyncRefsInit } from './syncMessaging.ts'
 import { findRepoPackages } from '@sidelines/packages/findRepoPackages'
+import type { RepoSyncRef, SyncRefsEvent } from './syncMessaging.ts'
 
 declare const self: DedicatedWorkerGlobalScope
 
-onmessage = (e: MessageEvent<SyncRefsInit>) => {
-    syncPackages(e.data.ghToken, e.data.repos)
+onmessage = (e: MessageEvent<SyncRefsEvent>) => {
+    syncPackages(e.data.ghToken, e.data.syncedRefs)
         .then(() => {})
         .catch(e => {
             console.error('syncPackages.js error', e)

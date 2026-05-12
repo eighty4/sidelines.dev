@@ -66,12 +66,6 @@ export class ExecJobWorker {
     async #execute(ghToken: string, jobExecId: string) {
         console.log('ExecJobWorker', LABEL, 'executing', jobExecId)
         try {
-            await this.#definition.forEachViewerOwnedRepo(ghToken, {
-                owner: 'eighty4',
-                name: 'qwerky',
-            })
-            return
-
             const fetchingViewerRepoNames = queryViewerOwnedRepoNames(ghToken)
             await createRepoJobRecord(jobExecId)
             const owner = await queryUserLogin(ghToken)
