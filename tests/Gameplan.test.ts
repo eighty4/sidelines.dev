@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { GH_TOKEN } from '@sidelines/data/cookie'
 import { login } from './login.ts'
 import screenshotOnFailure from './screenshotOnFailure.ts'
@@ -71,8 +71,9 @@ test.describe('initializing page', () => {
 })
 
 test.describe('job list', () => {
-    test('exec button triggers job', async ({ page }) => {
-        await loginToGameplan(page)
+    test('exec button click disables button', async ({ page }) => {
+        await loginToGameplanUserStory().configureRoutes(page)
+        await login(page)
         const execButton = page.getByRole('button', { name: 'Exec' })
         await expect(execButton).toBeVisible()
         await execButton.click()
@@ -80,8 +81,8 @@ test.describe('job list', () => {
     })
 })
 
-async function loginToGameplan(page: Page) {
-    await UserStory.login('eighty4')
+function loginToGameplanUserStory(): UserStory {
+    return UserStory.login('eighty4')
         .withAppInstallation({ id: 1234567, repos: 'all' })
         .withGraphqlResponse('QViewerLogin', null, {
             viewer: { login: 'eighty4' },
@@ -95,31 +96,29 @@ async function loginToGameplan(page: Page) {
                 },
             },
         })
-        // for sync refs shared worker
-        .withGraphqlResponse('QViewerRepoDefaultBranch', null, {
-            viewer: {
-                repositories: {
-                    nodes: [
-                        {
-                            name: 'l3',
-                            owner: { login: 'eighty4' },
-                            defaultBranchRef: {
-                                target: {
-                                    history: {
-                                        edges: [{ node: { oid: '6773aaca' } }],
-                                    },
-                                },
-                            },
-                        },
-                    ],
-                    pageInfo: {
-                        endCursor: 'asdf',
-                        hasNextPage: false,
-                    },
-                },
-            },
-        })
-        .configureRoutes(page)
-
-    await login(page)
 }
+
+// // for sync refs shared worker
+// .withGraphqlResponse('QViewerRepoDefaultBranch', null, {
+//     viewer: {
+//         repositories: {
+//             nodes: [
+//                 {
+//                     name: 'l3',
+//                     owner: { login: 'eighty4' },
+//                     defaultBranchRef: {
+//                         target: {
+//                             history: {
+//                                 edges: [{ node: { oid: '6773aaca' } }],
+//                             },
+//                         },
+//                     },
+//                 },
+//             ],
+//             pageInfo: {
+//                 endCursor: 'asdf',
+//                 hasNextPage: false,
+//             },
+//         },
+//     },
+// })

@@ -2,7 +2,7 @@ export default function startJobSchedulingWorker(
     ghToken: string,
 ): SharedWorker {
     const sw = new SharedWorker('./JobsSWorker.ts', {
-        name: 'Sidelines.dev job scheduling',
+        name: 'Sidelines.dev - job scheduling',
     })
     sw.onerror = onError
     sw.port.onmessage = onMessage

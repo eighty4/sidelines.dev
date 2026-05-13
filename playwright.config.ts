@@ -43,7 +43,7 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
     workers: process.env.CI ? 2 : undefined,
-    reporter: [['html', { outputFolder: '.playwright/report' }]],
+    reporter: [['html', { open: 'never', outputFolder: '.playwright/report' }]],
     use: {
         baseURL: mode.baseURL,
         serviceWorkers: 'block',
@@ -65,6 +65,7 @@ function projects(): PlaywrightTestConfig['projects'] {
         {
             name: 'webkit',
             use: { ...devices['Desktop Safari'] },
+            grepInvert: /@opfs/,
         },
     ]
 }

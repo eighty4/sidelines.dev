@@ -1,6 +1,7 @@
 import type { RepositoryObject } from '@sidelines/model'
 import { sortRepositoryObjects } from './_queryRepoObjects.ts'
 import { QViewerRepoDirContent, type QViewerRepoDirContentVars } from './gql.ts'
+import type { QViewerRepoDirContentGraph } from '../../graphs.ts'
 import queryGraphqlApi from '../../queryGraphqlApi.ts'
 
 // repo obj query where obj expr is expected to return a tree
@@ -11,14 +12,13 @@ export async function queryViewerRepoDirContent(
     dirpath: string,
     ref: string = 'HEAD',
 ): Promise<Array<RepositoryObject> | 'repo-does-not-exist'> {
-    const json = await queryGraphqlApi<QViewerRepoDirContentVars, GraphData>(
-        ghToken,
-        QViewerRepoDirContent,
-        {
-            name: repo,
-            objExpr: `${ref}:${dirpath.length ? dirpath : `''`}`,
-        },
-    )
+    const json = await queryGraphqlApi<
+        QViewerRepoDirContentVars,
+        QViewerRepoDirContentGraph
+    >(ghToken, QViewerRepoDirContent, {
+        name: repo,
+        objExpr: `${ref}:${dirpath.length ? dirpath : `''`}`,
+    })
     if (!json.data.viewer.repository) {
         return 'repo-does-not-exist'
     }
@@ -44,29 +44,4 @@ export async function queryViewerRepoDirContent(
             }
         })
         .sort(sortRepositoryObjects)
-}
-
-type GraphData = {
-    viewer: {
-        repository: {
-            object: {
-                entries: Array<
-                    {
-                        name: string
-                    } & (
-                        | {
-                              type: 'blob'
-                              object: {
-                                  byteSize: number
-                                  text: string
-                              }
-                          }
-                        | {
-                              type: 'tree'
-                          }
-                    )
-                >
-            }
-        }
-    }
 }

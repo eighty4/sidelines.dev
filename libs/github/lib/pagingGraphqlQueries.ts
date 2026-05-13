@@ -4,7 +4,7 @@ import queryGraphqlApi from './queryGraphqlApi.ts'
 export type Pageable<T> = {
     data: Array<T>
     pageInfo: {
-        endCursor: string
+        endCursor: string | null
         hasNextPage: boolean
     }
     totalCount: number

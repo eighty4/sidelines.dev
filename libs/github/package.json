@@ -13,6 +13,9 @@
       "types": "./lib_types/*.api.ts",
       "node": "./lib_js/*.api.js",
       "import": "./lib/*.api.ts"
+    },
+    "./GRAPHS": {
+      "types": "./lib_types/graphs.d.ts"
     }
   },
   "scripts": {

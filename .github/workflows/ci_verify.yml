@@ -79,10 +79,10 @@ jobs:
       - run: pnpm build:libs
       - run: echo -e "GH_APP_ID=a\nGH_CLIENT_ID=b\nGH_CLIENT_SECRET=c\nWEBAPP_ADDRESS=http://127.0.0.1:3000\n" > .env.local
       - name: playwright install
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps --only-shell
       - name: playwright test
         env:
-          CI: true
+          CI: ${{ matrix.browser }}
         run: pnpm test:e2e
       - uses: actions/upload-artifact@v7
         if: always()

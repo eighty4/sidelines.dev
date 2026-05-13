@@ -1,6 +1,10 @@
 import { RepositoryValues, type RepositoryId } from '@sidelines/model'
 import { findLatestFloatingMajorTag } from './floatingMajorTag.api.ts'
 import queryGraphqlApi from '../../queryGraphqlApi.ts'
+import type {
+    QMultipleReposLatestTagsGraph,
+    QMultipleReposLatestTagsVars,
+} from '../../graphs.ts'
 
 export async function queryMultipleReposLatestFloatingMajorTag(
     ghToken: string,
@@ -10,11 +14,10 @@ export async function queryMultipleReposLatestFloatingMajorTag(
         throw TypeError()
     }
     console.log('fetching floating major tags of', repos.length, 'repos')
-    const json = await queryGraphqlApi<GraphVars, GraphData>(
-        ghToken,
-        buildQuery(repos),
-        { tags: 10 },
-    )
+    const json = await queryGraphqlApi<
+        QMultipleReposLatestTagsVars,
+        QMultipleReposLatestTagsGraph
+    >(ghToken, buildQuery(repos), { tags: 10 })
     const result = new RepositoryValues<`v${number}`>()
     for (let i = 0; i < repos.length; i++) {
         const repoId = repos[i]
@@ -37,26 +40,11 @@ export async function queryMultipleReposLatestFloatingMajorTag(
     return result
 }
 
-type GraphVars = { tags: number }
-
-type GraphData = Record<
-    `repo${string}`,
-    null | {
-        refs: {
-            edges: Array<{
-                node: {
-                    name: string
-                }
-            }>
-        }
-    }
->
-
 function buildQuery(repos: Array<RepositoryId>): string {
     const repoQueries = repos.map((repo, i) => {
         return `repo${i}: repository(owner: "${repo.owner}", name: "${repo.name}") { refs( refPrefix: "refs/tags/" first: $tags orderBy: { field: TAG_COMMIT_DATE, direction: DESC } ) { edges { node { name } } } }`
     })
-    return `query RepoLatestTags($tags: Int!) { ${repoQueries} }`
+    return `query QMultipleReposLatestTags($tags: Int!) { ${repoQueries} }`
 }
 
 type RefEdge = {

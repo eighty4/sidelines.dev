@@ -49,7 +49,8 @@ export class GraphqlResponses {
                 const match = this.#responses[definition.name.value].find(
                     queryVars === null
                         ? hasNullVars
-                        : hasMatchingVars(queryVars),
+                        : (response: RegisteredResponse) =>
+                              matchVars(queryVars, response.variables),
                 )
                 if (!match) {
                     throw Error(
@@ -67,14 +68,6 @@ function hasNullVars(response: RegisteredResponse): boolean {
     return response.variables === null
 }
 
-function hasMatchingVars(
-    queryVars: Record<string, any>,
-): (response: RegisteredResponse) => boolean {
-    return (response: RegisteredResponse) => {
-        return matchVars(queryVars, response.variables)
-    }
-}
-
 function matchVars(
     vars1: Record<string, any> | null,
     vars2: Record<string, any> | null,
@@ -89,7 +82,14 @@ function matchVars(
         return false
     }
     for (const [k, v] of Object.entries(vars2)) {
-        if (!vars1[k] || vars1[k] !== v) {
+        const otherV = vars1[k]
+        if (v === null && otherV !== null) {
+            return false
+        }
+        if (typeof v === 'undefined' && typeof otherV !== 'undefined') {
+            return false
+        }
+        if (v !== otherV) {
             return false
         }
     }

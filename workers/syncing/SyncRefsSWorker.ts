@@ -5,10 +5,7 @@ import {
 } from '@sidelines/data/indexeddb/tx/syncRefs'
 import { queryMultipleRepoHeadOids } from '@sidelines/github/repositories/queryMultipleRepoHeadOids'
 import { isMessageObject } from '../messaging.ts'
-import {
-    SharedWorkerSideWorkerLauncher,
-    type WorkerLaunchId,
-} from '../WorkerLaunch.ts'
+import { SharedWorkerSideWorkerLauncher } from '../WorkerLaunch.ts'
 import type { SyncRefsEvent } from './syncMessaging.ts'
 
 declare let self: SharedWorkerGlobalScope
@@ -93,7 +90,7 @@ async function sync() {
     for (const workerId of [
         'SYNC_packages',
         'SYNC_watches',
-    ] satisfies Array<WorkerLaunchId>) {
+    ] satisfies Array<`SYNC_${string}`>) {
         workerLaunch!.request(workerId, {
             kind: 'sync',
             ghToken,
