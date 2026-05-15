@@ -28,6 +28,11 @@ test.describe('initializing page', () => {
                         domain: new URL(baseURL!).host,
                     },
                 ])
+                await UserStory.login('eighty4')
+                    .withGraphqlResponse('QViewerLogin', null, {
+                        viewer: { login: 'eighty4' },
+                    })
+                    .configureRoutes(page)
                 await page.goto('/gameplan')
                 await page.waitForURL('/')
                 expect(
@@ -52,11 +57,6 @@ test.describe('initializing page', () => {
                         domain: new URL(baseURL!).host,
                     },
                 ])
-                await UserStory.login('eighty4')
-                    .withGraphqlResponse('QViewerLogin', null, {
-                        viewer: { login: 'eighty4' },
-                    })
-                    .configureRoutes(page)
                 await context.addInitScript(() => {
                     window.sessionStorage.setItem(
                         'sld.user.gh.login',

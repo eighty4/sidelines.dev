@@ -1,5 +1,6 @@
 import type { Page, Route } from '@playwright/test'
 import { GraphqlResponses } from './graphQuerying.ts'
+import { isWebKit } from '../isWebKit.ts'
 
 type FulfillOpts = Parameters<Route['fulfill']>[0]
 
@@ -62,16 +63,12 @@ async function routeGitHubAuth(page: Page) {
                 'Set-Cookie': `ght=${ghToken}; Secure; SameSite=Strict; Path=/; Max-Age=${expiresIn}`,
             },
         }
-        if (isWebKit(page)) {
+        if (isWebKit(page.context())) {
             await fauxLogin(fulfill, page)
         } else {
             await route.fulfill(fulfill)
         }
     })
-}
-
-function isWebKit(page: Page): boolean {
-    return page.context().browser()?.browserType().name() === 'webkit'
 }
 
 // webkit cannot use page.route with 301/302
@@ -102,16 +99,17 @@ async function routeGitHubGraphqlQuery(
             await route.fulfill({
                 status: 401,
             })
+        } else {
+            const { query, variables } = req.postDataJSON()
+            await route.fulfill({
+                json: {
+                    data: graphqlResponses.resolveQueryResponse(
+                        query,
+                        variables || null,
+                    ),
+                },
+            })
         }
-        const { query, variables } = req.postDataJSON()
-        await route.fulfill({
-            json: {
-                data: graphqlResponses.resolveQueryResponse(
-                    query,
-                    variables || null,
-                ),
-            },
-        })
     })
 }
 
