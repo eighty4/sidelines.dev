@@ -10,6 +10,10 @@
       "import": "./lib/*.ts"
     }
   },
+  "scripts": {
+    "build": "tsc --build",
+    "build:clean": "rm -rf lib_js lib_types tsconfig.tsbuildinfo"
+  },
   "dependencies": {
     "@sidelines/data": "workspace:*",
     "@sidelines/github": "workspace:*",

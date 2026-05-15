@@ -4,8 +4,12 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts",
-    "./monaco": "./src/monaco/monaco.ts"
+    ".": "./lib/index.ts",
+    "./monaco": "./lib/monaco/monaco.ts"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "build:clean": "rm -rf lib_js lib_types tsconfig.tsbuildinfo"
   },
   "peerDependencies": {
     "monaco-editor": "catalog:",

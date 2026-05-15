@@ -25,6 +25,10 @@
       "default": "./lib/storage.ts"
     }
   },
+  "scripts": {
+    "build": "tsc --build",
+    "build:clean": "rm -rf lib_js lib_types tsconfig.tsbuildinfo"
+  },
   "dependencies": {
     "@sidelines/github": "workspace:*",
     "@sidelines/model": "workspace:*",

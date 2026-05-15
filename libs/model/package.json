@@ -9,5 +9,9 @@
       "node": "./lib_js/model.js",
       "import": "./lib/model.ts"
     }
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "build:clean": "rm -rf lib_js lib_types tsconfig.tsbuildinfo"
   }
 }

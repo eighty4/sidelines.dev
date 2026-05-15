@@ -17,8 +17,10 @@
     "pages/**/*.tsx",
     "tests/**/*.ts",
     "workers/**/*.ts",
+    ".prettier.ts",
     "global.d.ts",
-    "*.ts"
+    "local.ts",
+    "playwright.config.ts"
   ],
   "exclude": ["node_modules"],
   "references": [

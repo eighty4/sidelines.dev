@@ -14,5 +14,9 @@
       "node": "./lib_js/tx.js",
       "import": "./lib/tx.ts"
     }
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "build:clean": "rm -rf lib_js lib_types tsconfig.tsbuildinfo"
   }
 }

@@ -55,8 +55,10 @@ fi
 
 # run through all the checks done for ci
 
+pnpm -r build:clean
 pnpm graphql
-pnpm build:libs
+pnpm -r build
+pnpm typecheck
 pnpm test
 pnpm build
 pnpm fmtcheck
