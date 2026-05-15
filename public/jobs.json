@@ -1,6 +1,0 @@
-{
-  "WORKFLOWS::UPGRADE_ACTIONS": {
-    "label": "Upgrade Workflow Actions",
-    "url": "/workers/jobs/UpgradeWorkflowActionsDWorker.js"
-  }
-}

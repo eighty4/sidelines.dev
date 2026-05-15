@@ -1,3 +1,6 @@
+import type { RepoJobId } from '@sidelines/model'
+
+// from JobApiClient to JobSWorker(Backend)
 export type JobApiRequest =
     | {
           kind: 'LS'
@@ -5,18 +8,20 @@ export type JobApiRequest =
       }
     | {
           kind: 'EXEC'
-          jobId: string
+          jobId: RepoJobId
           channelId: string
       }
 
 export type JobListingUpdate = {
-    // temp mapping jobId to jobExecId
-    running?: Record<string, string>
-    available: Array<JobSpec>
+    running?: Array<{
+        jobId: RepoJobId
+        jobExecId: string
+        whenStarted: Date
+    }>
 }
 
 export type JobExecUpdate = {
-    jobId: string
+    jobId: RepoJobId
     jobExecId: string
 }
 
@@ -24,11 +29,6 @@ export type JobSchedulingRequest = {
     kind: 'INIT'
     ghToken: string
     pageId: string
-}
-
-export type JobSpec = {
-    id: string
-    label: string
 }
 
 export function createChannel(

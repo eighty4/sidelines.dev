@@ -1,34 +1,28 @@
 import { useEffect, useState, type FC } from 'react'
 import JobApiClient, {
     type JobMessaging,
+    type JobSpec,
 } from 'Sidelines.dev/workers/jobs/JobApiClient'
-import type {
-    JobExecUpdate,
-    JobSpec,
-} from 'Sidelines.dev/workers/jobs/jobMessaging'
+import type { JobExecUpdate } from 'Sidelines.dev/workers/jobs/jobMessaging'
 
 export type JobListProps = {
     jobApiClient: JobApiClient
 }
 
 export const JobList: FC<JobListProps> = ({ jobApiClient }) => {
-    const [jobs, setJobs] = useState<Array<JobSpec> | 'loading'>('loading')
+    // const [jobs, setJobs] = useState<'loading'>('loading')
 
-    useEffect(() => {
-        const ls = jobApiClient.ls()
-        ls.onUpdate = update => setJobs(update.available)
-        return () => ls.close()
-    }, [])
-
-    if (jobs === 'loading') {
-        return
-    }
+    // useEffect(() => {
+    //     const ls = jobApiClient.ls()
+    //     ls.onUpdate = update => setRunningJobs(update.available)
+    //     return () => ls.close()
+    // }, [])
 
     return (
         <div className="job-list">
-            {jobs.map(job => (
+            {JobApiClient.availableJobs().map(job => (
                 <JobListItem
-                    key={job.id}
+                    key={job.jobId}
                     job={job}
                     jobApiClient={jobApiClient}
                 />
@@ -57,7 +51,7 @@ const JobListItem: FC<JobListItemProps> = ({ job, jobApiClient }) => {
         <div className="job-list-item">
             {job.label}{' '}
             <button
-                onClick={() => setMessaging(jobApiClient.exec(job))}
+                onClick={() => setMessaging(jobApiClient.exec(job.jobId))}
                 disabled={!!messaging}
             >
                 Exec

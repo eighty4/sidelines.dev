@@ -1,11 +1,23 @@
+import { ulid } from 'ulid'
 import {
     createChannel,
     type JobApiRequest,
     type JobListingUpdate,
-    type JobSpec,
 } from './jobMessaging.ts'
-import { SharedWorkerSideWorkerLauncher } from '../WorkerLaunch.ts'
+import {
+    SharedWorkerSideWorkerLauncher,
+    type WorkerLaunchId,
+} from '../WorkerLaunch.ts'
 import type { ExecJobWorkerRequest } from './ExecJobWorker.ts'
+import { createRepoJobRecord } from '@sidelines/data/indexeddb/tx/jobLog'
+import type { RepoJobId } from '@sidelines/model'
+
+function workerLaunchId(jobId: RepoJobId): WorkerLaunchId {
+    switch (jobId) {
+        case 'UPGRADE_ACTIONS':
+            return 'JOB_upgradeWorkflowActions'
+    }
+}
 
 export default class JobsBackend {
     #channels: Record<JobApiRequest['kind'], Array<BroadcastChannel>> = {
@@ -24,27 +36,30 @@ export default class JobsBackend {
         this.#ghToken = ghToken
     }
 
-    exec(channelId: string) {
+    exec(channelId: string, jobId: RepoJobId) {
         console.log('job exec request')
         this.#createChannel('EXEC', channelId)
         // todo create a record of job in database
-        const jobExecId = crypto.randomUUID()
-        this.#launcher.request('JOB_upgradeWorkflowActions', {
-            kind: 'EXEC',
-            ghToken: this.#ghToken,
-            jobExecId,
-        } satisfies ExecJobWorkerRequest)
+        const jobExecId = ulid()
+        createRepoJobRecord(jobId, jobExecId)
+            .then(() => {
+                this.#launcher.request(workerLaunchId(jobId), {
+                    kind: 'EXEC',
+                    ghToken: this.#ghToken,
+                    jobExecId,
+                } satisfies ExecJobWorkerRequest)
+            })
+            .catch(e => {
+                console.error('JobSWorkerBackend error initializing exec', e)
+            })
     }
 
     ls(channelId: string) {
+        throw Error()
         console.log('job ls request', this.#channels.LS.length)
         this.#createChannel('LS', channelId)
-        fetchJobsConfig().then(jobs => {
-            const update: JobListingUpdate = {
-                available: jobs,
-            }
-            this.#postJobListingUpdate(update)
-        })
+        const update: JobListingUpdate = {}
+        this.#postJobListingUpdate(update)
     }
 
     ghTokenChanged(ghToken: string): boolean {
@@ -59,6 +74,10 @@ export default class JobsBackend {
         }
     }
 
+    // #channel(kind: JobApiRequest['kind'], channelId: string): BroadcastChannel | undefined {
+    //     return this.#channels[kind].find(c => c.name.endsWith(channelId))
+    // }
+
     #createChannel(kind: JobApiRequest['kind'], channelId: string) {
         const channel = createChannel(kind, channelId)
         this.#channels[kind].push(channel)
@@ -69,20 +88,4 @@ export default class JobsBackend {
             c.postMessage(update)
         }
     }
-}
-
-type JobSpecBackend = JobSpec & {
-    url: string
-}
-
-type JobSpecJson = Record<string, Omit<JobSpecBackend, 'id'>>
-
-async function fetchJobsConfig(): Promise<Array<JobSpecBackend>> {
-    const request = await fetch('/jobs.json')
-    const json: JobSpecJson = await request.json()
-    return Object.entries(json).map(([id, { label, url }]) => ({
-        id,
-        label,
-        url,
-    }))
 }

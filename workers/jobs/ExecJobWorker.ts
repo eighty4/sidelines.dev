@@ -1,8 +1,7 @@
 import {
-    createRepoJobRecord,
-    markRepoJobTaskCompleted,
-    markRepoJobTaskFailed,
-} from '@sidelines/data/indexeddb/tx/jobLogging'
+    markJobDone,
+    markRepoJobStatus,
+} from '@sidelines/data/indexeddb/tx/jobLog'
 import queryViewerOwnedRepoNames from '@sidelines/github/repositories/queryViewerOwnedRepoNames'
 import { queryUserLogin } from '@sidelines/github/user/queryUserLogin'
 import type { RepositoryId } from '@sidelines/model'
@@ -65,19 +64,32 @@ export class ExecJobWorker {
 
     async #execute(ghToken: string, jobExecId: string) {
         console.log('ExecJobWorker', LABEL, 'executing', jobExecId)
-        try {
-            const fetchingViewerRepoNames = queryViewerOwnedRepoNames(ghToken)
-            await createRepoJobRecord(jobExecId)
-            const owner = await queryUserLogin(ghToken)
-            const viewerRepoNames = await fetchingViewerRepoNames
-            const repoIds = viewerRepoNames.map(name => ({ owner, name }))
-            for (const repoId of repoIds) {
+        const repoIds = await this.#fetchViewerRepos(ghToken)
+
+        for (const repoId of repoIds) {
+            try {
                 await this.#definition.forEachViewerOwnedRepo(ghToken, repoId)
-                await markRepoJobTaskCompleted(jobExecId, repoId)
+                await markRepoJobStatus(jobExecId, repoId, {
+                    state: 'done',
+                    when: new Date(),
+                })
+            } catch (e: any) {
+                await markRepoJobStatus(jobExecId, repoId, {
+                    state: 'error',
+                    when: new Date(),
+                    error: e.message,
+                    stack: e.stack,
+                })
             }
-        } catch (e) {
-            console.error('ExecJobWorker', LABEL, 'error', e)
-            await markRepoJobTaskFailed()
         }
+
+        await markJobDone(jobExecId)
+    }
+
+    async #fetchViewerRepos(ghToken: string): Promise<Array<RepositoryId>> {
+        const fetchingViewerRepoNames = queryViewerOwnedRepoNames(ghToken)
+        const owner = await queryUserLogin(ghToken)
+        const viewerRepoNames = await fetchingViewerRepoNames
+        return viewerRepoNames.map(name => ({ owner, name }))
     }
 }

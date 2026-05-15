@@ -1,9 +1,9 @@
+import type { RepoJobId } from '@sidelines/model'
 import {
     createChannel,
     type JobApiRequest,
     type JobExecUpdate,
     type JobListingUpdate,
-    type JobSpec,
 } from './jobMessaging.ts'
 import startJobSchedulingWorker from './startJobsSWorker.ts'
 
@@ -14,7 +14,20 @@ export type JobMessaging<T> = {
     close(): void
 }
 
+export type JobSpec = {
+    jobId: RepoJobId
+    label: string
+}
+
 export default class JobApiClient {
+    static availableJobs(): Array<JobSpec> {
+        return [
+            {
+                jobId: 'UPGRADE_ACTIONS',
+                label: 'Upgrade Workflow Actions',
+            },
+        ]
+    }
     #sw: SharedWorker
 
     constructor(ghToken: string) {
@@ -24,13 +37,13 @@ export default class JobApiClient {
         // })
     }
 
-    exec(job: JobSpec): JobMessaging<JobExecUpdate> {
+    exec(jobId: RepoJobId): JobMessaging<JobExecUpdate> {
         const channelId = crypto.randomUUID()
         const channel = createChannel('EXEC', channelId)
         this.#sw.port.postMessage({
             kind: 'EXEC',
             channelId,
-            jobId: job.id,
+            jobId: jobId,
         } satisfies JobApiRequest)
         return {
             set onUpdate(cb: OnJobMessage<JobExecUpdate>) {

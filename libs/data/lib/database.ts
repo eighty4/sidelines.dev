@@ -4,9 +4,6 @@ const DB_VERSION = 1
 export const DB_STORE_REPO_JOBS = 'repo-jobs'
 const DB_STORE_REPO_JOBS_KEY = 'jobExecId'
 
-export const DB_STORE_REPO_JOB_TASKS = 'repo-job-tasks'
-const DB_STORE_REPO_JOB_TASKS_KEY = ['jobExecId', 'repo']
-
 export const DB_STORE_COMMIT_REVIEW = 'commit-review'
 const DB_STORE_COMMIT_REVIEW_KEY = ['reviewId']
 
@@ -46,9 +43,6 @@ function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
         if (oldVersion === 0) {
             db.createObjectStore(DB_STORE_REPO_JOBS, {
                 keyPath: DB_STORE_REPO_JOBS_KEY,
-            })
-            db.createObjectStore(DB_STORE_REPO_JOB_TASKS, {
-                keyPath: DB_STORE_REPO_JOB_TASKS_KEY,
             })
             db.createObjectStore(DB_STORE_COMMIT_REVIEW, {
                 keyPath: DB_STORE_COMMIT_REVIEW_KEY,
