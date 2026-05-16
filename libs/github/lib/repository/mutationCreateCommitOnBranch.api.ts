@@ -1,33 +1,16 @@
-import type { RepositoryId } from '@sidelines/model'
+import type {
+    RepoCommitAddition,
+    RepoCommitDeletion,
+    RepoCommitInputs,
+} from '@sidelines/model'
 import queryGraphqlApi from '../queryGraphqlApi.ts'
 
-export type CreateCommitInputs = {
-    repo: RepositoryId
-    commitMessage: string
-    branch: { name: string; headOid: string }
-    additions?: Array<CommitRepoAddition>
-    deletions?: Array<CommitRepoDeletion>
-}
-
-export type CommitRepoAddition = {
-    dirpath: string
-    filename: string
-    content: string
-}
-
-export type CommitRepoDeletion = {
-    dirpath: string
-    filename: string
-}
-
-function toCommitPath(change: CommitRepoAddition | CommitRepoDeletion): string {
-    return `${change.dirpath}/${change.filename}`
-}
+export type { RepoCommitInputs } from '@sidelines/model'
 
 // https://docs.github.com/en/graphql/reference/mutations#createcommitonbranch
 export async function createCommitOnBranch(
     ghToken: string,
-    { repo, commitMessage, branch, additions, deletions }: CreateCommitInputs,
+    { repo, commitMessage, branch, additions, deletions }: RepoCommitInputs,
 ): Promise<void> {
     const query = `
     mutation {
@@ -58,4 +41,8 @@ export async function createCommitOnBranch(
                 JSON.stringify(json, null, 4),
         )
     }
+}
+
+function toCommitPath(change: RepoCommitAddition | RepoCommitDeletion): string {
+    return `${change.dirpath}/${change.filename}`
 }

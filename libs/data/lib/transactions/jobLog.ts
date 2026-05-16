@@ -1,6 +1,7 @@
 import type { RepositoryId, RepoJobStatus, RepoJobId } from '@sidelines/model'
 import { connectToDb, DB_STORE_REPO_JOBS } from '../database.ts'
 
+// DB_STORE_REPO_JOBS
 type JobLogRecord = {
     jobId: RepoJobId
     jobExecId: string

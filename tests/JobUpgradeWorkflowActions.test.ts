@@ -11,6 +11,7 @@ import { indexedDBStateFrom } from './indexedDBState.ts'
 import { login } from './login.ts'
 import screenshotOnFailure from './screenshotOnFailure.ts'
 import { UserStory } from './github/UserStory.ts'
+import { readRepoCommitAddition } from './opfsState.ts'
 
 test.afterEach(screenshotOnFailure)
 
@@ -118,13 +119,21 @@ jobs:
         )
         expect(indexedDBState.records['commit-review'].length).toBe(1)
         const commitReview = indexedDBState.records['commit-review'][0]
-        expect(commitReview.commit.additions.length).toBe(1)
-        expect(commitReview.commit.additions[0]).toStrictEqual({
+        expect(commitReview.additions.length).toBe(1)
+        expect(commitReview.additions[0]).toStrictEqual({
             dirpath: '.github/workflows',
             filename: 'ci_verify.yml',
-            content:
-                'on:\n  push:\njobs:\n  checkout-repo:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: echo "checked it out"\n',
         })
+        expect(
+            await readRepoCommitAddition(
+                page,
+                commitReview.reviewId,
+                { owner: 'eighty4', name: 'l3' },
+                commitReview.additions[0],
+            ),
+        ).toBe(
+            'on:\n  push:\njobs:\n  checkout-repo:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: echo "checked it out"\n',
+        )
     },
 )
 

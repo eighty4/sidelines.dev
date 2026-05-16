@@ -1,27 +1,24 @@
 import type {
-    CommitRepoAddition,
-    CreateCommitInputs,
-} from '@sidelines/github/repository/mutationCreateCommitOnBranch'
-import type { RepositoryId } from '@sidelines/model'
+    RepoCommitAddition,
+    RepoCommitInputs,
+    RepoCommitReview,
+    RepositoryId,
+} from '@sidelines/model'
+import { ulid } from 'ulid'
 import { connectToDb, DB_STORE_COMMIT_REVIEW } from '../database.ts'
 import { opfsLookupDir, opfsWriteFile } from '../opfs.ts'
 
-export type CommitReviewRecord = {
+// DB_STORE_COMMIT_REVIEW
+type CommitReviewRecord = {
     reviewId: string
-    commit: CreateCommitInputs
-}
-
-function createRecord(
-    reviewId: string,
-    commit: CreateCommitInputs,
-): CommitReviewRecord {
-    return { reviewId, commit }
-}
+    nameWithOwner: string
+    additions?: Array<Omit<RepoCommitAddition, 'content'>>
+} & Pick<RepoCommitInputs, 'branch' | 'commitMessage' | 'deletions'>
 
 export async function saveRepoCommitReview(
-    commit: CreateCommitInputs,
-): Promise<CommitReviewRecord> {
-    const reviewId = crypto.randomUUID()
+    commit: RepoCommitInputs,
+): Promise<RepoCommitReview> {
+    const reviewId = ulid()
     if (commit.additions) {
         await writeAdditionsToOpfs(reviewId, commit.repo, commit.additions)
     }
@@ -29,6 +26,23 @@ export async function saveRepoCommitReview(
     return {
         reviewId,
         commit,
+    }
+}
+
+function createRecord(
+    reviewId: string,
+    commit: RepoCommitInputs,
+): CommitReviewRecord {
+    return {
+        reviewId,
+        nameWithOwner: `${commit.repo.owner}/${commit.repo.name}`,
+        commitMessage: commit.commitMessage,
+        branch: commit.branch,
+        additions: commit.additions?.map(addition => ({
+            dirpath: addition.dirpath,
+            filename: addition.filename,
+        })),
+        deletions: commit.deletions,
     }
 }
 
@@ -48,36 +62,10 @@ async function writeRecordToDb(record: CommitReviewRecord) {
     })
 }
 
-// todo call from diff ui resync required before review approval
-export async function updateCommitReviewRecordHeadOid(
-    reviewId: string,
-    headOid: string,
-) {
-    const db = await connectToDb()
-    await new Promise<void>((res, rej) => {
-        const tx = db.transaction([DB_STORE_COMMIT_REVIEW], 'readwrite')
-        const objectStore = tx.objectStore(DB_STORE_COMMIT_REVIEW)
-        const request: IDBRequest<CommitReviewRecord> =
-            objectStore.get(reviewId)
-        request.onsuccess = () => {
-            request.result.commit.branch.headOid = headOid
-            objectStore.put(request.result)
-            tx.commit()
-        }
-
-        tx.oncomplete = () => res()
-
-        tx.onerror = e => {
-            console.error('db error', e)
-            rej(e)
-        }
-    })
-}
-
 async function writeAdditionsToOpfs(
     reviewId: string,
     repo: RepositoryId,
-    additions: Array<CommitRepoAddition>,
+    additions: Array<RepoCommitAddition>,
 ): Promise<void> {
     const dirHandles: Record<string, Promise<FileSystemDirectoryHandle>> = {}
     await Promise.all(
@@ -99,3 +87,29 @@ async function writeAdditionsToOpfs(
         }),
     )
 }
+
+// todo call from diff ui resync required before review approval
+// export async function updateCommitReviewRecordHeadOid(
+//     reviewId: string,
+//     headOid: string,
+// ) {
+//     const db = await connectToDb()
+//     await new Promise<void>((res, rej) => {
+//         const tx = db.transaction([DB_STORE_COMMIT_REVIEW], 'readwrite')
+//         const objectStore = tx.objectStore(DB_STORE_COMMIT_REVIEW)
+//         const request: IDBRequest<CommitReviewRecord> =
+//             objectStore.get(reviewId)
+//         request.onsuccess = () => {
+//             request.result.branch.headOid = headOid
+//             objectStore.put(request.result)
+//             tx.commit()
+//         }
+
+//         tx.oncomplete = () => res()
+
+//         tx.onerror = e => {
+//             console.error('db error', e)
+//             rej(e)
+//         }
+//     })
+// }
