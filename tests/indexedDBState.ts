@@ -22,11 +22,7 @@ type IndexedDBStoreStorageState = {
 
 type IndexedDBRecordStorageState = {
     value?: any
-    valueEncoded?: {
-        o: Array<{
-            k: string
-            v: any
-        }>
+    valueEncoded?: EncodedValue & {
         id: number
     }
 }
@@ -99,15 +95,7 @@ export async function indexedDBStateFrom(
                 if (record.value) {
                     return record.value
                 } else if (record.valueEncoded) {
-                    const result: Record<string, any> = {}
-                    record.valueEncoded.o.forEach(({ k, v }) => {
-                        if (isDateContainer(v)) {
-                            result[k] = new Date(v.d)
-                        } else {
-                            result[k] = v
-                        }
-                    })
-                    return result
+                    return mapEncodedValue(record.valueEncoded)
                 } else {
                     throw Error(
                         'unexpected IndexedDBRecordStorageState: ' +
@@ -140,11 +128,50 @@ export function debugPrintIndexedDBContent(content: IndexedDBContent) {
     }
 }
 
-function isDateContainer(value: unknown): value is { d: string } {
-    return (
-        value !== null &&
-        typeof value === 'object' &&
-        'd' in value &&
-        typeof value.d === 'string'
-    )
+type EncodedValue =
+    | {
+          a: [EncodedValue]
+      }
+    | {
+          d: {
+              value: string
+          }
+      }
+    | {
+          o: Array<{
+              k: string
+              v: EncodedValue
+          }>
+      }
+    | {
+          v: any
+      }
+
+function mapEncodedValue(v: EncodedValue): any {
+    if (v === null) {
+        return null
+    }
+    switch (typeof v) {
+        case 'boolean':
+        case 'number':
+        case 'string':
+        case 'undefined':
+            return v
+    }
+    if ('a' in v && Array.isArray(v.a)) {
+        return v.a.map(mapEncodedValue)
+    } else if ('o' in v && Array.isArray(v.o)) {
+        return Object.fromEntries(
+            v.o.map(({ k, v }) => [k, mapEncodedValue(v)]),
+        )
+    } else if ('d' in v && typeof v.d === 'string') {
+        return new Date(v.d)
+    } else if ('v' in v) {
+        return v.v
+    } else {
+        throw Error(
+            'unexpected IndexedDBRecordStorageState encoded value: ' +
+                JSON.stringify(v),
+        )
+    }
 }
