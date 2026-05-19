@@ -13,7 +13,7 @@ export type RepoDefaultBranchGraphData = {
                     edges: Array<{
                         node: {
                             name: string
-                            headOid: string
+                            oid: string
                             committedDate: string
                         }
                     }>
@@ -33,7 +33,7 @@ export function resultFromData(
     const commit = dbr.target.history.edges[0].node
     return {
         name: dbr.name,
-        headOid: commit.headOid,
+        headOid: commit.oid,
         committedDate: new Date(commit.committedDate),
     }
 }
