@@ -4,6 +4,9 @@ import JobApiClient, {
     type JobSpec,
 } from 'Sidelines.dev/workers/jobs/JobApiClient'
 import type { JobExecUpdate } from 'Sidelines.dev/workers/jobs/jobMessaging'
+import styles from './JobList.module.css'
+
+console.log(styles)
 
 export type JobListProps = {
     jobApiClient: JobApiClient
@@ -19,7 +22,7 @@ export const JobList: FC<JobListProps> = ({ jobApiClient }) => {
     // }, [])
 
     return (
-        <div className="job-list">
+        <div className={styles.jobList}>
             {JobApiClient.availableJobs().map(job => (
                 <JobListItem
                     key={job.jobId}

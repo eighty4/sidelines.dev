@@ -5,7 +5,7 @@
     "outDir": "lib_js",
     "declarationDir": "lib_types",
     "composite": true,
-    "types": ["@types/node"]
+    "types": ["node"]
   },
   "include": ["lib/**/*.ts"],
   "exclude": ["node_modules"],

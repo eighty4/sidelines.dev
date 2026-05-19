@@ -6,8 +6,13 @@
     "emitDeclarationOnly": true,
     "composite": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "react"
+    "jsxImportSource": "react",
+    "types": ["react", "react-dom"]
   },
-  "include": ["lib/**/*.ts", "lib/**/*.tsx"],
+  "include": [
+    "lib/**/*.{ts,tsx}",
+    "../../types/esbuild_css.d.ts",
+    "../../types/react_css_vars.d.ts"
+  ],
   "exclude": ["node_modules"]
 }

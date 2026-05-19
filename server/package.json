@@ -8,6 +8,10 @@
       "import": "./lib_js/routes.js"
     }
   },
+  "scripts": {
+    "build": "tsc",
+    "build:clean": "rm -rf lib_js lib_types tsconfig.tsbuildinfo"
+  },
   "dependencies": {
     "@sidelines/data": "workspace:*",
     "@sidelines/github": "workspace:*"

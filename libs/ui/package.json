@@ -4,12 +4,22 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./lib/index.ts",
-    "./monaco": "./lib/monaco/monaco.ts"
+    ".": {
+      "types": "./lib_types/*.d.ts",
+      "default": "./lib/index.ts"
+    },
+    "./monaco": {
+      "types": "./lib_types/monaco/*.d.ts",
+      "default": "./lib/monaco/monaco.ts"
+    }
   },
   "scripts": {
     "build": "tsc --build",
     "build:clean": "rm -rf lib_js lib_types tsconfig.tsbuildinfo"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:"
   },
   "peerDependencies": {
     "monaco-editor": "catalog:",

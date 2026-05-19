@@ -3,22 +3,21 @@
   "compilerOptions": {
     "noEmit": true,
     "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM", "DOM.AsyncIterable", "DOM.Iterable", "WebWorker"],
+    "lib": ["ESNext", "DOM", "WebWorker"],
     "target": "ES2022",
     "rewriteRelativeImportExtensions": false,
     "noUncheckedIndexedAccess": false,
     "paths": {
       "Sidelines.dev/workers/*": ["./workers/*.ts"]
     },
-    "types": ["@types/node"]
+    "types": ["node", "react", "react-dom"]
   },
   "include": [
-    "pages/**/*.ts",
-    "pages/**/*.tsx",
+    "pages/**/*.{ts,tsx}",
     "tests/**/*.ts",
     "workers/**/*.ts",
+    "types/*.d.ts",
     ".prettier.ts",
-    "global.d.ts",
     "local.ts",
     "playwright.config.ts"
   ],
