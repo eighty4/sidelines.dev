@@ -1,17 +1,20 @@
+import { dispatchRateLimitUpdate } from '#rateLimit'
+import { GH_API_PRIOR_VERSION } from './apiVersion.ts'
 import { NotFoundError, UnauthorizedError } from './responses.ts'
 
 export default async function restGetJson(
     ghToken: string,
-    url: string,
+    url: `https://api.github.com/${string}`,
 ): Promise<any> {
     const response = await fetch(url, {
         method: 'GET',
         headers: {
-            Authorization: 'Bearer ' + ghToken,
-            'Content-Type': 'application/json',
-            'X-GitHub-Api-Version': '2022-11-28',
+            authorization: 'Bearer ' + ghToken,
+            'content-type': 'application/json',
+            'x-gitHub-api-version': GH_API_PRIOR_VERSION,
         },
     })
+    dispatchRateLimitUpdate(response.headers)
     if (response.status === 401) {
         throw new UnauthorizedError('401 ' + url)
     }

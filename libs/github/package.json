@@ -18,6 +18,12 @@
       "types": "./lib_types/graphs.d.ts"
     }
   },
+  "imports": {
+    "#rateLimit": {
+      "node": "./lib/rateLimit.stub.ts",
+      "default": "./lib/rateLimit.ts"
+    }
+  },
   "scripts": {
     "build": "tsc --build",
     "build:clean": "rm -rf lib_js lib_types tsconfig.tsbuildinfo",

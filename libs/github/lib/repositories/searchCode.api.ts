@@ -43,8 +43,10 @@ export async function searchCode(
     { kind = 'in:file', term, qualifiers }: SearchQuery,
 ): Promise<SearchResults> {
     const q = `${term} ${qualifiers.map(qual => `${qual.type}:${qual.term}`).join(' ')} ${kind}`
-    const url = 'https://api.github.com/search/code?q=' + encodeURIComponent(q)
-    const searchResponse: SearchResponse = await restGetJson(ghToken, url)
+    const searchResponse: SearchResponse = await restGetJson(
+        ghToken,
+        `https://api.github.com/search/code?q=${encodeURIComponent(q)}`,
+    )
     return searchResponse.items.map(item => ({
         filename: item.name,
         path: item.path,

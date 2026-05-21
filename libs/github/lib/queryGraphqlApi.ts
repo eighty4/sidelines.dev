@@ -1,3 +1,5 @@
+import { dispatchRateLimitUpdate } from '#rateLimit'
+import { GH_API_PRIOR_VERSION } from './apiVersion.ts'
 import { UnauthorizedError } from './responses.ts'
 
 export type GraphqlResponse<DATA> = {
@@ -20,11 +22,11 @@ export default async function queryGraphqlApi<VARS, DATA>(
 ): Promise<GraphqlResponse<DATA>> {
     const body = JSON.stringify(variables ? { query, variables } : { query })
     const headers = new Headers({
-        'Content-Type': 'application/json',
-        'X-GitHub-Api-Version': '2022-11-28',
+        'content-type': 'application/json',
+        'x-github-api-version': GH_API_PRIOR_VERSION,
     })
     if (ghToken) {
-        headers.set('Authorization', 'Bearer ' + ghToken)
+        headers.set('authorization', 'Bearer ' + ghToken)
     }
     const response = await fetch('https://api.github.com/graphql', {
         method: 'POST',
@@ -32,6 +34,7 @@ export default async function queryGraphqlApi<VARS, DATA>(
         body,
         signal: opts?.signal,
     })
+    dispatchRateLimitUpdate(response.headers)
     if (response.status === 401) {
         throw new UnauthorizedError('401 /graphql')
     }

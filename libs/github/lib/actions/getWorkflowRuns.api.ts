@@ -33,15 +33,17 @@ export async function getWorkflowRuns(
         status?: WorkflowRun['status'] | WorkflowRun['conclusion']
     },
 ): Promise<Array<WorkflowRun>> {
-    let url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflow}/runs`
+    const params = new URLSearchParams()
     if (opts) {
-        url +=
-            '?' +
-            Object.entries(opts)
-                .map(([k, v]) => `${k}=${v}`)
-                .join('&')
+        for (const [n, v] of Object.entries(opts)) {
+            if (v) {
+                params.set(n, `${v}`)
+            }
+        }
     }
-    const json = await restGetJson(ghToken, url)
+    const url =
+        `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflow}/runs` as const
+    const json = await restGetJson(ghToken, `${url}?${params.toString()}`)
     return json.workflow_runs.map((wr: any) => ({
         id: wr.id,
         path: wr.path,

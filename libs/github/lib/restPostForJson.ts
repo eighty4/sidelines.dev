@@ -2,7 +2,7 @@ import restPostForResponse from './restPostForResponse.ts'
 
 export default async function restPostForJson(
     ghToken: string,
-    url: string,
+    url: `https://api.github.com/${string}`,
     body: any,
 ): Promise<any> {
     const response = await restPostForResponse(ghToken, url, body)
