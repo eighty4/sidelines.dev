@@ -1,6 +1,6 @@
 import { queryDoesViewerRepoExist } from '@sidelines/github/repository/queryDoesViewerRepoExist'
 import type { RepositoryId } from '@sidelines/model'
-import { InitializingError } from '@sidelines/ui'
+import { InitializingError } from '@sidelines/ui/messaging/InitializingError'
 import {
     type ChangeEvent,
     type FC,

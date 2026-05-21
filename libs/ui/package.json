@@ -4,13 +4,10 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": {
+    "./*": {
       "types": "./lib_types/*.d.ts",
-      "default": "./lib/index.ts"
-    },
-    "./monaco": {
-      "types": "./lib_types/monaco/*.d.ts",
-      "default": "./lib/monaco/monaco.ts"
+      "node": "./lib_js/*.api.js",
+      "import": "./lib/*.api.tsx"
     }
   },
   "scripts": {

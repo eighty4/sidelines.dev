@@ -1,6 +1,6 @@
 import { createSidelinesRepo } from '@sidelines/github/sidelines/repository/createSidelinesRepo'
 import type { RepositoryId } from '@sidelines/model'
-import { InitializingError } from '@sidelines/ui'
+import { InitializingError } from '@sidelines/ui/messaging/InitializingError'
 import { type FC, useState } from 'react'
 
 export interface MakeSidelinesRepoProps {

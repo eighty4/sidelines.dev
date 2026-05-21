@@ -1,4 +1,4 @@
-import { MonacoEditor } from '@sidelines/ui/monaco'
+import { MonacoEditor } from '@sidelines/ui/monaco/MonacoEditor'
 import { editor as Editor, Uri } from 'monaco-editor'
 import { type FC, useEffect, useState } from 'react'
 import type { RepoFile } from '../RepoSources.ts'

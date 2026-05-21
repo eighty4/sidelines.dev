@@ -2,7 +2,7 @@ import { editor as Editor } from 'monaco-editor'
 import { useEffect, useRef, type FC, type HTMLAttributes } from 'react'
 import { MonacoEnvironment } from './MonacoEnvironment.ts'
 
-window.MonacoEnvironment = MonacoEnvironment
+globalThis.MonacoEnvironment = MonacoEnvironment
 
 export type MonacoEditorProps = {
     onLoad: (editor: Editor.IStandaloneCodeEditor) => void
