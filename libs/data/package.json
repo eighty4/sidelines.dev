@@ -4,6 +4,11 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
+    "./cache/*": {
+      "types": "./lib_types/caches/*.d.ts",
+      "node": "./lib_js/caches/*.js",
+      "default": "./lib/caches/*.ts"
+    },
     "./cookie": {
       "types": "./lib_types/cookie.d.ts",
       "node": "./lib_js/cookie.js",

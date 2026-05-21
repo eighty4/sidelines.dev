@@ -1,9 +1,7 @@
+import ghLoginCache from '@sidelines/data/cache/ghLogin'
 import { getGhTokenCookie } from '@sidelines/data/cookie'
-import { createCache } from '@sidelines/data/storage'
 import { UnauthorizedError } from '@sidelines/github'
 import { queryUserLogin } from '@sidelines/github/user/queryUserLogin'
-
-const ghLoginCache = createCache(sessionStorage, 'sld.user.gh.login')
 
 export function expectGhToken(): string {
     const ghToken = getGhTokenCookie(document.cookie)
