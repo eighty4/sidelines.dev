@@ -139,8 +139,6 @@ importers:
 
   libs/model: {}
 
-  libs/notify: {}
-
   libs/packages:
     dependencies:
       '@sidelines/github':
