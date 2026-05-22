@@ -3,11 +3,25 @@ import queryRepoMultipleObjectsContents from '@sidelines/github/repository/objec
 import queryRepoRefsHighestSemverTag from '@sidelines/github/repository/refs/queryRepoRefsHighestSemverTag'
 import type { BranchRef, RepositoryId } from '@sidelines/model'
 
-export abstract class FindPackagesApi {
+export type FindPackagesDataProvider = {
+    // return file contents by path from repo root
+    contents(
+        paths: string | Array<string>,
+    ): Promise<Record<string, string | null>>
+    tag(tagPrefix?: string): Promise<string | null>
+}
+
+export class FindPackagesApi {
+    readonly #dataProvider: FindPackagesDataProvider
     readonly #repo: RepositoryId
     readonly #branchRef: BranchRef
 
-    protected constructor(repo: RepositoryId, branchRef: BranchRef) {
+    constructor(
+        dataProvider: FindPackagesDataProvider,
+        repo: RepositoryId,
+        branchRef: BranchRef,
+    ) {
+        this.#dataProvider = dataProvider
         this.#repo = repo
         this.#branchRef = branchRef
     }
@@ -16,17 +30,16 @@ export abstract class FindPackagesApi {
         return this.#repo
     }
 
-    // given paths to files from the repository root, return file contents
-    abstract contents(
-        paths: string | Array<string>,
-    ): Promise<Record<string, string | null>>
+    // abstract contents(
+    //     paths: string | Array<string>,
+    // ): Promise<Record<string, string | null>>
 
-    abstract getTag(tagPrefix?: string): Promise<string | null>
+    // abstract getTag(tagPrefix?: string): Promise<string | null>
 
     // fallback to sha if tag-not-found
     async getTagOrSha(tagPrefix?: string): Promise<string> {
         return (
-            (await this.getTag(tagPrefix)) ||
+            (await this.#dataProvider.tag(tagPrefix)) ||
             this.#branchRef.headOid.substring(0, 7)
         )
     }
@@ -43,7 +56,7 @@ export abstract class FindPackagesApi {
         const contentPaths = paths.map(
             p => `${contentPathPrefix}${p}/${filename}`,
         )
-        const contents = await this.contents(contentPaths)
+        const contents = await this.#dataProvider.contents(contentPaths)
         const result: Record<string, string | null> = {}
         for (let i = 0; i < paths.length; i++) {
             result[contentPathPrefix + paths[i]] = contents[contentPaths[i]]
@@ -52,13 +65,12 @@ export abstract class FindPackagesApi {
     }
 }
 
-export class FindPackagesApiImpl extends FindPackagesApi {
+export class DefaultFindPackagesDataProvider implements FindPackagesDataProvider {
     readonly #ghToken: string
     readonly #repo: RepositoryId
     readonly #tagCache: Record<string, Promise<string | null>> = {}
 
-    constructor(ghToken: string, repo: RepositoryId, branchRef: BranchRef) {
-        super(repo, branchRef)
+    constructor(ghToken: string, repo: RepositoryId) {
         this.#ghToken = ghToken
         this.#repo = repo
     }
@@ -66,6 +78,7 @@ export class FindPackagesApiImpl extends FindPackagesApi {
     async contents(
         paths: string | Array<string>,
     ): Promise<Record<string, string | null>> {
+        console.log('asdgasdgasdg')
         if (typeof paths === 'string') {
             return {
                 [paths]: await queryRepoObjectContent(
@@ -87,7 +100,7 @@ export class FindPackagesApiImpl extends FindPackagesApi {
         }
     }
 
-    async getTag(tagPrefix?: string): Promise<string | null> {
+    async tag(tagPrefix?: string): Promise<string | null> {
         const tagCacheKey = tagPrefix || ''
         if (typeof this.#tagCache[tagCacheKey] === 'undefined') {
             this.#tagCache[tagCacheKey] = queryRepoRefsHighestSemverTag(

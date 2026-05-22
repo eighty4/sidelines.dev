@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { BranchRef, RepositoryId } from '@sidelines/model'
 import { parsePubspecYaml } from './parsePubspecYaml.ts'
-import { TestFindPackagesApi } from '../_testFindPackages.ts'
+import { TestDataProvider } from '../_testFindPackages.ts'
+import { FindPackagesApi } from '../findPackagesApi.ts'
 
 const repo: RepositoryId = { owner: 'eighty4', name: 'picking.pl' }
 
@@ -16,7 +17,7 @@ test('dart package name and version from pubspec.yaml', async () => {
     const yaml = `name: libtab\nversion: 1.1.1`
     assert.deepEqual(
         await parsePubspecYaml(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             yaml,
         ),
@@ -35,7 +36,7 @@ test('dart package name from repo name', async () => {
     const yaml = `version: 1.1.1`
     assert.deepEqual(
         await parsePubspecYaml(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             yaml,
         ),
@@ -53,7 +54,11 @@ test('dart package name from repo name', async () => {
 test('dart package version from git tag', async () => {
     assert.deepEqual(
         await parsePubspecYaml(
-            new TestFindPackagesApi(repo, branchRef, {}, { '': '1.2.3' }),
+            new FindPackagesApi(
+                new TestDataProvider({}, { '': '1.2.3' }),
+                repo,
+                branchRef,
+            ),
             '',
             '',
         ),
@@ -71,7 +76,7 @@ test('dart package version from git tag', async () => {
 test('dart package version from branch ref', async () => {
     assert.deepEqual(
         await parsePubspecYaml(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             '',
         ),
@@ -89,11 +94,13 @@ test('dart package version from branch ref', async () => {
 test('dart package with explicit workspace paths', async () => {
     assert.deepEqual(
         await parsePubspecYaml(
-            new TestFindPackagesApi(
+            new FindPackagesApi(
+                new TestDataProvider(
+                    { 'abc/pubspec.yaml': 'name: libtab\nversion: 1.1.1' },
+                    {},
+                ),
                 repo,
                 branchRef,
-                { 'abc/pubspec.yaml': 'name: libtab\nversion: 1.1.1' },
-                {},
             ),
             '',
             '\n\nworkspace:\n  - abc\n\n',

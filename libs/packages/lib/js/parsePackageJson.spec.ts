@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { BranchRef, RepositoryId } from '@sidelines/model'
 import { parsePackageJson } from './parsePackageJson.ts'
-import { TestFindPackagesApi } from '../_testFindPackages.ts'
+import { TestDataProvider } from '../_testFindPackages.ts'
+import { FindPackagesApi } from '../findPackagesApi.ts'
 
 const repo: RepositoryId = { owner: '', name: '' }
 const branchRef: BranchRef = {
@@ -18,7 +19,7 @@ test('js package standalone package', async () => {
     })
     assert.deepEqual(
         await parsePackageJson(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             packageJson,
             null,
@@ -48,7 +49,11 @@ test('js package bun or npm workspace with explicit path', async () => {
     }
     assert.deepEqual(
         await parsePackageJson(
-            new TestFindPackagesApi(repo, branchRef, files, {}),
+            new FindPackagesApi(
+                new TestDataProvider(files, {}),
+                repo,
+                branchRef,
+            ),
             '',
             rootPackageJson,
             null,
@@ -92,7 +97,11 @@ test('js package pnpm workspace with explicit path', async () => {
     }
     assert.deepEqual(
         await parsePackageJson(
-            new TestFindPackagesApi(repo, branchRef, files, {}),
+            new FindPackagesApi(
+                new TestDataProvider(files, {}),
+                repo,
+                branchRef,
+            ),
             '',
             rootPackageJson,
             `packages:\n  - core`,
@@ -137,7 +146,11 @@ test.skip('js package bun or npm with wildcard path', async () => {
     }
     assert.deepEqual(
         await parsePackageJson(
-            new TestFindPackagesApi(repo, branchRef, files, {}),
+            new FindPackagesApi(
+                new TestDataProvider(files, {}),
+                repo,
+                branchRef,
+            ),
             '',
             rootPackageJson,
             null,

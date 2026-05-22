@@ -6,7 +6,8 @@ import {
     parsePackageInCargoToml,
     parseWorkspaceInCargoToml,
 } from './parseCargoToml.ts'
-import { TestFindPackagesApi } from '../_testFindPackages.ts'
+import { TestDataProvider } from '../_testFindPackages.ts'
+import { FindPackagesApi } from '../findPackagesApi.ts'
 
 const repo = { name: 'maestro' } as RepositoryId
 const branchRef = { headOid: 'abcdefg' } as BranchRef
@@ -15,7 +16,7 @@ test('rust package .name .version and .publish in [package]', async () => {
     const toml = `[package]\nname = "cquill"\nversion = "0.0.1"\npublish = false`
     assert.deepEqual(
         await parseCargoToml(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             toml,
         ),
@@ -34,7 +35,7 @@ test('rust package defaults for [package]', async () => {
     const toml = `[package]\n`
     assert.deepEqual(
         await parseCargoToml(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             toml,
         ),
@@ -52,7 +53,8 @@ test('rust package defaults for [package]', async () => {
 test('rust package without [package] or workspace.members', async () => {
     assert.deepEqual(
         await parseCargoToml(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
+
             '',
             '',
         ),
@@ -64,11 +66,10 @@ test('rust package cargo.toml with explicit workspace paths', async () => {
     const clap = '[package]\nname = "clap-api"\nversion = "1"'
     assert.deepEqual(
         await parseCargoToml(
-            new TestFindPackagesApi(
+            new FindPackagesApi(
+                new TestDataProvider({ ['clap/Cargo.toml']: clap }, {}),
                 repo,
                 branchRef,
-                { ['clap/Cargo.toml']: clap },
-                {},
             ),
             '',
             'workspace.members = ["clap"]',
@@ -94,11 +95,10 @@ test('rust package cargo.toml with workspace and root crate', async () => {
     const clap = '[package]\nname = "clap-api"\nversion = "1"'
     assert.deepEqual(
         await parseCargoToml(
-            new TestFindPackagesApi(
+            new FindPackagesApi(
+                new TestDataProvider({ ['clap/Cargo.toml']: clap }, {}),
                 repo,
                 branchRef,
-                { ['clap/Cargo.toml']: clap },
-                {},
             ),
             '',
             'workspace.members = ["clap"]',

@@ -4,7 +4,10 @@ import type {
     RepositoryId,
     RepositoryPackage,
 } from '@sidelines/model'
-import { type FindPackagesApi, FindPackagesApiImpl } from './findPackagesApi.ts'
+import {
+    DefaultFindPackagesDataProvider,
+    FindPackagesApi,
+} from './findPackagesApi.ts'
 import { parsePubspecYaml } from './dart/parsePubspecYaml.ts'
 import { parseGoMod } from './go/parseGoMod.ts'
 import { parsePackageJson } from './js/parsePackageJson.ts'
@@ -48,8 +51,8 @@ export async function findRepoPackages(
     // package configs from a full repo search, PATH would be replaced with
     // each package's subdir
 
-    const findPackagesApi: FindPackagesApi = new FindPackagesApiImpl(
-        ghToken,
+    const findPackagesApi: FindPackagesApi = new FindPackagesApi(
+        new DefaultFindPackagesDataProvider(ghToken, repo),
         repo,
         branchRef,
     )

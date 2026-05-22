@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { BranchRef, RepositoryId } from '@sidelines/model'
 import { parseBuildZig, parseZon } from './parseBuildZig.ts'
-import { TestFindPackagesApi } from '../_testFindPackages.ts'
+import { TestDataProvider } from '../_testFindPackages.ts'
+import { FindPackagesApi } from '../findPackagesApi.ts'
 
 test('zig parse zig.build.zon modern', () => {
     assert.deepEqual(
@@ -35,7 +36,7 @@ const branchRef: BranchRef = {
 test('zig package name from repo name', async () => {
     assert.deepEqual(
         await parseBuildZig(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             null,
         ),
@@ -53,7 +54,7 @@ test('zig package name from zon modern', async () => {
     const zon = `.{.name = .ghostty,.version = "1.1.4",}`
     assert.deepEqual(
         await parseBuildZig(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             zon,
         ),
@@ -71,7 +72,7 @@ test('zig package name from zon legacy', async () => {
     const zon = `.{.name = "ghostty",.version = "1.1.4",}`
     assert.deepEqual(
         await parseBuildZig(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             zon,
         ),
@@ -88,7 +89,7 @@ test('zig package name from zon legacy', async () => {
 test('zig package version from branch sha', async () => {
     assert.deepEqual(
         await parseBuildZig(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             null,
         ),
@@ -105,7 +106,11 @@ test('zig package version from branch sha', async () => {
 test('zig package version from latest release tag', async () => {
     assert.deepEqual(
         await parseBuildZig(
-            new TestFindPackagesApi(repo, branchRef, {}, { '': 'v1.1.4' }),
+            new FindPackagesApi(
+                new TestDataProvider({}, { '': 'v1.1.4' }),
+                repo,
+                branchRef,
+            ),
             '',
             null,
         ),
@@ -123,7 +128,7 @@ test('zig package version from zon', async () => {
     const zon = `.{.name = .ghostty,.version = "1.1.4",}`
     assert.deepEqual(
         await parseBuildZig(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             zon,
         ),

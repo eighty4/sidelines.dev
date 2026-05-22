@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { BranchRef, RepositoryId } from '@sidelines/model'
 import { extractName, parseGoMod } from './parseGoMod.ts'
-import { TestFindPackagesApi } from '../_testFindPackages.ts'
+import { TestDataProvider } from '../_testFindPackages.ts'
+import { FindPackagesApi } from '../findPackagesApi.ts'
 
 const MOD = 'github.com/eighty4/sse'
 
@@ -24,7 +25,7 @@ test('go package name from go.mod', async () => {
     const goMod = `module ${MOD}`
     assert.deepEqual(
         await parseGoMod(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             goMod,
         ),
@@ -42,7 +43,7 @@ test('go package name from repo name', async () => {
     const goMod = `no errors`
     assert.deepEqual(
         await parseGoMod(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             goMod,
         ),
@@ -60,7 +61,7 @@ test('go package version from sha', async () => {
     const goMod = `module ${MOD}`
     assert.deepEqual(
         await parseGoMod(
-            new TestFindPackagesApi(repo, branchRef, {}, {}),
+            new FindPackagesApi(new TestDataProvider({}, {}), repo, branchRef),
             '',
             goMod,
         ),
@@ -78,7 +79,11 @@ test('go package version from tag', async () => {
     const goMod = `module ${MOD}`
     assert.deepEqual(
         await parseGoMod(
-            new TestFindPackagesApi(repo, branchRef, {}, { '': 'v0.0.1' }),
+            new FindPackagesApi(
+                new TestDataProvider({}, { '': 'v0.0.1' }),
+                repo,
+                branchRef,
+            ),
             '',
             goMod,
         ),
