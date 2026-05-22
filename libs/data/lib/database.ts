@@ -1,11 +1,19 @@
 const DB_NAME = 'sidelines-dev9'
 const DB_VERSION = 1
 
+/*****************/
+/*** REPO JOBS ***/
+/*****************/
+
 export const DB_STORE_REPO_JOBS = 'repo-jobs'
 const DB_STORE_REPO_JOBS_KEY = 'jobExecId'
 
 export const DB_STORE_COMMIT_REVIEW = 'commit-review'
 const DB_STORE_COMMIT_REVIEW_KEY = ['reviewId']
+
+/***************/
+/*** WATCHES ***/
+/***************/
 
 export const DB_STORE_READ_COMMITS = 'read-commits'
 // const DB_STORE_READ_COMMITS_KEY = ['']
@@ -16,11 +24,19 @@ const DB_STORE_READ_WATCHES_KEY = ['nameWithOwner', 'path']
 export const DB_INDEX_READ_WATCHES_REPO = 'read-watches-by-repo'
 const DB_INDEX_READ_WATCHES_REPO_KEY = 'nameWithOwner'
 
+/************************/
+/*** REPO NAV HISTORY ***/
+/************************/
+
 export const DB_STORE_REPO_NAV = 'repo-nav'
 const DB_STORE_REPO_NAV_KEY = 'nameWithOwner'
 
 export const DB_INDEX_REPO_NAV_WHEN = 'repo-nav-visited'
 const DB_INDEX_REPO_NAV_WHEN_KEY = 'when'
+
+/********************/
+/*** REPO OBJECTS ***/
+/********************/
 
 export const DB_STORE_REPO_FILES = 'repo-objects'
 const DB_STORE_REPO_FILES_KEY = ['owner', 'name', 'sha', 'dirpath']
@@ -28,8 +44,16 @@ const DB_STORE_REPO_FILES_KEY = ['owner', 'name', 'sha', 'dirpath']
 export const DB_STORE_REPO_HEADS = 'repo-heads'
 const DB_STORE_REPO_HEADS_KEY = 'nameWithOwner'
 
+/*********************/
+/*** REPO PACKAGES ***/
+/*********************/
+
 export const DB_STORE_REPO_PACKAGES = 'repo-pkgs'
 const DB_STORE_REPO_PACKAGES_KEY = ['nameWithOwner', 'commitHash']
+
+/********************/
+/*** REPO SYNCING ***/
+/********************/
 
 export const DB_STORE_REPO_SYNCING = 'repo-syncing'
 const DB_STORE_REPO_SYNCING_KEY = ['when', 'nameWithOwner', 'task']
