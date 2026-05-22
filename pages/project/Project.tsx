@@ -2,15 +2,47 @@ import { UnauthorizedError } from '@sidelines/github'
 import type { RepositoryId, RepositoryPackage } from '@sidelines/model'
 import { onDomInteractive } from '@sidelines/pageload/ready'
 import { expectRepoFromLocation } from '@sidelines/pageload/urls'
-import { type FC, useEffect, useState } from 'react'
+import { ActivityHub } from '@sidelines/ui/activity/ActivityHub'
+import { type FC, Suspense, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
-import { UserDataClient } from 'Sidelines.dev/workers/userData/UserDataClient'
+import { UserDataClient } from '../../workers/userData/UserDataClient'
 import { getUserDataClient } from '../expectUserData.ts'
 import { loginRedirectUrl } from '../nav.ts'
+import { ProjectNav } from './ProjectNav'
+import { ProjectPackages } from './ProjectPackages.tsx'
+import styles from './Project.module.css'
 
 type ProjectPageProps = {
     repo: RepositoryId
     userData: UserDataClient
+}
+
+type PackagesState = 'loading' | Array<RepositoryPackage>
+
+const ProjectWithUserData: FC<ProjectPageProps> = ({ repo, userData }) => {
+    const loadingNav = useMemo(() => userData.navHistory(), [])
+    const loadingPackages = useMemo(() => userData.repoPackages(repo), [])
+
+    return (
+        <div id={styles.page}>
+            <div id={styles.dashboard}></div>
+            <div id={styles.sidelines}>
+                <div id={styles.packages}>
+                    <Suspense fallback={<div>loading</div>}>
+                        <ProjectPackages loadingPackages={loadingPackages} />
+                    </Suspense>
+                </div>
+                <div id={styles.projects}>
+                    <Suspense fallback={<div>loading</div>}>
+                        <ProjectNav loadingProjects={loadingNav} />
+                    </Suspense>
+                </div>
+            </div>
+            <div id={styles.activity}>
+                <ActivityHub />
+            </div>
+        </div>
+    )
 }
 
 const Project: FC<Omit<ProjectPageProps, 'userData'>> = ({ repo }) => {
@@ -25,19 +57,6 @@ const Project: FC<Omit<ProjectPageProps, 'userData'>> = ({ repo }) => {
             </p>
         </>
     )
-}
-
-type PackagesState = 'loading' | Array<RepositoryPackage> | 'repo-not-found'
-
-const ProjectWithUserData: FC<ProjectPageProps> = ({ repo, userData }) => {
-    const [packages, setPackages] = useState<PackagesState>('loading')
-
-    useEffect(() => {
-        if (packages !== 'loading') setPackages('loading')
-        userData.repoPackages(repo).then(setPackages).catch(console.error)
-    }, [repo])
-
-    return <pre>{JSON.stringify(packages, null, 4)}</pre>
 }
 
 onDomInteractive(async () => {

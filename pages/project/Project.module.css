@@ -1,0 +1,31 @@
+#page {
+    --activity-height: 10rem;
+    display: grid;
+    grid-template-columns: 1fr 30rem;
+    grid-template-rows: 1fr var(--activity-height);
+    min-height: 100vh;
+}
+
+#sidelines {
+    grid-area: 1 / -2 / 2 / -1;
+    background: #eff;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 0 solid #e9e9e9;
+    border-width: 0 0 1px 1px;
+    box-sizing: border-box;
+}
+
+#packages,
+#projects {
+    min-height: 0;
+    overflow-y: auto;
+}
+
+#activity {
+    grid-area: -2 / -2 / -1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding-right: 1rem;
+}

@@ -77,15 +77,16 @@ export class UserDataClient {
         return objects
     }
 
-    async repoPackages(
-        repo: RepositoryId,
-    ): Promise<Array<RepositoryPackage> | 'repo-not-found'> {
+    async repoPackages(repo: RepositoryId): Promise<Array<RepositoryPackage>> {
         const { result } = await this.#requestAndReply<RepoPackagesResponse>({
             id: crypto.randomUUID(),
             kind: 'repo-pkgs',
             ghToken: this.ghToken,
             repo,
         })
+        if (result === 'repo-not-found') {
+            throw Error(`repo ${repo.owner}/${repo.name} not found`)
+        }
         return result
     }
 

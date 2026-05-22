@@ -1,3 +1,4 @@
+export * from './channels.ts'
 export * from './jobs.ts'
 export * from './packages.ts'
 export * from './objects.ts'

@@ -152,7 +152,14 @@ self.onmessage = async (e: MessageEvent<UserDataRequest>) => {
                 await processAsyncRequest(req)
             }
         } catch (e) {
-            console.error('error processing', req.kind, 'request:', e)
+            console.error(
+                'error processing',
+                req.kind,
+                'request:',
+                req,
+                'error:',
+                e,
+            )
         }
     }
 }

@@ -1,0 +1,30 @@
+.activityHub {
+    height: 40px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    /* background: rgb(200, 200, 200); */
+    box-sizing: border-box;
+    padding: 0.25rem;
+}
+
+.apiMeter {
+    --api-meter-border-radius: 4px;
+    height: 100%;
+    width: 0.5rem;
+    display: flex;
+    border: 1px solid #888;
+    background: #bbb6;
+    border-radius: 4px;
+    padding: 1px;
+
+    & .indicator {
+        --api-meter-v: 1;
+        height: calc(100% * var(--api-meter-v));
+        width: 100%;
+        border-radius: calc(var(--api-meter-border-radius) * 0.5);
+        background: green;
+        transition: 0.05s ease-in-out all;
+    }
+}
