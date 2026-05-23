@@ -1,12 +1,10 @@
 import type { BranchRef } from '@sidelines/model'
-import {
-    resultFromData,
-    type ViewerRepoDefaultBranchGraphData,
-} from './_queryRepoDefaultBranch.ts'
+import { mapBranchRef } from './_map.ts'
 import {
     QViewerRepoDefaultBranch,
     type QViewerRepoDefaultBranchVars,
 } from './gql.ts'
+import type { QViewerRepoDefaultBranchGraph } from '../graphs.ts'
 import queryGraphqlApi from '../queryGraphqlApi.ts'
 
 // lookup the default branch name and its HEAD's commit object id, scoped to a user's personal repo
@@ -16,7 +14,7 @@ export default async function queryViewerRepoDefaultBranch(
 ): Promise<BranchRef | 'repo-not-found'> {
     const json = await queryGraphqlApi<
         QViewerRepoDefaultBranchVars,
-        ViewerRepoDefaultBranchGraphData
+        QViewerRepoDefaultBranchGraph
     >(ghToken, QViewerRepoDefaultBranch, { repo })
-    return resultFromData(json.data.viewer)
+    return mapBranchRef(json.data.viewer)
 }

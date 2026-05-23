@@ -8,9 +8,8 @@ import type {
     QViewerReposNamesVars,
 } from '@sidelines/github/GRAPHS'
 import { indexedDBStateFrom } from './indexedDBState.ts'
-import { login } from './login.ts'
+import { login, userStoryWithSidelinesRepo } from './login.ts'
 import screenshotOnFailure from './screenshotOnFailure.ts'
-import { UserStory } from './github/UserStory.ts'
 import { readRepoCommitAddition } from './opfsState.ts'
 
 test.afterEach(screenshotOnFailure)
@@ -19,7 +18,7 @@ test(
     'creates commit with upgraded github action',
     { tag: '@opfs' },
     async ({ baseURL, context, page }) => {
-        await loginToGameplanUserStory()
+        await userStoryWithSidelinesRepo()
             .withGraphqlResponse(
                 'QViewerReposNames',
                 { cursor: null, pageSize: 100 } satisfies QViewerReposNamesVars,
@@ -154,21 +153,4 @@ async function retryUntilCondition<T>(
         }
     }
     return result
-}
-
-function loginToGameplanUserStory(): UserStory {
-    return UserStory.login('eighty4')
-        .withAppInstallation({ id: 1234567, repos: 'all' })
-        .withGraphqlResponse('QViewerLogin', null, {
-            viewer: { login: 'eighty4' },
-        })
-        .withGraphqlResponse('QCheckSidelinesRepo', null, {
-            viewer: {
-                repository: {
-                    nameWithOwner: 'eighty4/.sidelines',
-                    homepageUrl: 'https://sidelines.dev',
-                    isPrivate: true,
-                },
-            },
-        })
 }

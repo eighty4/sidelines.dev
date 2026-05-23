@@ -1,8 +1,9 @@
 import type { RepositoryId } from '@sidelines/model'
-import { mapObject } from './_queryRepoObjects.ts'
+import { mapRepoObject } from './_map.ts'
 import { QRepoObject, type QRepoObjectVars } from './gql.ts'
 import type { RepoObject } from './types.api.ts'
 import queryGraphqlApi from '../../queryGraphqlApi.ts'
+import type { QRepoObjectGraph } from '../../graphs.ts'
 
 // repo obj query where obj expr is expected to return a blob or tree
 export default async function queryRepoObject(
@@ -14,7 +15,7 @@ export default async function queryRepoObject(
     },
 ): Promise<RepoObject | 'repo-not-found'> {
     path = path || ''
-    const json = await queryGraphqlApi<QRepoObjectVars, any>(
+    const json = await queryGraphqlApi<QRepoObjectVars, QRepoObjectGraph>(
         ghToken,
         QRepoObject,
         { owner: repo.owner, name: repo.name, objExpr: `HEAD:${path || ''}` },
@@ -23,5 +24,5 @@ export default async function queryRepoObject(
     if (!json.data.repository) {
         return 'repo-not-found'
     }
-    return mapObject(path, json.data.repository.object)
+    return mapRepoObject(path, json.data.repository.object)
 }

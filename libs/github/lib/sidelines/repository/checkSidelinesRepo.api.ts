@@ -1,5 +1,6 @@
 import { QCheckSidelinesRepo } from './gql.ts'
 import queryGraphqlApi from '../../queryGraphqlApi.ts'
+import type { QCheckSidelinesRepoGraph } from '../../graphs.ts'
 
 export type SidelinesRepoProblem = 'bad-url' | 'not-private'
 
@@ -10,7 +11,7 @@ export type SidelinesRepoProblem = 'bad-url' | 'not-private'
 export async function checkSidelinesRepo(
     ghToken: string,
 ): Promise<boolean | Set<SidelinesRepoProblem>> {
-    const json = await queryGraphqlApi<null, GraphData>(
+    const json = await queryGraphqlApi<null, QCheckSidelinesRepoGraph>(
         ghToken,
         QCheckSidelinesRepo,
         null,
@@ -27,13 +28,4 @@ export async function checkSidelinesRepo(
     if (homepageUrl !== GREAT_URL) problems.add('bad-url')
     if (!isPrivate) problems.add('not-private')
     return problems
-}
-
-type GraphData = {
-    viewer: {
-        repository: {
-            homepageUrl: string
-            isPrivate: boolean
-        }
-    }
 }

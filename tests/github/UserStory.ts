@@ -11,17 +11,8 @@ type UserAppInstallation = {
 
 // todo separate the "user story" from the GitHub API data
 export class UserStory {
-    static login(ghLogin: string): UserStory {
-        return new UserStory(ghLogin)
-    }
-
-    #ghLogin: string
     #appInstallation: UserAppInstallation | null = null
     #graphqlResponses = new GraphqlResponses()
-
-    constructor(ghLogin: string) {
-        this.#ghLogin = ghLogin
-    }
 
     withAppInstallation(appInstallation: UserAppInstallation): this {
         this.#appInstallation = appInstallation
@@ -41,10 +32,6 @@ export class UserStory {
         await routeGitHubAuth(page)
         await routeGitHubGraphqlQuery(page, this.#graphqlResponses)
         await routeGitHubGetUrlInstallations(page, this.#appInstallation)
-    }
-
-    get ghLogin(): string {
-        return this.#ghLogin
     }
 
     get appInstallation(): UserAppInstallation | null {

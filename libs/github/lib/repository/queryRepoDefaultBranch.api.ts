@@ -1,9 +1,7 @@
 import type { BranchRef, RepositoryId } from '@sidelines/model'
-import {
-    resultFromData,
-    type RepoDefaultBranchGraphData,
-} from './_queryRepoDefaultBranch.ts'
+import { mapBranchRef } from './_map.ts'
 import { QRepoDefaultBranch, type QRepoDefaultBranchVars } from './gql.ts'
+import type { QRepoDefaultBranchGraph } from '../graphs.ts'
 import queryGraphqlApi from '../queryGraphqlApi.ts'
 
 export default async function queryRepoDefaultBranch(
@@ -12,10 +10,10 @@ export default async function queryRepoDefaultBranch(
 ): Promise<BranchRef | 'repo-not-found'> {
     const json = await queryGraphqlApi<
         QRepoDefaultBranchVars,
-        RepoDefaultBranchGraphData
+        QRepoDefaultBranchGraph
     >(ghToken, QRepoDefaultBranch, {
         owner: repo.owner,
         name: repo.name,
     })
-    return resultFromData(json.data)
+    return mapBranchRef(json.data)
 }

@@ -1,9 +1,13 @@
 import { basename, dirname } from 'node:path/posix'
 import { expect, type Page, test } from '@playwright/test'
 import type { RepositoryId } from '@sidelines/model'
-import { login } from './login.ts'
+import { login, userStoryWithSidelinesRepo } from './login.ts'
 import screenshotOnFailure from './screenshotOnFailure.ts'
 import { UserStory } from './github/UserStory.ts'
+import type {
+    QRepoObjectGraph,
+    QRepoObjectVars,
+} from '@sidelines/github/GRAPHS'
 
 test.afterEach(screenshotOnFailure)
 
@@ -37,18 +41,13 @@ test.describe.skip('PathSearchInput', () => {
         }
 
         test('pasting blob url', async ({ page }) => {
-            const userStory = UserStory.login('eighty4')
-            apiResponsesForPageSetup(userStory)
-            graphqlResponsesForRepoObjects(
-                userStory,
+            await userStoryWithRepoObjects(
                 { owner: 'eighty4', name: 'l3' },
                 {
                     '': 'tree',
                     'Cargo.toml': 'blob',
                 },
-            )
-            await userStory.configureRoutes(page)
-
+            ).configureRoutes(page)
             await login(page)
             await page.goto('/watches')
 
@@ -59,10 +58,7 @@ test.describe.skip('PathSearchInput', () => {
         })
 
         test('pasting tree url', async ({ page }) => {
-            const userStory = UserStory.login('eighty4')
-            apiResponsesForPageSetup(userStory)
-            graphqlResponsesForRepoObjects(
-                userStory,
+            await userStoryWithRepoObjects(
                 { owner: 'eighty4', name: 'l3' },
                 {
                     l3_cli: 'tree',
@@ -70,9 +66,7 @@ test.describe.skip('PathSearchInput', () => {
                     'l3_cli/CHANGELOG.md': 'blob',
                     'l3_cli/Cargo.toml': 'blob',
                 },
-            )
-            await userStory.configureRoutes(page)
-
+            ).configureRoutes(page)
             await login(page)
             await page.goto('/watches')
 
@@ -87,19 +81,14 @@ test.describe.skip('PathSearchInput', () => {
 
     test.describe('autocomplete', () => {
         test('submit resolves complete filename', async ({ page }) => {
-            const userStory = UserStory.login('eighty4')
-            apiResponsesForPageSetup(userStory)
-            graphqlResponsesForRepoObjects(
-                userStory,
+            await userStoryWithRepoObjects(
                 { owner: 'eighty4', name: 'l3' },
                 {
                     '': 'tree',
                     README: 'blob',
                     'README.md': 'blob',
                 },
-            )
-            await userStory.configureRoutes(page)
-
+            ).configureRoutes(page)
             await login(page)
             await page.goto('/watches')
 
@@ -113,10 +102,7 @@ test.describe.skip('PathSearchInput', () => {
         })
 
         test('shows autocomplete suggestions', async ({ page }) => {
-            const userStory = UserStory.login('eighty4')
-            apiResponsesForPageSetup(userStory)
-            graphqlResponsesForRepoObjects(
-                userStory,
+            await userStoryWithRepoObjects(
                 { owner: 'eighty4', name: 'l3' },
                 {
                     '': 'tree',
@@ -130,9 +116,7 @@ test.describe.skip('PathSearchInput', () => {
                     'l3_cli/Cargo.toml': 'blob',
                     'l3_cli/CHANGELOG.md': 'blob',
                 },
-            )
-            await userStory.configureRoutes(page)
-
+            ).configureRoutes(page)
             await login(page)
             await page.goto('/watches')
 
@@ -144,19 +128,14 @@ test.describe.skip('PathSearchInput', () => {
         })
 
         test('keyboard nav autocomplete menu', async ({ page }) => {
-            const userStory = UserStory.login('eighty4')
-            apiResponsesForPageSetup(userStory)
-            graphqlResponsesForRepoObjects(
-                userStory,
+            await userStoryWithRepoObjects(
                 { owner: 'eighty4', name: 'l3' },
                 {
                     '': 'tree',
                     l3_cli: 'tree',
                     'l3_cli/CHANGELOG.md': 'blob',
                 },
-            )
-            await userStory.configureRoutes(page)
-
+            ).configureRoutes(page)
             await login(page)
             await page.goto('/watches')
 
@@ -171,7 +150,7 @@ test.describe.skip('PathSearchInput', () => {
             await page.keyboard.press('ArrowDown')
             await page.keyboard.press('Enter')
 
-            // auto focuses exclusive match
+            // autofocuses exclusive match
             await input.pressSequentially('CHA')
             await page.keyboard.press('Enter')
 
@@ -180,66 +159,20 @@ test.describe.skip('PathSearchInput', () => {
     })
 })
 
-function apiResponsesForPageSetup(userStory: UserStory) {
-    // for configure page
-    userStory
-        .withAppInstallation({ id: 1234567, repos: 'all' })
-        // for verifying auth
-        .withGraphqlResponse('QViewerLogin', null, {
-            viewer: { login: 'eighty4' },
-        })
-        // for configure page
-        .withGraphqlResponse('QCheckSidelinesRepo', null, {
-            viewer: {
-                repository: {
-                    nameWithOwner: 'eighty4/.sidelines',
-                    homepageUrl: 'https://sidelines.dev',
-                    isPrivate: true,
-                },
-            },
-        })
-        // for sync refs shared worker
-        .withGraphqlResponse('QViewerRepoDefaultBranch', null, {
-            viewer: {
-                repositories: {
-                    nodes: [
-                        {
-                            name: 'l3',
-                            owner: { login: 'eighty4' },
-                            defaultBranchRef: {
-                                target: {
-                                    history: {
-                                        edges: [
-                                            {
-                                                node: {
-                                                    oid: '6773aaca',
-                                                },
-                                            },
-                                        ],
-                                    },
-                                },
-                            },
-                        },
-                    ],
-                    pageInfo: {
-                        endCursor: 'asdf',
-                        hasNextPage: false,
-                    },
-                },
-            },
-        })
-}
-
-function graphqlResponsesForRepoObjects(
-    userStory: UserStory,
+function userStoryWithRepoObjects(
     { owner, name }: RepositoryId,
     repoObjects: Record<string, 'blob' | 'tree'>,
-) {
+): UserStory {
+    const userStory = userStoryWithSidelinesRepo()
     for (const [path, kind] of Object.entries(repoObjects)) {
         if (kind === 'blob') {
             userStory.withGraphqlResponse(
                 'QRepoObject',
-                { owner, name, objExpr: 'HEAD:' + path },
+                {
+                    owner,
+                    name,
+                    objExpr: 'HEAD:' + path,
+                } satisfies QRepoObjectVars,
                 {
                     repository: {
                         object: {
@@ -248,12 +181,16 @@ function graphqlResponsesForRepoObjects(
                             isBinary: false,
                         },
                     },
-                },
+                } satisfies QRepoObjectGraph,
             )
         } else {
             userStory.withGraphqlResponse(
                 'QRepoObject',
-                { owner, name, objExpr: 'HEAD:' + path },
+                {
+                    owner,
+                    name,
+                    objExpr: 'HEAD:' + path,
+                } satisfies QRepoObjectVars,
                 {
                     repository: {
                         object: {
@@ -274,10 +211,8 @@ function graphqlResponsesForRepoObjects(
                                             type: 'blob',
                                             name: basename(p),
                                             object: {
-                                                blob: {
-                                                    byteSize: 405,
-                                                    isBinary: false,
-                                                },
+                                                byteSize: 405,
+                                                isBinary: false,
                                             },
                                         }
                                     } else {
@@ -289,10 +224,11 @@ function graphqlResponsesForRepoObjects(
                                 }),
                         },
                     },
-                },
+                } satisfies QRepoObjectGraph,
             )
         }
     }
+    return userStory
 }
 
 test.describe('FileBrowser', () => {})

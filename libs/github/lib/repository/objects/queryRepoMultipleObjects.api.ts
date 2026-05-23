@@ -1,5 +1,5 @@
 import type { RepositoryId } from '@sidelines/model'
-import { mapObject } from './_queryRepoObjects.ts'
+import { mapRepoObject } from './_map.ts'
 import type { RepoObject } from './types.api.ts'
 import queryGraphqlApi from '../../queryGraphqlApi.ts'
 
@@ -28,7 +28,10 @@ export async function queryMultipleRepoObjects(
     }
     const result: Record<string, RepoObject | 'object-not-found'> = {}
     for (let i = 0; i < paths.length; i++) {
-        result[paths[i]] = mapObject(paths[i], json.data.repository['obj' + i])
+        result[paths[i]] = mapRepoObject(
+            paths[i],
+            json.data.repository['obj' + i],
+        )
     }
     return result
 }

@@ -1,5 +1,5 @@
 import type { RepositoryId, RepositoryObject } from '@sidelines/model'
-import { sortRepositoryObjects } from './_queryRepoObjects.ts'
+import { sortRepoObjects } from './_sort.ts'
 import { QRepoDirListing, type QRepoDirListingVars } from './gql.ts'
 import queryGraphqlApi from '../../queryGraphqlApi.ts'
 
@@ -45,7 +45,7 @@ export default async function queryRepoDirListing(
                     )
             }
         })
-        .sort(sortRepositoryObjects)
+        .sort(sortRepoObjects)
 }
 
 type GraphData = {
