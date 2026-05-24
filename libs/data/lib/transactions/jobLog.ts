@@ -1,11 +1,15 @@
-import type { RepositoryId, RepoJobStatus, RepoJobId } from '@sidelines/model'
+import type {
+    RepositoryId,
+    RepoJobExecStatus,
+    RepoJobId,
+} from '@sidelines/model'
 import { connectToDb, DB_STORE_REPO_JOBS } from '../database.ts'
 
 // DB_STORE_REPO_JOBS
 type JobLogRecord = {
     jobId: RepoJobId
     jobExecId: string
-    repos: Record<string, RepoJobStatus>
+    repos: Record<string, RepoJobExecStatus>
     whenInit: Date
     whenLastActivity?: Date
     whenDone?: Date
@@ -104,7 +108,7 @@ export async function readJobCompletedRepos(
 export async function markRepoJobStatus(
     jobExecId: string,
     repoId: RepositoryId,
-    status: RepoJobStatus,
+    status: RepoJobExecStatus,
 ): Promise<void> {
     const db = await connectToDb()
     await new Promise<void>((res, rej) => {

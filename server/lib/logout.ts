@@ -4,7 +4,7 @@ import type { ServerEnv } from './routes.ts'
 export function createLogoutRoute(env: ServerEnv) {
     return (req: Request) => {
         const headers: Record<string, string> = {
-            // 'Clear-Site-Data': '"cookies", "storage"',
+            'Clear-Site-Data': '"cookies", "storage"',
             Location: env.WEBAPP_ADDRESS!,
         }
         if (hasAuthCookie(req)) {

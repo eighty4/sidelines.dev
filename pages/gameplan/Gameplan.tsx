@@ -1,10 +1,10 @@
 import { UnauthorizedError } from '@sidelines/github'
 import { onDomInteractive } from '@sidelines/pageload/ready'
 import { expectGhLogin, expectGhToken } from '@sidelines/pageload/session'
+import { JobList } from '@sidelines/ui/jobs/JobList'
 import { type FC } from 'react'
 import { createRoot } from 'react-dom/client'
-import JobApiClient from 'Sidelines.dev/workers/jobs/JobApiClient'
-import { JobList } from './JobList.tsx'
+import JobApiClient from '../../workers/jobs/JobApiClient.ts'
 import { logout } from '../nav.ts'
 
 interface GameplanPageProps {
@@ -16,7 +16,10 @@ interface GameplanPageProps {
 const Gameplan: FC<GameplanPageProps> = ({ jobApiClient }) => {
     return (
         <div id="view">
-            <JobList jobApiClient={jobApiClient} />
+            <JobList
+                availableJobs={JobApiClient.availableJobs()}
+                execJob={(jobId, cb) => jobApiClient.exec(jobId, cb)}
+            />
             <div id="reading-cta" onClick={() => location.assign('/watches')}>
                 Go to Watches
             </div>

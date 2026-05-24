@@ -1,26 +1,19 @@
-import type { RepoJobId } from '@sidelines/model'
+import {
+    ChannelDataSubscription,
+    type DataCallback,
+    type RepoJobExecUpdate,
+    type RepoJobId,
+    type RepoJobSpec,
+} from '@sidelines/model'
 import {
     createChannel,
     type JobApiRequest,
-    type JobExecUpdate,
     type JobListingUpdate,
 } from './jobMessaging.ts'
 import startJobSchedulingWorker from './startJobsSWorker.ts'
 
-export type OnJobMessage<T> = (update: T) => Promise<void> | void
-
-export type JobMessaging<T> = {
-    set onUpdate(cb: OnJobMessage<T>)
-    close(): void
-}
-
-export type JobSpec = {
-    jobId: RepoJobId
-    label: string
-}
-
 export default class JobApiClient {
-    static availableJobs(): Array<JobSpec> {
+    static availableJobs(): Array<RepoJobSpec> {
         return [
             {
                 jobId: 'UPGRADE_ACTIONS',
@@ -37,7 +30,10 @@ export default class JobApiClient {
         // })
     }
 
-    exec(jobId: RepoJobId): JobMessaging<JobExecUpdate> {
+    exec(
+        jobId: RepoJobId,
+        cb: DataCallback<RepoJobExecUpdate>,
+    ): ChannelDataSubscription<RepoJobExecUpdate> {
         const channelId = crypto.randomUUID()
         const channel = createChannel('EXEC', channelId)
         this.#sw.port.postMessage({
@@ -45,26 +41,18 @@ export default class JobApiClient {
             channelId,
             jobId: jobId,
         } satisfies JobApiRequest)
-        return {
-            set onUpdate(cb: OnJobMessage<JobExecUpdate>) {
-                channel.onmessage = e => cb(e.data)
-            },
-            close: () => channel.close(),
-        }
+        return new ChannelDataSubscription(channel, cb)
     }
 
-    ls(): JobMessaging<JobListingUpdate> {
+    ls(
+        cb: DataCallback<JobListingUpdate>,
+    ): ChannelDataSubscription<JobListingUpdate> {
         const channelId = crypto.randomUUID()
         const channel = createChannel('LS', channelId)
         this.#sw.port.postMessage({
             kind: 'LS',
             channelId,
         } satisfies JobApiRequest)
-        return {
-            set onUpdate(cb: OnJobMessage<JobListingUpdate>) {
-                channel.onmessage = e => cb(e.data)
-            },
-            close: () => channel.close(),
-        }
+        return new ChannelDataSubscription(channel, cb)
     }
 }

@@ -4,9 +4,20 @@ export const RepoJobIds = ['UPGRADE_ACTIONS'] as const
 
 export type RepoJobId = (typeof RepoJobIds)[number]
 
+export type RepoJobSpec = {
+    jobId: RepoJobId
+    label: string
+}
+
 export type RepoJobWorkflowUpgradeActions = 'UPGRADE_ACTIONS'
 
-export type RepoJobStatus =
+export type RepoJobExecUpdate = {
+    jobId: RepoJobId
+    jobExecId: string
+    status: RepoJobExecStatus
+}
+
+export type RepoJobExecStatus =
     | {
           state: 'done'
           when: Date

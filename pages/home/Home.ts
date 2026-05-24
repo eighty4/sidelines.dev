@@ -16,7 +16,7 @@ onDomInteractive(async () => {
                 `Project ${repo.owner}/${repo.name}`,
             )
         }
-        createLink('/logout', 'Logout')
+        createLogoutButton()
     }
 })
 
@@ -25,4 +25,11 @@ function createLink(href: string, text: string) {
     a.href = href
     a.innerText = text
     document.body.appendChild(a)
+}
+
+function createLogoutButton() {
+    document.body.insertAdjacentHTML(
+        'beforeend',
+        `<form action="/logout" method="POST"><button type="submit">Logout</button></form>`,
+    )
 }

@@ -170,6 +170,9 @@ importers:
 
   libs/ui:
     dependencies:
+      '@sidelines/model':
+        specifier: 'workspace:'
+        version: link:../model
       monaco-editor:
         specifier: 'catalog:'
         version: 0.55.1
