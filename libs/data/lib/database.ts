@@ -1,4 +1,4 @@
-const DB_NAME = 'sidelines-dev9'
+const DB_NAME = 'sidelines-dev'
 const DB_VERSION = 1
 
 /*****************/
@@ -48,8 +48,11 @@ const DB_STORE_REPO_HEADS_KEY = 'nameWithOwner'
 /*** REPO PACKAGES ***/
 /*********************/
 
+// cache for offline, cron synced
+// keyed by repo, branch, sha
+
 export const DB_STORE_REPO_PACKAGES = 'repo-pkgs'
-const DB_STORE_REPO_PACKAGES_KEY = ['nameWithOwner', 'commitHash']
+const DB_STORE_REPO_PACKAGES_KEY = ['nameWithOwner', 'defaultBranch', 'headOid']
 
 /********************/
 /*** REPO SYNCING ***/

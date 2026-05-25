@@ -9,7 +9,8 @@ import { connectToDb, DB_STORE_REPO_PACKAGES } from '../database.ts'
 
 type PackagesRecord = {
     nameWithOwner: string
-    commitHash: string
+    defaultBranch: string
+    headOid: string
     committedWhen: Date
     packages: Array<RepositoryPackage>
 }
@@ -20,15 +21,19 @@ export async function readRepoPackages(
     repo: RepositoryId,
 ): Promise<Array<RepositoryPackage> | 'repo-not-found'> {
     const defaultBranch = await queryRepoDefaultBranch(ghToken, repo)
+    const LOG_LABEL = '@sidelines/data/tx/readRepoPackages'
+    console.log(LOG_LABEL, 'query default branch', defaultBranch)
     if (defaultBranch === 'repo-not-found') {
         return 'repo-not-found'
     }
     const nameWithOwner = `${repo.owner}/${repo.name}`
     const fromDb = await readFromDb(nameWithOwner, defaultBranch)
+    console.log(LOG_LABEL, 'read from db', fromDb)
     if (fromDb) {
         return fromDb
     }
     const fromApi = await findRepoPackages(ghToken, repo, defaultBranch)
+    console.log(LOG_LABEL, 'fetch from api', fromDb)
     if (fromApi === 'repo-not-found') {
         return 'repo-not-found'
     }
@@ -45,7 +50,7 @@ async function readFromDb(
         const tx = db.transaction([DB_STORE_REPO_PACKAGES], 'readonly')
         const req: IDBRequest<PackagesRecord | undefined> = tx
             .objectStore(DB_STORE_REPO_PACKAGES)
-            .get([nameWithOwner, defaultBranch.headOid])
+            .get([nameWithOwner, defaultBranch.name, defaultBranch.headOid])
 
         req.onsuccess = () => res(req.result?.packages || null)
 
@@ -63,7 +68,8 @@ async function writeToDb(
 ): Promise<void> {
     const record: PackagesRecord = {
         nameWithOwner,
-        commitHash: defaultBranch.headOid,
+        defaultBranch: defaultBranch.name,
+        headOid: defaultBranch.headOid,
         committedWhen: defaultBranch.committedDate,
         packages,
     }

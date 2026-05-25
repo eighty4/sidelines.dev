@@ -85,12 +85,21 @@ export async function findRepoPackages(
         }
     }
     const packages: Array<RepositoryPackage> = []
-    for (const result of await Promise.all(parsing)) {
-        if (result !== null) {
-            if (Array.isArray(result)) {
-                packages.push(...result)
-            } else {
-                packages.push(result)
+    console.log(
+        '@sidelines/packages/findRepoPackages',
+        repo,
+        'parsing',
+        parsing.length,
+        'top-level possible packages',
+    )
+    if (parsing.length) {
+        for (const result of await Promise.all(parsing)) {
+            if (result !== null) {
+                if (Array.isArray(result)) {
+                    packages.push(...result)
+                } else {
+                    packages.push(result)
+                }
             }
         }
     }
