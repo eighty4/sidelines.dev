@@ -4,6 +4,7 @@
     "rootDir": "lib",
     "outDir": "lib_js",
     "declarationDir": "lib_types",
+    "types": ["node"],
     "composite": true
   },
   "include": ["lib/**/*.ts"],

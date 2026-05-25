@@ -14,6 +14,7 @@ import type {
     RepositoryObject,
     RepositoryPackage,
 } from '@sidelines/model'
+import type { RefNotFound, RepoNotFound } from '@sidelines/model/errors'
 
 declare const self: DedicatedWorkerGlobalScope
 
@@ -57,7 +58,7 @@ export type RepoPackagesRequest = {
 } & UserDataRpcMessageBase<'repo-pkgs'>
 
 export type RepoPackagesResponse = {
-    result: 'repo-not-found' | Array<RepositoryPackage>
+    result: Array<RepositoryPackage> | typeof RefNotFound | typeof RepoNotFound
 } & UserDataRpcMessageBase<RepoPackagesRequest['kind']>
 
 export type UserDataRequest = UserDataRpcRequest | ProjectNavUpdateRequest

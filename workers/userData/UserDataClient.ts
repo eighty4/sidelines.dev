@@ -1,8 +1,4 @@
-import type {
-    RepositoryId,
-    RepositoryObject,
-    RepositoryPackage,
-} from '@sidelines/model'
+import type { RepositoryId, RepositoryObject } from '@sidelines/model'
 import { Subject } from 'rxjs'
 import type {
     ProjectNavGetResponse,
@@ -77,16 +73,15 @@ export class UserDataClient {
         return objects
     }
 
-    async repoPackages(repo: RepositoryId): Promise<Array<RepositoryPackage>> {
+    async repoPackages(
+        repo: RepositoryId,
+    ): Promise<RepoPackagesResponse['result']> {
         const { result } = await this.#requestAndReply<RepoPackagesResponse>({
             id: crypto.randomUUID(),
             kind: 'repo-pkgs',
             ghToken: this.ghToken,
             repo,
         })
-        if (result === 'repo-not-found') {
-            throw Error(`repo ${repo.owner}/${repo.name} not found`)
-        }
         return result
     }
 

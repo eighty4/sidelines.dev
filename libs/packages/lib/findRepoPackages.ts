@@ -4,6 +4,7 @@ import type {
     RepositoryId,
     RepositoryPackage,
 } from '@sidelines/model'
+import { RepoNotFound } from '@sidelines/model/errors'
 import {
     DefaultFindPackagesDataProvider,
     FindPackagesApi,
@@ -21,7 +22,7 @@ export async function findRepoPackages(
     ghToken: string,
     repo: RepositoryId,
     branchRef: BranchRef,
-): Promise<Array<RepositoryPackage> | 'repo-not-found'> {
+): Promise<Array<RepositoryPackage> | typeof RepoNotFound> {
     // todo matrixQueryRepoObjects
     //  variant of queryRepoObjects where files are matrixed with repos
     //  support retrieving blobs or only checking if they exist
@@ -41,8 +42,8 @@ export async function findRepoPackages(
         ],
         branchRef.headOid,
     )
-    if (cats === 'repo-not-found') {
-        return 'repo-not-found'
+    if (cats === RepoNotFound) {
+        return RepoNotFound
     }
     // logic all works for subdir roots of a repo as well as root dir
     // however, only parsing root dir configs as of now and hard-coding path for root dir

@@ -3,6 +3,7 @@ import { createCommitOnBranch } from '../../repository/mutationCreateCommitOnBra
 import queryViewerRepoDefaultBranch from '../../repository/queryViewerRepoDefaultBranch.api.ts'
 import restPostForJson from '../../restPostForJson.ts'
 import restPostForResponse from '../../restPostForResponse.ts'
+import { RepoNotFound, Timeout } from '@sidelines/model/errors'
 
 // graphql mutation createCommitOnBranch requires a pre-existing ref
 // so we use a template repo to seed a commit at refs/head/main
@@ -71,14 +72,16 @@ async function pollForDefaultBranchAfterCreatingRepo(
     const timeout: Promise<'timeout'> = new Promise(res =>
         setTimeout(() => res('timeout'), TIMEOUT_MS),
     )
-    let fetching: Promise<BranchRef | 'repo-not-found'>
+    let fetching: ReturnType<typeof queryViewerRepoDefaultBranch>
     while (true) {
         fetching = queryViewerRepoDefaultBranch(ghToken, repo)
-        let branch: 'timeout' | BranchRef | 'repo-not-found'
+        let branch:
+            | Awaited<ReturnType<typeof queryViewerRepoDefaultBranch>>
+            | typeof Timeout
         branch = await Promise.race([timeout, fetching])
-        if (branch === 'timeout') {
+        if (branch === Timeout) {
             throw Error('timed out')
-        } else if (branch === 'repo-not-found') {
+        } else if (branch === RepoNotFound) {
             await new Promise(res => setTimeout(res, INTERVAL_MS))
         } else {
             return branch

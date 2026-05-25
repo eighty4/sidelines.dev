@@ -1,4 +1,5 @@
 import type { BranchRef } from '@sidelines/model'
+import type { RepoNotFound } from '@sidelines/model/errors'
 import { mapBranchRef } from './_map.ts'
 import {
     QViewerRepoDefaultBranch,
@@ -11,7 +12,7 @@ import queryGraphqlApi from '../queryGraphqlApi.ts'
 export default async function queryViewerRepoDefaultBranch(
     ghToken: string,
     repo: string,
-): Promise<BranchRef | 'repo-not-found'> {
+): Promise<BranchRef | typeof RepoNotFound> {
     const json = await queryGraphqlApi<
         QViewerRepoDefaultBranchVars,
         QViewerRepoDefaultBranchGraph

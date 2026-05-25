@@ -11,7 +11,7 @@ import { UserDataClient } from '../../workers/userData/UserDataClient.ts'
 import { getUserDataClient } from '../expectUserData.ts'
 import { ProjectPageAnonUser } from './ProjectAnonUser.tsx'
 import { ProjectNav } from './ProjectNav.tsx'
-import { ProjectPackages } from './ProjectPackages.tsx'
+import { LoadingProjectPackages } from './ProjectPackages.tsx'
 import styles from './Project.module.css'
 
 type ProjectPageProps = {
@@ -21,6 +21,8 @@ type ProjectPageProps = {
 }
 
 // todo load AnonUserProjectPage as separate async module
+// todo add ErrorBoundary around packages and nav Suspense
+// todo root.render(<ProjectPage/>) with a graphql promise that fetches repo ownership/visibility
 
 const ProjectPage: FC<ProjectPageProps> = ({
     jobApiClient,
@@ -32,9 +34,7 @@ const ProjectPage: FC<ProjectPageProps> = ({
 
     useEffect(() => {
         loadingPackages
-            .then(() => {
-                userData.navVisit(repo)
-            })
+            .then(() => userData.navVisit(repo))
             .catch(e =>
                 console.error('error awaiting userData.repoPackages', e),
             )
@@ -55,7 +55,9 @@ const ProjectPage: FC<ProjectPageProps> = ({
             <div id={styles.sidelines}>
                 <div id={styles.packages}>
                     <Suspense fallback={<div>loading</div>}>
-                        <ProjectPackages loadingPackages={loadingPackages} />
+                        <LoadingProjectPackages
+                            loadingPackages={loadingPackages}
+                        />
                     </Suspense>
                 </div>
                 <div id={styles.projects}>

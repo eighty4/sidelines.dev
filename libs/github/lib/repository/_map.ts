@@ -1,11 +1,12 @@
 import type { BranchRef } from '@sidelines/model'
+import { RepoNotFound } from '@sidelines/model/errors'
 import type { QRepoDefaultBranchGraph } from '../graphs.ts'
 
 export function mapBranchRef(
     data: QRepoDefaultBranchGraph,
-): BranchRef | 'repo-not-found' {
+): BranchRef | typeof RepoNotFound {
     if (!data.repository) {
-        return 'repo-not-found'
+        return RepoNotFound
     }
     const dbr = data.repository.defaultBranchRef
     const commit = dbr.target.history.edges[0].node

@@ -98,6 +98,8 @@ export type QRepoObjectGraph = {
 
 /* QRepoDefaultBranch */
 
+export type { QRepoDefaultBranchVars } from './repository/gql.ts'
+
 export type QRepoDefaultBranchGraph = {
     repository: {
         defaultBranchRef: {

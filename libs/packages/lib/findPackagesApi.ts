@@ -2,6 +2,7 @@ import queryRepoObjectContent from '@sidelines/github/repository/objects/queryRe
 import queryRepoMultipleObjectsContents from '@sidelines/github/repository/objects/queryRepoMultipleObjectsContents'
 import queryRepoRefsHighestSemverTag from '@sidelines/github/repository/refs/queryRepoRefsHighestSemverTag'
 import type { BranchRef, RepositoryId } from '@sidelines/model'
+import { RepoNotFound } from '@sidelines/model/errors'
 
 export type FindPackagesDataProvider = {
     // return file contents by path from repo root
@@ -93,7 +94,7 @@ export class DefaultFindPackagesDataProvider implements FindPackagesDataProvider
                 this.#repo,
                 paths,
             )
-            if (result === 'repo-not-found') {
+            if (result === RepoNotFound) {
                 throw new Error()
             }
             return result

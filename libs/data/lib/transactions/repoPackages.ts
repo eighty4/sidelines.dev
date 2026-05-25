@@ -1,10 +1,11 @@
-import queryRepoDefaultBranch from '@sidelines/github/repository/queryRepoDefaultBranch'
 import type {
     BranchRef,
     RepositoryId,
     RepositoryPackage,
 } from '@sidelines/model'
+import { RefNotFound, RepoNotFound } from '@sidelines/model/errors'
 import { findRepoPackages } from '@sidelines/packages/findRepoPackages'
+import { readRepoHead } from './repoHeads.ts'
 import { connectToDb, DB_STORE_REPO_PACKAGES } from '../database.ts'
 
 type PackagesRecord = {
@@ -15,16 +16,21 @@ type PackagesRecord = {
     packages: Array<RepositoryPackage>
 }
 
-// todo support offline
+const LOG_LABEL = '@sidelines/data/tx/readRepoPackages'
+
+// todo RefNotFound from readRepoHead could openCursor and attempt to find most recent computed packages data
 export async function readRepoPackages(
     ghToken: string,
     repo: RepositoryId,
-): Promise<Array<RepositoryPackage> | 'repo-not-found'> {
-    const defaultBranch = await queryRepoDefaultBranch(ghToken, repo)
-    const LOG_LABEL = '@sidelines/data/tx/readRepoPackages'
-    console.log(LOG_LABEL, 'query default branch', defaultBranch)
-    if (defaultBranch === 'repo-not-found') {
-        return 'repo-not-found'
+): Promise<
+    Array<RepositoryPackage> | typeof RefNotFound | typeof RepoNotFound
+> {
+    const defaultBranch = await readRepoHead(ghToken, repo)
+    console.log(LOG_LABEL, 'default branch', defaultBranch)
+    switch (defaultBranch) {
+        case RefNotFound:
+        case RepoNotFound:
+            return defaultBranch
     }
     const nameWithOwner = `${repo.owner}/${repo.name}`
     const fromDb = await readFromDb(nameWithOwner, defaultBranch)
@@ -34,8 +40,8 @@ export async function readRepoPackages(
     }
     const fromApi = await findRepoPackages(ghToken, repo, defaultBranch)
     console.log(LOG_LABEL, 'fetch from api', fromDb)
-    if (fromApi === 'repo-not-found') {
-        return 'repo-not-found'
+    if (fromApi === RepoNotFound) {
+        return fromApi
     }
     await writeToDb(nameWithOwner, defaultBranch, fromApi)
     return fromApi
@@ -47,7 +53,7 @@ async function readFromDb(
 ): Promise<Array<RepositoryPackage> | null> {
     const db = await connectToDb()
     return new Promise((res, rej) => {
-        const tx = db.transaction([DB_STORE_REPO_PACKAGES], 'readonly')
+        const tx = db.transaction(DB_STORE_REPO_PACKAGES, 'readonly')
         const req: IDBRequest<PackagesRecord | undefined> = tx
             .objectStore(DB_STORE_REPO_PACKAGES)
             .get([nameWithOwner, defaultBranch.name, defaultBranch.headOid])

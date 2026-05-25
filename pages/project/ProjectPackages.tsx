@@ -4,17 +4,34 @@ import type {
     RepositoryPackage,
 } from '@sidelines/model'
 import { use, type FC } from 'react'
-
-export type ProjectPackagesProps = {
-    loadingPackages: Promise<Array<RepositoryPackage>>
-}
+import { RepoPackagesResponse } from '../../workers/userData/UserDataWorker'
+import { RefNotFound, RepoNotFound } from '@sidelines/model/errors'
 
 const packageKey = (p: RepositoryPackage) => `${p.language}-${p.path}`
 
-export const ProjectPackages: FC<ProjectPackagesProps> = ({
+export type LoadingProjectPackagesProps = {
+    loadingPackages: Promise<RepoPackagesResponse['result']>
+}
+
+export const LoadingProjectPackages: FC<LoadingProjectPackagesProps> = ({
     loadingPackages,
 }) => {
     const packages = use(loadingPackages)
+
+    if (packages === RefNotFound) {
+        return <div>Unable to fetch packages.</div>
+    } else if (packages === RepoNotFound) {
+        return <div>Repo does not exist.</div>
+    } else {
+        return <ProjectPackages packages={packages} />
+    }
+}
+
+export type ProjectPackagesProps = {
+    packages: Array<RepositoryPackage>
+}
+
+export const ProjectPackages: FC<ProjectPackagesProps> = ({ packages }) => {
     return packages.map(p => {
         if ('packages' in p) {
             return <WorkspacePackages key={packageKey(p)} workspace={p} />

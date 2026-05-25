@@ -1,4 +1,5 @@
 import type { RepositoryId } from '@sidelines/model'
+import { RepoNotFound } from '@sidelines/model/errors'
 import queryGraphqlApi from '../../queryGraphqlApi.ts'
 import type {
     QRepoMultipleObjectContentsGraph,
@@ -10,14 +11,14 @@ export default async function queryRepoMultipleObjectsContents(
     repo: RepositoryId,
     paths: Array<string>,
     ref: string = 'HEAD',
-): Promise<Record<string, string | null> | 'repo-not-found'> {
+): Promise<Record<string, string | null> | typeof RepoNotFound> {
     const query = buildQuery(ref, paths)
     const json = await queryGraphqlApi<
         QRepoMultipleObjectContentsVars,
         QRepoMultipleObjectContentsGraph
     >(ghToken, query, repo)
     if (!json.data.repository) {
-        return 'repo-not-found'
+        return RepoNotFound
     }
     const result: Record<string, string | null> = {}
     for (let i = 0; i < paths.length; i++) {

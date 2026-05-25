@@ -137,7 +137,11 @@ importers:
         specifier: 'catalog:'
         version: 16.14.0
 
-  libs/model: {}
+  libs/model:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.6.2
 
   libs/packages:
     dependencies:

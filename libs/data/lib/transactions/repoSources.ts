@@ -8,6 +8,7 @@ import type {
 } from '@sidelines/model'
 import { connectToDb, DB_STORE_REPO_FILES } from '../database.ts'
 import { opfsLookupDir, opfsReadFile, opfsWriteFile } from '../opfs.ts'
+import { RepoNotFound } from '@sidelines/model/errors'
 
 const OPFS_PREFIX = 'REPO_SRCS'
 
@@ -27,7 +28,7 @@ export async function readRepoContent({
     repo,
 }: ReadRepoContent): Promise<string | 'file-not-found' | 'repo-not-found'> {
     const defaultBranch = await queryRepoDefaultBranch(ghToken, repo)
-    if (defaultBranch === 'repo-not-found') {
+    if (defaultBranch === RepoNotFound) {
         return 'repo-not-found'
     }
     console.log(
@@ -91,7 +92,7 @@ export async function readRepoListing({
     dirpath,
 }: ReadRepoListing): Promise<Array<RepositoryObject> | 'repo-not-found'> {
     const branchRef = await queryRepoDefaultBranch(ghToken, repo)
-    if (branchRef === 'repo-not-found') {
+    if (branchRef === RepoNotFound) {
         return 'repo-not-found'
     }
     const db = await connectToDb()

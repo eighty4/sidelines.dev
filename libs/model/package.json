@@ -8,10 +8,18 @@
       "types": "./lib_types/model.d.ts",
       "node": "./lib_js/model.js",
       "import": "./lib/model.ts"
+    },
+    "./*": {
+      "types": "./lib_types/*.api.d.ts",
+      "node": "./lib_js/*.api.js",
+      "import": "./lib/*.api.ts"
     }
   },
   "scripts": {
     "build": "tsc --build",
     "build:clean": "rm -rf lib_js lib_types tsconfig.tsbuildinfo"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
   }
 }

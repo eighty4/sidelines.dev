@@ -41,6 +41,10 @@ const DB_INDEX_REPO_NAV_WHEN_KEY = 'when'
 export const DB_STORE_REPO_FILES = 'repo-objects'
 const DB_STORE_REPO_FILES_KEY = ['owner', 'name', 'sha', 'dirpath']
 
+/******************/
+/*** REPO HEADS ***/
+/******************/
+
 export const DB_STORE_REPO_HEADS = 'repo-heads'
 const DB_STORE_REPO_HEADS_KEY = 'nameWithOwner'
 
