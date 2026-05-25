@@ -1,13 +1,7 @@
 {
-  "extends": ["../../tsconfig.common.json"],
+  "extends": ["./tsconfig.lib.json"],
   "compilerOptions": {
-    "rootDir": "lib",
-    "outDir": "lib_js",
-    "declarationDir": "lib_types",
-    "types": ["node"],
-    "composite": true
+    "types": ["node"]
   },
-  "include": ["lib/**/*.ts"],
-  "exclude": ["node_modules"],
-  "references": []
+  "exclude": ["node_modules"]
 }

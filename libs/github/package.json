@@ -25,9 +25,9 @@
     }
   },
   "scripts": {
-    "build": "tsc --build",
-    "build:clean": "rm -rf lib_js lib_types tsconfig.tsbuildinfo",
-    "graphql": "node graphql.ts && pnpm fmt:graphql",
+    "build": "tsc --build tsconfig.lib.json",
+    "build:clean": "rm -rf lib_js lib_types *.tsbuildinfo",
+    "graphql": "node lib/gen_gql.ts && pnpm fmt:graphql",
     "fmt:graphql": "pnpm exec prettier --config ../../.prettierrc.ts --write \"**/gql.ts\" --log-level warn"
   },
   "dependencies": {

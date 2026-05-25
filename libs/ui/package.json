@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "tsc --build",
-    "build:clean": "rm -rf lib_js lib_types tsconfig.tsbuildinfo"
+    "build:clean": "rm -rf lib_js lib_types *.tsbuildinfo"
   },
   "dependencies": {
     "@sidelines/model": "workspace:"

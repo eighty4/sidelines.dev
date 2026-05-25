@@ -6,5 +6,8 @@
     "declarationDir": "lib_types",
     "composite": true
   },
-  "references": [{ "path": "../libs/data" }, { "path": "../libs/github" }]
+  "references": [
+    { "path": "../libs/data" },
+    { "path": "../libs/github/tsconfig.lib.json" }
+  ]
 }

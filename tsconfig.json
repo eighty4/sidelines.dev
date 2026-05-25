@@ -24,9 +24,9 @@
   "exclude": ["node_modules"],
   "references": [
     { "path": "./libs/data" },
-    { "path": "./libs/github" },
-    { "path": "./libs/model" },
-    { "path": "./libs/packages" },
+    { "path": "./libs/github/tsconfig.lib.json" },
+    { "path": "./libs/model/tsconfig.lib.json" },
+    { "path": "./libs/packages/tsconfig.lib.json" },
     { "path": "./libs/pageload" },
     { "path": "./server" }
   ]

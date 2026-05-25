@@ -7,10 +7,5 @@
     "composite": true
   },
   "include": ["lib/**/*.ts"],
-  "exclude": ["node_modules"],
-  "references": [
-    { "path": "../github/tsconfig.lib.json" },
-    { "path": "../model/tsconfig.lib.json" },
-    { "path": "../packages/tsconfig.lib.json" }
-  ]
+  "exclude": ["node_modules", "lib/**/*.spec.ts"]
 }
