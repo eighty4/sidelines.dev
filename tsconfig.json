@@ -6,7 +6,6 @@
     "lib": ["ESNext", "DOM", "WebWorker"],
     "target": "ES2022",
     "rewriteRelativeImportExtensions": false,
-    "noUncheckedIndexedAccess": false,
     "paths": {
       "Sidelines.dev/workers/*": ["./workers/*.ts"]
     },

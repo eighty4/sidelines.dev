@@ -1,0 +1,8 @@
+{
+  "extends": ["./tsconfig.json"],
+  "compilerOptions": {
+    "types": ["react", "react-dom"]
+  },
+  "include": ["pages/**/*.{ts,tsx}", "workers/**/*.ts", "types/*.d.ts"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}

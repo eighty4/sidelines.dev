@@ -7,7 +7,7 @@
     "libs/*"
   ],
   "scripts": {
-    "build": "dank build",
+    "build": "pnpm typecheck:app && dank build",
     "clean": "pnpm -r build:clean && rm -rf build",
     "dev": "dank serve",
     "fmt": "prettier --write . --log-level warn",
@@ -16,7 +16,8 @@
     "test": "pnpm test:unit && pnpm test:e2e",
     "test:unit": "node --test \"**/*.spec.ts\"",
     "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc",
+    "typecheck:app": "tsc -p tsconfig.app.json"
   },
   "dependencies": {
     "@eighty4/model-t": "0.0.5-4",
