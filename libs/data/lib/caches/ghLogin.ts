@@ -1,3 +1,9 @@
-import { createCache } from '../storage.ts'
+const KEY = 'sl.gh.login'
 
-export default createCache(sessionStorage, 'sl.gh.login')
+export function ghLoginFromSession(): string | null {
+    return sessionStorage.getItem(KEY)
+}
+
+export function ghLoginToSession(ghLogin: string) {
+    sessionStorage.setItem(KEY, ghLogin)
+}

@@ -13,7 +13,7 @@ export const ChooseWorkflow: FC<ChooseWorkflowProps> = ({
     ghToken,
     ghLogin,
 }) => {
-    const userData = useMemo(() => new UserDataClient(ghToken, ghLogin), [])
+    const userData = useMemo(() => new UserDataClient(ghToken), [])
     const workflowSearch = useMemo(() => {
         return new WorkflowRepoSearch(ghToken, ghLogin)
     }, [])

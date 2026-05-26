@@ -12,13 +12,11 @@ import type {
 
 export class UserDataClient {
     readonly ghToken: string
-    readonly ghLogin: string
     #responses: Record<string, (v: any) => void> = {}
     #w: Worker
 
-    constructor(ghToken: string, ghLogin: string) {
+    constructor(ghToken: string) {
         this.ghToken = ghToken
-        this.ghLogin = ghLogin
         this.#w = new Worker('./UserDataWorker.ts', {
             name: 'sidelines.dev user data',
         })

@@ -1,12 +1,14 @@
 import { onDomInteractive } from '@sidelines/pageload/ready'
-import { getUserDataClient } from '../expectUserData.ts'
+import { lookupGhToken } from '@sidelines/pageload/session'
 import { buildProjectUrl, loginRedirectUrl } from '../nav.ts'
+import { UserDataClient } from '../../workers/userData/UserDataClient.ts'
 
 onDomInteractive(async () => {
-    const userData = await getUserDataClient()
-    if (userData === null) {
+    const ghToken = lookupGhToken()
+    if (ghToken === null) {
         createLink(loginRedirectUrl, 'Login')
     } else {
+        const userData = new UserDataClient(ghToken)
         createLink('/configure', 'Configure')
         createLink('/gameplan', 'Gameplan')
         createLink('/watches', 'Watches')

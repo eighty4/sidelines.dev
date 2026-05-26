@@ -1,10 +1,29 @@
-import ghLoginCache from '@sidelines/data/cache/ghLogin'
-import { getGhTokenCookie } from '@sidelines/data/cookie'
+import {
+    ghLoginFromSession,
+    ghLoginToSession,
+} from '@sidelines/data/cache/ghLogin'
+import {
+    ghTokenFromSession,
+    ghTokenToSession,
+} from '@sidelines/data/cache/ghToken'
+import { ghTokenFromCookie } from '@sidelines/data/cookie'
 import { UnauthorizedError } from '@sidelines/github'
 import { queryUserLogin } from '@sidelines/github/user/queryUserLogin'
 
+export function lookupGhToken(): string | null {
+    const fromSession = ghTokenFromSession()
+    if (fromSession) {
+        return fromSession
+    }
+    const fromCookie = ghTokenFromCookie(document.cookie)
+    if (fromCookie) {
+        ghTokenToSession(fromCookie)
+    }
+    return fromCookie
+}
+
 export function expectGhToken(): string {
-    const ghToken = getGhTokenCookie(document.cookie)
+    const ghToken = lookupGhToken()
     if (ghToken === null) {
         console.log('expected gh token cookie, throwing unauthorized')
         throw new UnauthorizedError('missing token')
@@ -14,10 +33,11 @@ export function expectGhToken(): string {
 }
 
 export async function expectGhLogin(ghToken: string): Promise<string> {
-    let ghLogin = ghLoginCache.read()
+    let ghLogin = ghLoginFromSession()
     if (ghLogin === null) {
         console.log('expected gh login session state, fetching from gh graphql')
-        ghLoginCache.write((ghLogin = await queryUserLogin(ghToken)))
+        ghLogin = await queryUserLogin(ghToken)
+        ghLoginToSession(ghLogin)
     }
     return ghLogin
 }

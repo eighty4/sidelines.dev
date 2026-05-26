@@ -1,5 +1,8 @@
 import { type FC, useEffect, useMemo, useState } from 'react'
-import rateLimitsCache from '@sidelines/data/cache/rateLimits'
+import {
+    rateLimitStateFromSession,
+    rateLimitStateToSession,
+} from '@sidelines/data/cache/rateLimits'
 import {
     type RateLimitedResource,
     type RateLimitUpdate,
@@ -24,7 +27,7 @@ const CurrentActivity: FC = () => {
 
 const ApiMeter: FC = () => {
     const initialState = useMemo(() => {
-        const fromCache = rateLimitsCache.read()
+        const fromCache = rateLimitStateFromSession()
         if (fromCache?.graphql && Date.now() < fromCache.graphql.reset) {
             return fromCache.graphql
         } else {
@@ -46,7 +49,7 @@ const ApiMeter: FC = () => {
             return
         }
         setState(update)
-        rateLimitsCache.write({ graphql: update })
+        rateLimitStateToSession({ graphql: update })
     }
 
     const ratio = state?.ratio || 1

@@ -3,10 +3,12 @@ import {
     connectToDb,
     DB_INDEX_REPO_NAV_WHEN,
     DB_STORE_REPO_NAV,
+    idbPutRecord,
 } from '../database.ts'
 
 const LIMIT_NAV = 5
 
+// DB_STORE_REPO_NAV
 type NavRecord = {
     nameWithOwner: string
     repo: RepositoryId
@@ -52,22 +54,9 @@ export async function readRecentNav(
 }
 
 export async function writeNavVisit(repo: RepositoryId) {
-    const db = await connectToDb()
-    await new Promise<void>((res, rej) => {
-        const tx = db.transaction([DB_STORE_REPO_NAV], 'readwrite')
-        const record: NavRecord = {
-            nameWithOwner: `${repo.owner}/${repo.name}`,
-            repo,
-            when: new Date(),
-        }
-        tx.objectStore(DB_STORE_REPO_NAV).put(record)
-        tx.commit()
-
-        tx.oncomplete = () => res()
-
-        tx.onerror = e => {
-            console.error('db error', e)
-            rej(e)
-        }
+    await idbPutRecord<NavRecord>(DB_STORE_REPO_NAV, {
+        nameWithOwner: `${repo.owner}/${repo.name}`,
+        repo,
+        when: new Date(),
     })
 }

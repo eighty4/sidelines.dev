@@ -74,3 +74,12 @@ query _QViewerRepoDefaultBranchHeadSha($repo: String!) {
         }
     }
 }
+
+query QViewerRepoUserContext($owner: String!, $name: String!) {
+    viewer {
+        login
+    }
+    repository(owner: $owner, name: $name) {
+        viewerPermission
+    }
+}

@@ -27,6 +27,25 @@ type IndexedDBRecordStorageState = {
     }
 }
 
+type EncodedValue =
+    | {
+          a: [EncodedValue]
+      }
+    | {
+          d: {
+              value: string
+          }
+      }
+    | {
+          o: Array<{
+              k: string
+              v: EncodedValue
+          }>
+      }
+    | {
+          v: any
+      }
+
 type IndexedDBIndexStorageState = {
     name: string
     keyPath: string
@@ -37,8 +56,9 @@ type IndexedDBIndexStorageState = {
 const SidelinesColumnFamilies = [
     'repo-jobs',
     'commit-review',
-    'read-commits',
+    // 'read-commits',
     'read-watches',
+    'repo-context',
     'repo-nav',
     'repo-objects',
     'repo-heads',
@@ -78,8 +98,9 @@ export async function indexedDBStateFrom(
     const records: IndexedDBContent['records'] = {
         'repo-jobs': [],
         'commit-review': [],
-        'read-commits': [],
+        // 'read-commits': [],
         'read-watches': [],
+        'repo-context': [],
         'repo-nav': [],
         'repo-objects': [],
         'repo-heads': [],
@@ -89,21 +110,39 @@ export async function indexedDBStateFrom(
     }
     for (const objectStore of indexedDBState.stores) {
         if (!isSidelinesColumnFamily(objectStore.name)) {
-            throw Error(`\`${objectStore.name}\` is unexpected`)
+            throw Error(`\
+ObjectStore \`${objectStore.name}\` was unexpected when collecting data from IndexedDB during Playwright tests.\
+Verify \`SidelinesColumnFamilies\` in tests/indexedDBState.ts was updated with any object store additions in \`@sidelines/data\`.`)
         } else if (objectStore.records.length) {
             records[objectStore.name] = objectStore.records.map(record => {
                 if (record.value) {
                     return record.value
                 } else if (record.valueEncoded) {
-                    return mapEncodedValue(record.valueEncoded)
+                    try {
+                        return mapEncodedValue(record.valueEncoded)
+                    } catch (e: any) {
+                        throw Error(`\
+ObjectStore \`${objectStore.name}\` has a record that was not mapped from the Playwright IndexedDBRecordStorageState's EncodedValue format.\
+The record data from Playwright is: ${JSON.stringify(record)}.\
+The unexpected EncodedValue that could not be extracted is: ${e.message}.`)
+                    }
                 } else {
-                    throw Error(
-                        'unexpected IndexedDBRecordStorageState: ' +
-                            JSON.stringify(record),
-                    )
+                    throw Error(`\
+ObjectStore \`${objectStore.name}\` has a record that was not mapped from Playwright's IndexedDBRecordStorageState representation.\
+The record data from Playwright is: ${JSON.stringify(record)}.`)
                 }
             })
         }
+    }
+    if (indexedDBState.stores.length !== SidelinesColumnFamilies.length) {
+        const extras = Array.from(
+            new Set(
+                indexedDBState.stores.map(objectStore => objectStore.name),
+            ).symmetricDifference(new Set(SidelinesColumnFamilies)),
+        )
+        throw Error(`\
+ObjectStores were removed from \`@sidelines/data\` without removing from \`SidelinesColumnFamilies\` in tests/indexedDBState.ts.\
+The offending ObjectStore names are: [${extras.map(name => `"${name}"`).join(', ')}].`)
     }
     const content = {
         db: indexedDBState.name,
@@ -128,25 +167,6 @@ export function debugPrintIndexedDBContent(content: IndexedDBContent) {
     }
 }
 
-type EncodedValue =
-    | {
-          a: [EncodedValue]
-      }
-    | {
-          d: {
-              value: string
-          }
-      }
-    | {
-          o: Array<{
-              k: string
-              v: EncodedValue
-          }>
-      }
-    | {
-          v: any
-      }
-
 function mapEncodedValue(v: EncodedValue): any {
     if (v === null) {
         return null
@@ -169,9 +189,6 @@ function mapEncodedValue(v: EncodedValue): any {
     } else if ('v' in v) {
         return v.v
     } else {
-        throw Error(
-            'unexpected IndexedDBRecordStorageState encoded value: ' +
-                JSON.stringify(v),
-        )
+        throw Error(JSON.stringify(v))
     }
 }

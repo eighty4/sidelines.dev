@@ -6,7 +6,6 @@ export type ProjectPageAnonUserProps = {
     repo: RepositoryId
 }
 
-// todo check if public repo and show packages
 export const ProjectPageAnonUser: FC<
     Omit<ProjectPageAnonUserProps, 'userData'>
 > = ({ repo }) => {

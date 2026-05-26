@@ -1,4 +1,4 @@
-import { getGhTokenCookie } from '@sidelines/data/cookie'
+import { ghTokenFromCookie } from '@sidelines/data/cookie'
 // import { onLoadComplete } from '@sidelines/pageload/ready'
 import startJobSchedulingWorker from 'Sidelines.dev/workers/jobs/startJobsSWorker'
 import startSyncRefsWorker from 'Sidelines.dev/workers/syncing/startSyncRefsSWorker'
@@ -40,7 +40,7 @@ if (dank.IS_DEV) {
 registerSharedWorkers()
 
 function registerSharedWorkers() {
-    const ghToken = getGhTokenCookie(document.cookie)
+    const ghToken = ghTokenFromCookie(document.cookie)
     if (!ghToken) {
         return
     }

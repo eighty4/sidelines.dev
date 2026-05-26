@@ -4,10 +4,12 @@ import type {
     QRepoDefaultBranchVars,
     QRepoMultipleObjectContentsGraph,
     QRepoMultipleObjectContentsVars,
+    QViewerRepoUserContextGraph,
 } from '@sidelines/github/GRAPHS'
 import { login, userStoryWithSidelinesRepo } from './login.ts'
 import screenshotOnFailure from './screenshotOnFailure.ts'
 import { indexedDBStateFrom } from './indexedDBState.ts'
+import type { QViewerRepoUserContextVars } from '../libs/github/lib/repository/gql.ts'
 
 test.afterEach(screenshotOnFailure)
 
@@ -28,6 +30,21 @@ test.describe('showing package data', () => {
     }) => {
         const committedDate = new Date()
         await userStoryWithSidelinesRepo()
+            .withGraphqlResponse(
+                'QViewerRepoUserContext',
+                {
+                    owner: 'eighty4',
+                    name: 'l3',
+                } satisfies QViewerRepoUserContextVars,
+                {
+                    viewer: {
+                        login: 'eighty4',
+                    },
+                    repository: {
+                        viewerPermission: 'ADMIN',
+                    },
+                } satisfies QViewerRepoUserContextGraph,
+            )
             .withGraphqlResponse(
                 'QRepoDefaultBranch',
                 {
@@ -94,6 +111,21 @@ test.describe('showing package data', () => {
     test('offline retrieves from indexeddb cache', async ({ page }) => {
         const committedDate = new Date()
         await userStoryWithSidelinesRepo()
+            .withGraphqlResponse(
+                'QViewerRepoUserContext',
+                {
+                    owner: 'eighty4',
+                    name: 'l3',
+                } satisfies QViewerRepoUserContextVars,
+                {
+                    viewer: {
+                        login: 'eighty4',
+                    },
+                    repository: {
+                        viewerPermission: 'ADMIN',
+                    },
+                } satisfies QViewerRepoUserContextGraph,
+            )
             .withGraphqlResponse(
                 'QRepoDefaultBranch',
                 {

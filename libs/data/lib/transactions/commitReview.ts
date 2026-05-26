@@ -5,7 +5,7 @@ import type {
     RepositoryId,
 } from '@sidelines/model'
 import { ulid } from 'ulid'
-import { connectToDb, DB_STORE_COMMIT_REVIEW } from '../database.ts'
+import { DB_STORE_COMMIT_REVIEW, idbPutRecord } from '../database.ts'
 import { opfsLookupDir, opfsWriteFile } from '../opfs.ts'
 
 // DB_STORE_COMMIT_REVIEW
@@ -22,7 +22,10 @@ export async function saveRepoCommitReview(
     if (commit.additions) {
         await writeAdditionsToOpfs(reviewId, commit.repo, commit.additions)
     }
-    await writeRecordToDb(createRecord(reviewId, commit))
+    await idbPutRecord<CommitReviewRecord>(
+        DB_STORE_COMMIT_REVIEW,
+        createRecord(reviewId, commit),
+    )
     return {
         reviewId,
         commit,
@@ -44,22 +47,6 @@ function createRecord(
         })),
         deletions: commit.deletions,
     }
-}
-
-async function writeRecordToDb(record: CommitReviewRecord) {
-    const db = await connectToDb()
-    await new Promise<void>((res, rej) => {
-        const tx = db.transaction([DB_STORE_COMMIT_REVIEW], 'readwrite')
-        tx.objectStore(DB_STORE_COMMIT_REVIEW).put(record)
-        tx.commit()
-
-        tx.oncomplete = () => res()
-
-        tx.onerror = e => {
-            console.error('db error', e)
-            rej(e)
-        }
-    })
 }
 
 async function writeAdditionsToOpfs(

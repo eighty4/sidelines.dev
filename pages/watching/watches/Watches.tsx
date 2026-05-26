@@ -1,4 +1,4 @@
-import { getGhTokenCookie } from '@sidelines/data/cookie'
+import { ghTokenFromCookie } from '@sidelines/data/cookie'
 import type { RepoWatches } from '@sidelines/model'
 import { onDomInteractive } from '@sidelines/pageload/ready'
 import { type FC, useEffect, useMemo, useState } from 'react'
@@ -98,7 +98,7 @@ const Watches: FC<WatchesProps> = ({ ghToken }) => {
 }
 
 onDomInteractive(() => {
-    const ghToken = getGhTokenCookie(document.cookie)
+    const ghToken = ghTokenFromCookie(document.cookie)
     if (ghToken === null) {
         location.assign('/logout')
     } else {

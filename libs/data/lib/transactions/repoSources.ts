@@ -6,12 +6,13 @@ import type {
     RepositoryId,
     RepositoryObject,
 } from '@sidelines/model'
-import { connectToDb, DB_STORE_REPO_FILES } from '../database.ts'
+import { DB_STORE_REPO_FILES, idbGetRecord } from '../database.ts'
 import { opfsLookupDir, opfsReadFile, opfsWriteFile } from '../opfs.ts'
 import { RepoNotFound } from '@sidelines/model/errors'
 
 const OPFS_PREFIX = 'REPO_SRCS'
 
+// DB_STORE_REPO_FILES
 export type ReadRepoContent = {
     ghToken: string
     repo: RepositoryId
@@ -95,8 +96,7 @@ export async function readRepoListing({
     if (branchRef === RepoNotFound) {
         return 'repo-not-found'
     }
-    const db = await connectToDb()
-    await readDirListingFromDb(db, repo, branchRef, dirpath)
+    await readDirListingFromDb(repo, branchRef, dirpath)
     return await queryRepoDirListing(ghToken, repo, dirpath)
 }
 
@@ -109,17 +109,15 @@ type RepoListingRecord = {
 }
 
 async function readDirListingFromDb(
-    db: IDBDatabase,
     repo: RepositoryId,
     defaultBranch: BranchRef,
     dirpath: string | null,
 ): Promise<Array<RepositoryObject> | null> {
-    return new Promise((res, rej) => {
-        const tx = db.transaction(DB_STORE_REPO_FILES, 'readonly')
-        const request: IDBRequest<RepoListingRecord | null> = tx
-            .objectStore(DB_STORE_REPO_FILES)
-            .get([repo.owner, repo.name, defaultBranch.headOid, dirpath || ''])
-        request.onsuccess = () => res(request.result?.objects || null)
-        request.onerror = rej
-    })
+    const record = await idbGetRecord<RepoListingRecord>(DB_STORE_REPO_FILES, [
+        repo.owner,
+        repo.name,
+        defaultBranch.headOid,
+        dirpath || '',
+    ])
+    return record?.objects || null
 }

@@ -1,34 +1,58 @@
-import { UnauthorizedError } from '@sidelines/github'
+import {
+    resolveRepoUserContext,
+    type ViewerRepoUserContext,
+} from '@sidelines/data/indexeddb/tx/repoContext'
 import type { RepositoryId } from '@sidelines/model'
+import { Unavailable } from '@sidelines/model/errors'
 import { onDomInteractive } from '@sidelines/pageload/ready'
+import { lookupGhToken } from '@sidelines/pageload/session'
 import { expectRepoFromLocation } from '@sidelines/pageload/urls'
 import { ActivityHub } from '@sidelines/ui/activity/ActivityHub'
+import ErrorFallback from '@sidelines/ui/errors/ErrorFallback'
 import { JobList } from '@sidelines/ui/jobs/JobList'
-import { type FC, Suspense, useEffect, useMemo } from 'react'
+import { type FC, Suspense, use, useEffect, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
 import JobApiClient from '../../workers/jobs/JobApiClient.ts'
 import { UserDataClient } from '../../workers/userData/UserDataClient.ts'
-import { getUserDataClient } from '../expectUserData.ts'
 import { ProjectPageAnonUser } from './ProjectAnonUser.tsx'
 import { ProjectNav } from './ProjectNav.tsx'
 import { LoadingProjectPackages } from './ProjectPackages.tsx'
+import { ProjectReadonly } from './ProjectReadonly.tsx'
 import styles from './Project.module.css'
 
-type ProjectPageProps = {
-    jobApiClient: JobApiClient
+type LoadingProjectPageProps = {
+    ghToken: string
+    loadingUserContext: Promise<ViewerRepoUserContext | typeof Unavailable>
     repo: RepositoryId
+}
+
+const LoadingProjectPage: FC<LoadingProjectPageProps> = ({
+    ghToken,
+    loadingUserContext,
+    repo,
+}) => {
+    const userContext = use(loadingUserContext)
+    const jobApi = useMemo(() => new JobApiClient(ghToken), [userContext])
+    const userData = useMemo(() => new UserDataClient(ghToken), [userContext])
+
+    if (userContext === Unavailable) {
+        return <div>you're offline</div>
+    } else if (!userContext.repo) {
+        return <div>no repo here</div>
+    } else if (!userContext.repo.permissions.write) {
+        return <ProjectReadonly repo={repo} />
+    } else {
+        return <ProjectPage jobApi={jobApi} repo={repo} userData={userData} />
+    }
+}
+
+type ProjectPageProps = {
+    repo: RepositoryId
+    jobApi: JobApiClient
     userData: UserDataClient
 }
 
-// todo load AnonUserProjectPage as separate async module
-// todo add ErrorBoundary around packages and nav Suspense
-// todo root.render(<ProjectPage/>) with a graphql promise that fetches repo ownership/visibility
-
-const ProjectPage: FC<ProjectPageProps> = ({
-    jobApiClient,
-    repo,
-    userData,
-}) => {
+const ProjectPage: FC<ProjectPageProps> = ({ repo, jobApi, userData }) => {
     const loadingNav = useMemo(() => userData.navHistory(), [])
     const loadingPackages = useMemo(() => userData.repoPackages(repo), [])
 
@@ -49,7 +73,7 @@ const ProjectPage: FC<ProjectPageProps> = ({
                 <h2>Run a job:</h2>
                 <JobList
                     availableJobs={JobApiClient.availableJobs()}
-                    execJob={(jobId, cb) => jobApiClient.exec(jobId, cb)}
+                    execJob={(jobId, cb) => jobApi.exec(jobId, cb)}
                 />
             </div>
             <div id={styles.sidelines}>
@@ -73,28 +97,24 @@ const ProjectPage: FC<ProjectPageProps> = ({
     )
 }
 
+// todo special handling with ErrorFallback & Unauthorized from GitHub
+// todo or make all expected/special errors a typed result and ErrorFallback is generic catch-all
 onDomInteractive(async () => {
-    let userData: UserDataClient | null = null
-    try {
-        userData = await getUserDataClient()
-    } catch (e) {
-        if (e instanceof UnauthorizedError) {
-            console.log(e)
-        } else {
-            throw e
-        }
-    }
     const repo = expectRepoFromLocation()
+    const ghToken = lookupGhToken()
     const root = createRoot(document.getElementById('root')!)
-    if (userData) {
-        const jobApiClient = new JobApiClient(userData.ghToken)
-        userData.navVisit(repo)
+    if (ghToken) {
+        const loadingUserContext = resolveRepoUserContext(ghToken, repo)
         root.render(
-            <ProjectPage
-                jobApiClient={jobApiClient}
-                repo={repo}
-                userData={userData}
-            />,
+            <ErrorFallback fallback={<div>error</div>}>
+                <Suspense fallback={<div>loading</div>}>
+                    <LoadingProjectPage
+                        ghToken={ghToken}
+                        repo={repo}
+                        loadingUserContext={loadingUserContext}
+                    />
+                </Suspense>
+            </ErrorFallback>,
         )
     } else {
         root.render(<ProjectPageAnonUser repo={repo} />)

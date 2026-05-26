@@ -5,9 +5,14 @@ import type {
 } from '@sidelines/model'
 import { RefNotFound, RepoNotFound } from '@sidelines/model/errors'
 import { findRepoPackages } from '@sidelines/packages/findRepoPackages'
+import {
+    DB_STORE_REPO_PACKAGES,
+    idbGetRecord,
+    idbPutRecord,
+} from '../database.ts'
 import { readRepoHead } from './repoHeads.ts'
-import { connectToDb, DB_STORE_REPO_PACKAGES } from '../database.ts'
 
+// DB_STORE_REPO_PACKAGES
 type PackagesRecord = {
     nameWithOwner: string
     defaultBranch: string
@@ -51,20 +56,12 @@ async function readFromDb(
     nameWithOwner: string,
     defaultBranch: BranchRef,
 ): Promise<Array<RepositoryPackage> | null> {
-    const db = await connectToDb()
-    return new Promise((res, rej) => {
-        const tx = db.transaction(DB_STORE_REPO_PACKAGES, 'readonly')
-        const req: IDBRequest<PackagesRecord | undefined> = tx
-            .objectStore(DB_STORE_REPO_PACKAGES)
-            .get([nameWithOwner, defaultBranch.name, defaultBranch.headOid])
-
-        req.onsuccess = () => res(req.result?.packages || null)
-
-        req.onerror = e => {
-            console.error('db error', e)
-            rej(e)
-        }
-    })
+    const record = await idbGetRecord<PackagesRecord>(DB_STORE_REPO_PACKAGES, [
+        nameWithOwner,
+        defaultBranch.name,
+        defaultBranch.headOid,
+    ])
+    return record?.packages || null
 }
 
 async function writeToDb(
@@ -72,25 +69,11 @@ async function writeToDb(
     defaultBranch: BranchRef,
     packages: Array<RepositoryPackage>,
 ): Promise<void> {
-    const record: PackagesRecord = {
+    await idbPutRecord<PackagesRecord>(DB_STORE_REPO_PACKAGES, {
         nameWithOwner,
         defaultBranch: defaultBranch.name,
         headOid: defaultBranch.headOid,
         committedWhen: defaultBranch.committedDate,
         packages,
-    }
-    const db = await connectToDb()
-    return new Promise((res, rej) => {
-        const tx = db.transaction([DB_STORE_REPO_PACKAGES], 'readwrite')
-        const req: IDBRequest = tx
-            .objectStore(DB_STORE_REPO_PACKAGES)
-            .put(record)
-
-        req.onsuccess = () => res()
-
-        req.onerror = e => {
-            console.error('db error', e)
-            rej(e)
-        }
     })
 }

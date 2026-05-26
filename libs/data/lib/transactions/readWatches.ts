@@ -3,28 +3,25 @@ import {
     connectToDb,
     DB_INDEX_READ_WATCHES_REPO,
     DB_STORE_READ_WATCHES,
+    idbDeleteRecord,
+    idbPutRecord,
 } from '../database.ts'
 
+// DB_STORE_READ_WATCHES
 type WatchRecord = {
     nameWithOwner: string
     path: string
     repo: RepositoryId
 }
 
-export function createWatch(repo: RepositoryId, path: string): Promise<void> {
-    return new Promise(async (res, rej) => {
-        const db = await connectToDb()
-        const request: IDBRequest = db
-            .transaction(DB_STORE_READ_WATCHES, 'readwrite')
-            .objectStore(DB_STORE_READ_WATCHES)
-            .put({
-                nameWithOwner: `${repo.owner}/${repo.name}`,
-                repo,
-                path,
-            })
-
-        request.onsuccess = () => res()
-        request.onerror = rej
+export async function createWatch(
+    repo: RepositoryId,
+    path: string,
+): Promise<void> {
+    await idbPutRecord<WatchRecord>(DB_STORE_READ_WATCHES, {
+        nameWithOwner: `${repo.owner}/${repo.name}`,
+        repo,
+        path,
     })
 }
 
@@ -32,16 +29,10 @@ export async function deleteWatch(
     repo: RepositoryId,
     path: string,
 ): Promise<void> {
-    return new Promise(async (res, rej) => {
-        const db = await connectToDb()
-        const request: IDBRequest = db
-            .transaction(DB_STORE_READ_WATCHES, 'readwrite')
-            .objectStore(DB_STORE_READ_WATCHES)
-            .delete([`${repo.owner}/${repo.name}`, path])
-
-        request.onsuccess = () => res()
-        request.onerror = rej
-    })
+    await idbDeleteRecord(DB_STORE_READ_WATCHES, [
+        `${repo.owner}/${repo.name}`,
+        path,
+    ])
 }
 
 // todo index to only get unique nameWithOwner

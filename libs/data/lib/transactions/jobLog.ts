@@ -3,7 +3,7 @@ import type {
     RepoJobExecStatus,
     RepoJobId,
 } from '@sidelines/model'
-import { connectToDb, DB_STORE_REPO_JOBS } from '../database.ts'
+import { connectToDb, DB_STORE_REPO_JOBS, idbAddRecord } from '../database.ts'
 
 // DB_STORE_REPO_JOBS
 type JobLogRecord = {
@@ -19,20 +19,11 @@ export async function createRepoJobRecord(
     jobId: RepoJobId,
     jobExecId: string,
 ): Promise<void> {
-    const db = await connectToDb()
-    await new Promise<void>((res, rej) => {
-        const tx = db.transaction([DB_STORE_REPO_JOBS], 'readwrite')
-        tx.objectStore(DB_STORE_REPO_JOBS).add({
-            jobId,
-            jobExecId,
-            repos: {},
-            whenInit: new Date(),
-        } satisfies JobLogRecord)
-        tx.oncomplete = () => res()
-        tx.onerror = e => {
-            console.error('db error', e)
-            rej(e)
-        }
+    await idbAddRecord<JobLogRecord>(DB_STORE_REPO_JOBS, {
+        jobId,
+        jobExecId,
+        repos: {},
+        whenInit: new Date(),
     })
 }
 

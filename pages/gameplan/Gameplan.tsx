@@ -13,7 +13,11 @@ interface GameplanPageProps {
     jobApiClient: JobApiClient
 }
 
-const Gameplan: FC<GameplanPageProps> = ({ jobApiClient }) => {
+const Gameplan: FC<GameplanPageProps> = ({
+    ghToken,
+    ghLogin,
+    jobApiClient,
+}) => {
     return (
         <div id="view">
             <JobList

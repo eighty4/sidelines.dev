@@ -15,7 +15,7 @@ const DB_STORE_COMMIT_REVIEW_KEY = ['reviewId']
 /*** WATCHES ***/
 /***************/
 
-export const DB_STORE_READ_COMMITS = 'read-commits'
+// export const DB_STORE_READ_COMMITS = 'read-commits'
 // const DB_STORE_READ_COMMITS_KEY = ['']
 
 export const DB_STORE_READ_WATCHES = 'read-watches'
@@ -23,6 +23,13 @@ const DB_STORE_READ_WATCHES_KEY = ['nameWithOwner', 'path']
 
 export const DB_INDEX_READ_WATCHES_REPO = 'read-watches-by-repo'
 const DB_INDEX_READ_WATCHES_REPO_KEY = 'nameWithOwner'
+
+/*************************/
+/*** REPO USER CONTEXT ***/
+/*************************/
+
+export const DB_STORE_REPO_CONTEXT = 'repo-context'
+const DB_STORE_REPO_CONTEXT_KEY = 'nameWithOwner'
 
 /************************/
 /*** REPO NAV HISTORY ***/
@@ -72,6 +79,9 @@ function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
     console.log('upgrading db from', oldVersion)
     while (oldVersion < DB_VERSION) {
         if (oldVersion === 0) {
+            db.createObjectStore(DB_STORE_REPO_CONTEXT, {
+                keyPath: DB_STORE_REPO_CONTEXT_KEY,
+            })
             db.createObjectStore(DB_STORE_REPO_JOBS, {
                 keyPath: DB_STORE_REPO_JOBS_KEY,
             })
@@ -118,17 +128,96 @@ export async function connectToDb(): Promise<IDBDatabase> {
         opening.onupgradeneeded = (e: IDBVersionChangeEvent) => {
             try {
                 upgradeDatabaseSchema((e.target as any).result, e.oldVersion)
-            } catch (e) {
-                console.error(e)
+            } catch (e: any) {
+                console.error(
+                    '@sidelines/data database.ts connectToDb onupgradeneeded',
+                    e.message,
+                )
                 throw e
             }
         }
-        opening.onerror = e =>
+        opening.onerror = () =>
             rej(
                 new Error('error requesting database', {
-                    cause: (e.target as any).error,
+                    cause: opening.error,
                 }),
             )
-        opening.onsuccess = e => res((e.target as any).result)
+        opening.onsuccess = () => res(opening.result)
+    })
+}
+
+export async function idbGetRecord<T>(
+    objectStore: string,
+    key: any,
+): Promise<T | null> {
+    const db = await connectToDb()
+    return new Promise((res, rej) => {
+        const tx = db.transaction(objectStore, 'readonly')
+        const req: IDBRequest<T | undefined> = tx
+            .objectStore(objectStore)
+            .get(key)
+
+        req.onsuccess = () => res(req.result || null)
+
+        req.onerror = e => {
+            console.error(objectStore, 'getRecord error', e)
+            rej(e)
+        }
+    })
+}
+
+export async function idbDeleteRecord(
+    objectStore: string,
+    key: any,
+): Promise<void> {
+    return new Promise(async (res, rej) => {
+        const db = await connectToDb()
+        const req: IDBRequest = db
+            .transaction(objectStore, 'readwrite')
+            .objectStore(objectStore)
+            .delete(key)
+
+        req.onsuccess = () => res()
+
+        req.onerror = e => {
+            console.error(objectStore, 'deleteRecord error', e)
+            rej(e)
+        }
+    })
+}
+
+export async function idbAddRecord<T>(
+    objectStore: string,
+    record: T,
+): Promise<void> {
+    const db = await connectToDb()
+    return new Promise((res, rej) => {
+        const tx = db.transaction(objectStore, 'readwrite')
+        const req: IDBRequest = tx.objectStore(objectStore).add(record)
+
+        req.onsuccess = () => res()
+
+        req.onerror = e => {
+            console.error(objectStore, 'addRecord error', e)
+            rej(e)
+        }
+    })
+}
+
+export async function idbPutRecord<T>(
+    objectStore: string,
+    record: T,
+): Promise<void> {
+    const db = await connectToDb()
+    return new Promise((res, rej) => {
+        const tx = db.transaction(objectStore, 'readwrite')
+        const req: IDBRequest = tx.objectStore(objectStore).put(record)
+
+        req.onsuccess = () => res()
+
+        req.onerror = e => {
+            console.error(objectStore, 'putRecord error', e)
+            rej(e)
+        }
     })
 }
