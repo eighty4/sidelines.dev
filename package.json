@@ -30,7 +30,6 @@
     "monaco-editor": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "rxjs": "^7.8.1",
     "ulid": "^3.0.2"
   },
   "devDependencies": {

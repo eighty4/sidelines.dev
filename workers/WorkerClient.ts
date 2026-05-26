@@ -1,19 +1,17 @@
-import { Subject } from 'rxjs'
-
 export type WorkerMsg<KIND extends string> = { kind: KIND }
 
 export type WorkerRpcMsg<KIND extends string> = WorkerMsg<KIND> & { id: string }
 
 export class WorkerClient {
     #name: string
-    #responses: Subject<any> = new Subject()
+    #responses: Record<string, (v: any) => void> = {}
     #w: Worker
 
     constructor(w: Worker, name: string = 'WorkerClient') {
         this.#name = name
         this.#w = w
         this.#w.onmessage = (e: MessageEvent<any>) =>
-            this.#responses.next(e.data)
+            this.#resolveResponse(e.data)
     }
 
     protected createId(): string {
@@ -35,18 +33,18 @@ export class WorkerClient {
         const request = payload as REQ
         request.id = this.createId()
         this.request(request)
-        return await new Promise<RES>(res => {
-            const sub = this.#responses.subscribe(response => {
-                if (request.id === response.id) {
-                    sub.unsubscribe()
-                    res(response)
-                }
-            })
-        })
+        return new Promise<RES>(res => (this.#responses[request.id] = res))
+    }
+
+    #resolveResponse<KIND extends string, RES extends WorkerRpcMsg<KIND>>(
+        data: RES,
+    ) {
+        const res = this.#responses[data.id]
+        delete this.#responses[data.id]
+        res(data)
     }
 
     protected terminate() {
         this.#w.terminate()
-        this.#responses.complete()
     }
 }

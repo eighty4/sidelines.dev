@@ -1,5 +1,4 @@
 import type { RepositoryId, RepositoryObject } from '@sidelines/model'
-import { Subject } from 'rxjs'
 import type {
     ProjectNavGetResponse,
     RepoListingResponse,
@@ -14,7 +13,7 @@ import type {
 export class UserDataClient {
     readonly ghToken: string
     readonly ghLogin: string
-    #responses: Subject<UserDataRpcResponse> = new Subject()
+    #responses: Record<string, (v: any) => void> = {}
     #w: Worker
 
     constructor(ghToken: string, ghLogin: string) {
@@ -24,7 +23,7 @@ export class UserDataClient {
             name: 'sidelines.dev user data',
         })
         this.#w.onmessage = (e: MessageEvent<UserDataRpcResponse>) =>
-            this.#responses.next(e.data)
+            this.#resolveResponse(e.data)
     }
 
     navVisit(repo: RepositoryId) {
@@ -89,17 +88,16 @@ export class UserDataClient {
         this.#w.postMessage(request)
     }
 
-    async #requestAndReply<R extends UserDataRpcResponse>(
+    #requestAndReply<R extends UserDataRpcResponse>(
         request: UserDataRpcRequest,
     ): Promise<R> {
         this.#request(request)
-        return await new Promise<R>(res => {
-            const sub = this.#responses.subscribe(response => {
-                if (request.id === response.id) {
-                    sub.unsubscribe()
-                    res(response as R)
-                }
-            })
-        })
+        return new Promise<R>(res => (this.#responses[request.id] = res))
+    }
+
+    #resolveResponse(data: UserDataRpcResponse) {
+        const res = this.#responses[data.id]
+        delete this.#responses[data.id]
+        res(data)
     }
 }
