@@ -1,5 +1,4 @@
 @import '../global.css';
-@import './workflow/ChooseWorkflow.css';
 
 #view {
     height: 100vh;
@@ -36,10 +35,5 @@
         position: sticky;
         top: 0;
         right: 0;
-    }
-}
-
-.job-list {
-    & .job-list-item {
     }
 }
