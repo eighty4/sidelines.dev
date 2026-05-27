@@ -5,7 +5,7 @@ import type {
 } from '@sidelines/model'
 import { RefNotFound, RepoNotFound } from '@sidelines/model/errors'
 import { use, type FC } from 'react'
-import { RepoPackagesResponse } from '../../workers/userData/UserDataWorker'
+import type { RepoPackagesResponse } from '../../workers/userData/UserDataWorker.ts'
 
 const packageKey = (p: RepositoryPackage) => `${p.language}-${p.path}`
 

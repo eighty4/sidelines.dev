@@ -1,4 +1,4 @@
-import { RepositoryId } from '@sidelines/model'
+import type { RepositoryId } from '@sidelines/model'
 import { type FC } from 'react'
 import { loginRedirectUrl } from '../nav.ts'
 

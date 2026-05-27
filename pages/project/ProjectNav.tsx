@@ -1,4 +1,4 @@
-import { RepositoryId } from '@sidelines/model'
+import type { RepositoryId } from '@sidelines/model'
 import { use, type FC } from 'react'
 
 export type ProjectNavProps = {

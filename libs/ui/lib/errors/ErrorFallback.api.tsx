@@ -18,7 +18,7 @@ export default class ErrorFallback extends Component<
     ErrorFallbackProps,
     ErrorFallbackState
 > {
-    static getDerivedStateFromError(e: unknown): ErrorFallbackState {
+    static getDerivedStateFromError(): ErrorFallbackState {
         return { caughtError: true }
     }
 

@@ -1,8 +1,8 @@
 import { ghTokenFromCookie } from '@sidelines/data/cookie'
 // import { onLoadComplete } from '@sidelines/pageload/ready'
-import startJobSchedulingWorker from 'Sidelines.dev/workers/jobs/startJobsSWorker'
-import startSyncRefsWorker from 'Sidelines.dev/workers/syncing/startSyncRefsSWorker'
-import { PageSideWorkerLauncher } from 'Sidelines.dev/workers/WorkerLaunch'
+import startJobSchedulingWorker from '../workers/jobs/startJobsSWorker.ts'
+import startSyncRefsWorker from '../workers/syncing/startSyncRefsSWorker.ts'
+import { PageSideWorkerLauncher } from '../workers/WorkerLaunch.ts'
 
 if (dank.IS_DEV) {
     if (location.hostname === 'localhost') {

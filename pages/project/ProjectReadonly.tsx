@@ -1,5 +1,5 @@
-import { RepositoryId } from '@sidelines/model'
-import { FC } from 'react'
+import type { RepositoryId } from '@sidelines/model'
+import type { FC } from 'react'
 
 type ProjectReadonlyProps = {
     repo: RepositoryId

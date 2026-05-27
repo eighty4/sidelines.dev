@@ -3,7 +3,6 @@ import {
     rateLimitStateToSession,
 } from '@sidelines/data/cache/rateLimits'
 import {
-    type RateLimitedResource,
     type RateLimitUpdate,
     subscribeToGitHubRateLimits,
 } from '@sidelines/github/rateLimits'
@@ -35,8 +34,6 @@ const ApiMeter: FC = () => {
         }
     }, [])
     const [state, setState] = useState<RateLimitUpdate | null>(initialState)
-    const [mostDepleted, setMostDepleted] =
-        useState<RateLimitedResource | null>()
 
     useEffect(() => {
         const sub = subscribeToGitHubRateLimits(onRateLimitUpdate)

@@ -3,7 +3,7 @@ import {
     WorkerClient,
     type WorkerMsg,
     type WorkerRpcMsg,
-} from 'Sidelines.dev/workers/WorkerClient'
+} from '../../workers/WorkerClient.ts'
 
 export type WatchPathReq = {
     repo: RepositoryId

@@ -6,13 +6,11 @@
     "lib": ["ESNext", "DOM", "WebWorker"],
     "target": "ES2022",
     "rewriteRelativeImportExtensions": false,
-    "paths": {
-      "Sidelines.dev/workers/*": ["./workers/*.ts"]
-    },
     "types": ["node", "react", "react-dom"]
   },
   "include": [
-    "pages/**/*.{ts,tsx}",
+    "pages/**/*.ts",
+    "pages/**/*.tsx",
     "tests/**/*.ts",
     "workers/**/*.ts",
     "types/*.d.ts",

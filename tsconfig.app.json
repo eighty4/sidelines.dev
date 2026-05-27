@@ -3,6 +3,11 @@
   "compilerOptions": {
     "types": ["react", "react-dom"]
   },
-  "include": ["pages/**/*.{ts,tsx}", "workers/**/*.ts", "types/*.d.ts"],
+  "include": [
+    "pages/**/*.ts",
+    "pages/**/*.tsx",
+    "workers/**/*.ts",
+    "types/*.d.ts"
+  ],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }
