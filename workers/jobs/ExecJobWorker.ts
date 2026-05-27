@@ -1,7 +1,4 @@
-import {
-    markJobDone,
-    markRepoJobStatus,
-} from '@sidelines/data/indexeddb/tx/jobLog'
+import { markJobDone, markRepoJobStatus } from '@sidelines/data/tx/jobLog'
 import queryViewerOwnedRepoNames from '@sidelines/github/repositories/queryViewerOwnedRepoNames'
 import { queryUserLogin } from '@sidelines/github/user/queryUserLogin'
 import type { RepositoryId } from '@sidelines/model'

@@ -1,14 +1,11 @@
-import {
-    readRecentNav,
-    writeNavVisit,
-} from '@sidelines/data/indexeddb/tx/repoNav'
-import { readRepoPackages } from '@sidelines/data/indexeddb/tx/repoPackages'
+import { readRecentNav, writeNavVisit } from '@sidelines/data/tx/repoNav'
+import { readRepoPackages } from '@sidelines/data/tx/repoPackages'
 import {
     type ReadRepoContent,
     readRepoContent,
     type ReadRepoListing,
     readRepoListing,
-} from '@sidelines/data/indexeddb/tx/repoSources'
+} from '@sidelines/data/tx/repoSources'
 import type {
     RepositoryId,
     RepositoryObject,

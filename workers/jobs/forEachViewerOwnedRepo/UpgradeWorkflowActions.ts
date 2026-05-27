@@ -1,5 +1,5 @@
 import { readWorkflowModel } from '@eighty4/model-t'
-import { saveRepoCommitReview } from '@sidelines/data/indexeddb/tx/commitReview'
+import { saveRepoCommitReview } from '@sidelines/data/tx/commitReview'
 import { NotFoundError } from '@sidelines/github'
 import { queryViewerRepoWorkflowContents } from '@sidelines/github/actions/queryViewerRepoWorkflowContents'
 import { isFloatingMajorTag } from '@sidelines/github/repository/refs/floatingMajorTag'

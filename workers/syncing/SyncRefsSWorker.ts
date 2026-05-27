@@ -1,8 +1,5 @@
-import { getReposWithWatches } from '@sidelines/data/indexeddb/tx/readWatches'
-import {
-    getTimeSinceLastSync,
-    syncRefs,
-} from '@sidelines/data/indexeddb/tx/syncRefs'
+import { getReposWithWatches } from '@sidelines/data/tx/readWatches'
+import { getTimeSinceLastSync, syncRefs } from '@sidelines/data/tx/syncRefs'
 import { queryMultipleRepoHeadOids } from '@sidelines/github/repositories/queryMultipleRepoHeadOids'
 import { isMessageObject } from '../messaging.ts'
 import { SharedWorkerSideWorkerLauncher } from '../WorkerLaunch.ts'

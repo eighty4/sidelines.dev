@@ -1,7 +1,7 @@
 import {
     resolveRepoUserContext,
     type ViewerRepoUserContext,
-} from '@sidelines/data/indexeddb/tx/repoContext'
+} from '@sidelines/data/tx/repoContext'
 import type { RepositoryId } from '@sidelines/model'
 import { Unavailable } from '@sidelines/model/errors'
 import { onDomInteractive } from '@sidelines/pageload/ready'

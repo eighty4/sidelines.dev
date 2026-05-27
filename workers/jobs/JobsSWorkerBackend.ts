@@ -1,4 +1,4 @@
-import { createRepoJobRecord } from '@sidelines/data/indexeddb/tx/jobLog'
+import { createRepoJobRecord } from '@sidelines/data/tx/jobLog'
 import type { RepoJobId } from '@sidelines/model'
 import { ulid } from 'ulid'
 import {

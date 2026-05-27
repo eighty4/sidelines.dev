@@ -14,7 +14,7 @@
       "node": "./lib_js/cookie.js",
       "default": "./lib/cookie.ts"
     },
-    "./indexeddb/tx/*": {
+    "./tx/*": {
       "types": "./lib_types/transactions/*.d.ts",
       "node": "./lib_js/transactions/*.js",
       "default": "./lib/transactions/*.ts"
