@@ -1,9 +1,9 @@
 import type { BranchRef, RepositoryId } from '@sidelines/model'
-import { mapBranchRef } from './_map.ts'
-import { QRepoDefaultBranch, type QRepoDefaultBranchVars } from './gql.ts'
+import type { RepoNotFound } from '@sidelines/model/errors'
 import type { QRepoDefaultBranchGraph } from '../graphs.ts'
 import queryGraphqlApi from '../queryGraphqlApi.ts'
-import type { RepoNotFound } from '@sidelines/model/errors'
+import { mapBranchRef } from './_map.ts'
+import { QRepoDefaultBranch, type QRepoDefaultBranchVars } from './gql.ts'
 
 export default async function queryRepoDefaultBranch(
     ghToken: string,

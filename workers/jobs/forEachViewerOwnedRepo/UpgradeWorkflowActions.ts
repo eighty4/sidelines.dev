@@ -9,8 +9,8 @@ import {
     RepositoryValues,
     type RepositoryId,
 } from '@sidelines/model'
-import replaceActionsVersions from './replaceActionsVersions.ts'
 import { ExecJobWorker } from '../ExecJobWorker.ts'
+import replaceActionsVersions from './replaceActionsVersions.ts'
 
 declare const self: DedicatedWorkerGlobalScope
 

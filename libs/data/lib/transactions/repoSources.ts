@@ -6,9 +6,9 @@ import type {
     RepositoryId,
     RepositoryObject,
 } from '@sidelines/model'
+import { RepoNotFound } from '@sidelines/model/errors'
 import { DB_STORE_REPO_FILES, idbGetRecord } from '../database.ts'
 import { opfsLookupDir, opfsReadFile, opfsWriteFile } from '../opfs.ts'
-import { RepoNotFound } from '@sidelines/model/errors'
 
 const OPFS_PREFIX = 'REPO_SRCS'
 

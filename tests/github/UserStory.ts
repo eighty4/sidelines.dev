@@ -1,6 +1,6 @@
 import type { Page, Route } from '@playwright/test'
-import { GraphqlResponses } from './graphQuerying.ts'
 import { isWebKit } from '../isWebKit.ts'
+import { GraphqlResponses } from './graphQuerying.ts'
 
 type FulfillOpts = Parameters<Route['fulfill']>[0]
 

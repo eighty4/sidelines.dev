@@ -1,5 +1,5 @@
-import type { RepoObject } from './types.api.ts'
 import type { QRepoObjectGraph } from '../../graphs.ts'
+import type { RepoObject } from './types.api.ts'
 
 export function mapRepoObject(
     path: string,

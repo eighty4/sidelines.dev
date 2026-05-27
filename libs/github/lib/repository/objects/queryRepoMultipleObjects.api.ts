@@ -1,7 +1,7 @@
 import type { RepositoryId } from '@sidelines/model'
+import queryGraphqlApi from '../../queryGraphqlApi.ts'
 import { mapRepoObject } from './_map.ts'
 import type { RepoObject } from './types.api.ts'
-import queryGraphqlApi from '../../queryGraphqlApi.ts'
 
 // useful for UIs that recursively retireve repo dirs
 export async function queryMultipleRepoObjects(

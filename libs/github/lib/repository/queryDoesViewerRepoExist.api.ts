@@ -1,5 +1,5 @@
-import { QViewerRepoExists, type QViewerRepoExistsVars } from './gql.ts'
 import queryGraphqlApi from '../queryGraphqlApi.ts'
+import { QViewerRepoExists, type QViewerRepoExistsVars } from './gql.ts'
 
 // checks if user authed by ghToken has a repo within its personal account
 //

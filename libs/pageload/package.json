@@ -5,9 +5,9 @@
   "sideEffects": false,
   "exports": {
     "./*": {
-      "types": "./lib_types/*.d.ts",
-      "node": "./lib_js/*.js",
-      "import": "./lib/*.ts"
+      "types": "./lib_types/*.api.d.ts",
+      "node": "./lib_js/*.api.js",
+      "import": "./lib/*.api.ts"
     }
   },
   "scripts": {

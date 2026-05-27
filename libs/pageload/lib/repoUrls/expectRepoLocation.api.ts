@@ -1,7 +1,9 @@
 import { UnauthorizedError } from '@sidelines/github'
 import type { RepositoryId } from '@sidelines/model'
 
-export function expectRepoFromLocation(expectGhLogin?: string): RepositoryId {
+export default function expectRepoFromLocation(
+    expectGhLogin?: string,
+): RepositoryId {
     let useSearchParams = false
     const url = new URL(location.href)
     switch (url.pathname) {

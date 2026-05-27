@@ -1,7 +1,7 @@
 import type { RepositoryId, RepositoryObject } from '@sidelines/model'
+import queryGraphqlApi from '../../queryGraphqlApi.ts'
 import { sortRepoObjects } from './_sort.ts'
 import { QRepoDirListing, type QRepoDirListingVars } from './gql.ts'
-import queryGraphqlApi from '../../queryGraphqlApi.ts'
 
 // repo obj query where obj expr is expected to return a tree
 export default async function queryRepoDirListing(

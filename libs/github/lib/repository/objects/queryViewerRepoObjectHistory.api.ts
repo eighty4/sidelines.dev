@@ -1,10 +1,10 @@
+import type { Pageable } from '../../pagingGraphqlQueries.ts'
+import queryGraphqlApi from '../../queryGraphqlApi.ts'
 import {
     QViewerRepoObjectHistory,
     type QViewerRepoObjectHistoryVars,
 } from './gql.ts'
 import type { RepoObjectHistory } from './types.api.ts'
-import type { Pageable } from '../../pagingGraphqlQueries.ts'
-import queryGraphqlApi from '../../queryGraphqlApi.ts'
 
 export default async function queryViewerRepoObjectHistory(
     ghToken: string,

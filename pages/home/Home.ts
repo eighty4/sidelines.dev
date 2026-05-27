@@ -1,7 +1,7 @@
 import { onDomInteractive } from '@sidelines/pageload/ready'
 import { lookupGhToken } from '@sidelines/pageload/session'
-import { buildProjectUrl, loginRedirectUrl } from '../nav.ts'
 import { UserDataClient } from '../../workers/userData/UserDataClient.ts'
+import { buildProjectUrl, loginRedirectUrl } from '../nav.ts'
 
 onDomInteractive(async () => {
     const ghToken = lookupGhToken()

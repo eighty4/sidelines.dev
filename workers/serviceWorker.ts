@@ -1,4 +1,4 @@
-import { isValidGitHubRepoUrl } from '@sidelines/pageload/urls'
+import isValidRepoUrl from '@sidelines/pageload/repoUrls/isValidRepoUrl'
 // @ts-ignore - cache.json will be made before esbuild bundles the service worker
 import buildManifest from '../build/cache.json' with { type: 'json' }
 
@@ -71,7 +71,7 @@ async function handleRequest(req: Request): Promise<Response> {
     const url = new URL(req.url)
     console.log('sidelines.sw.js fetch', url.pathname)
     if (req.method === 'GET' && !isApiUrl(url)) {
-        if (isValidGitHubRepoUrl(url)) {
+        if (isValidRepoUrl(url)) {
             const mapped = url.pathname.endsWith('/notes')
                 ? '/notes'
                 : '/project'

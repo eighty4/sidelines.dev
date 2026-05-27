@@ -9,8 +9,8 @@ import type {
 } from '@sidelines/github/GRAPHS'
 import { indexedDBStateFrom } from './indexedDBState.ts'
 import { login, userStoryWithSidelinesRepo } from './login.ts'
-import screenshotOnFailure from './screenshotOnFailure.ts'
 import { readRepoCommitAddition } from './opfsState.ts'
+import screenshotOnFailure from './screenshotOnFailure.ts'
 
 test.afterEach(screenshotOnFailure)
 

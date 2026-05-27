@@ -1,9 +1,9 @@
 import type { RepositoryId } from '@sidelines/model'
+import type { QRepoObjectGraph } from '../../graphs.ts'
+import queryGraphqlApi from '../../queryGraphqlApi.ts'
 import { mapRepoObject } from './_map.ts'
 import { QRepoObject, type QRepoObjectVars } from './gql.ts'
 import type { RepoObject } from './types.api.ts'
-import queryGraphqlApi from '../../queryGraphqlApi.ts'
-import type { QRepoObjectGraph } from '../../graphs.ts'
 
 // repo obj query where obj expr is expected to return a blob or tree
 export default async function queryRepoObject(

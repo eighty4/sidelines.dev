@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { BranchRef, RepositoryId } from '@sidelines/model'
-import { extractName, parseGoMod } from './parseGoMod.ts'
 import { TestDataProvider } from '../_testFindPackages.ts'
 import { FindPackagesApi } from '../findPackagesApi.ts'
+import { extractName, parseGoMod } from './parseGoMod.ts'
 
 const MOD = 'github.com/eighty4/sse'
 

@@ -1,6 +1,6 @@
 import type { RepositoryId } from '@sidelines/model'
-import { QRepoObjectContent, type QRepoObjectContentVars } from './gql.ts'
 import queryGraphqlApi from '../../queryGraphqlApi.ts'
+import { QRepoObjectContent, type QRepoObjectContentVars } from './gql.ts'
 
 // cat of file at a given path in a repository
 export default async function queryRepoObjectContent(

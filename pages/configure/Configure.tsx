@@ -8,8 +8,8 @@ import { expectGhLogin, expectGhToken } from '@sidelines/pageload/session'
 import { onDomInteractive } from '@sidelines/pageload/ready'
 import { useEffect, useState, type FC } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MakeSidelinesRepo } from './MakeSidelinesRepo.tsx'
 import { getAppInstallationConfigureUrl, getAppUrl, logout } from '../nav.ts'
+import { MakeSidelinesRepo } from './MakeSidelinesRepo.tsx'
 
 // todo hard-coded value should be a build env variable or globalThis
 const GH_APP_ID = location.host === 'sidelines.dev' ? 1166711 : 1144785
@@ -28,7 +28,6 @@ interface ConfigurePageProps {
     ghLogin: string
 }
 
-// todo check that the repo is private!
 // todo provide alternatives to repositorySelection === all
 //  `gh repo create --template eighty4/.sidelines.template` with .sidelines as an installed repository
 const Configure: FC<ConfigurePageProps> = ({ ghToken, ghLogin }) => {

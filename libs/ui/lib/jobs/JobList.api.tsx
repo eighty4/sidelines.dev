@@ -1,4 +1,3 @@
-import { useEffect, useState, type FC } from 'react'
 import type {
     ChannelDataSubscription,
     DataCallback,
@@ -6,6 +5,7 @@ import type {
     RepoJobId,
     RepoJobSpec,
 } from '@sidelines/model'
+import { useEffect, useState, type FC } from 'react'
 import styles from './JobList.module.css'
 
 // todo availableJobs will be async when jobs are resolved dynamically

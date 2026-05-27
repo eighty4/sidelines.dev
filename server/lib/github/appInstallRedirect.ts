@@ -1,5 +1,5 @@
-import { createLoginAndRedirectHandler } from './authExchangeRedirect.ts'
 import type { ServerEnv } from '../routes.ts'
+import { createLoginAndRedirectHandler } from './authExchangeRedirect.ts'
 
 export function createAppInstallRedirectRoute(env: ServerEnv) {
     const loginAndRedirect = createLoginAndRedirectHandler(env)

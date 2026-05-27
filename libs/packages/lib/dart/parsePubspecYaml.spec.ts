@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { BranchRef, RepositoryId } from '@sidelines/model'
-import { parsePubspecYaml } from './parsePubspecYaml.ts'
 import { TestDataProvider } from '../_testFindPackages.ts'
 import { FindPackagesApi } from '../findPackagesApi.ts'
+import { parsePubspecYaml } from './parsePubspecYaml.ts'
 
 const repo: RepositoryId = { owner: 'eighty4', name: 'picking.pl' }
 

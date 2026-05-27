@@ -1,4 +1,5 @@
 import type { RepositoryId } from '@sidelines/model'
+import { isFetchFailed, Unavailable } from '@sidelines/model/errors'
 import {
     queryViewerRepoUserContext,
     type ViewerRepoUserContext,
@@ -8,7 +9,6 @@ import {
     idbGetRecord,
     idbPutRecord,
 } from '../database.ts'
-import { isFetchFailed, Unavailable } from '@sidelines/model/errors'
 import { ghLoginToSession } from '../caches/ghLogin.ts'
 
 // todo candidate for `@sidelines/model`?

@@ -6,10 +6,10 @@ import type {
     QRepoMultipleObjectContentsVars,
     QViewerRepoUserContextGraph,
 } from '@sidelines/github/GRAPHS'
+import type { QViewerRepoUserContextVars } from '../libs/github/lib/repository/gql.ts'
+import { indexedDBStateFrom } from './indexedDBState.ts'
 import { login, userStoryWithSidelinesRepo } from './login.ts'
 import screenshotOnFailure from './screenshotOnFailure.ts'
-import { indexedDBStateFrom } from './indexedDBState.ts'
-import type { QViewerRepoUserContextVars } from '../libs/github/lib/repository/gql.ts'
 
 test.afterEach(screenshotOnFailure)
 

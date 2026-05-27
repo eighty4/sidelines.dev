@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { BranchRef, RepositoryId } from '@sidelines/model'
+import { TestDataProvider } from '../_testFindPackages.ts'
+import { FindPackagesApi } from '../findPackagesApi.ts'
 import {
     parseCargoToml,
     parsePackageInCargoToml,
     parseWorkspaceInCargoToml,
 } from './parseCargoToml.ts'
-import { TestDataProvider } from '../_testFindPackages.ts'
-import { FindPackagesApi } from '../findPackagesApi.ts'
 
 const repo = { name: 'maestro' } as RepositoryId
 const branchRef = { headOid: 'abcdefg' } as BranchRef

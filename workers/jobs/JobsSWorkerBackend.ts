@@ -1,16 +1,16 @@
+import { createRepoJobRecord } from '@sidelines/data/indexeddb/tx/jobLog'
+import type { RepoJobId } from '@sidelines/model'
 import { ulid } from 'ulid'
+import {
+    SharedWorkerSideWorkerLauncher,
+    type WorkerLaunchId,
+} from '../WorkerLaunch.ts'
 import {
     createChannel,
     type JobApiRequest,
     type JobListingUpdate,
 } from './jobMessaging.ts'
-import {
-    SharedWorkerSideWorkerLauncher,
-    type WorkerLaunchId,
-} from '../WorkerLaunch.ts'
 import type { ExecJobWorkerRequest } from './ExecJobWorker.ts'
-import { createRepoJobRecord } from '@sidelines/data/indexeddb/tx/jobLog'
-import type { RepoJobId } from '@sidelines/model'
 
 function workerLaunchId(jobId: RepoJobId): WorkerLaunchId {
     switch (jobId) {

@@ -1,8 +1,8 @@
 import type { RepositoryObject } from '@sidelines/model'
-import { sortRepoObjects } from './_sort.ts'
-import { QViewerRepoDirContent, type QViewerRepoDirContentVars } from './gql.ts'
 import type { QViewerRepoDirContentGraph } from '../../graphs.ts'
 import queryGraphqlApi from '../../queryGraphqlApi.ts'
+import { sortRepoObjects } from './_sort.ts'
+import { QViewerRepoDirContent, type QViewerRepoDirContentVars } from './gql.ts'
 
 // repo obj query where obj expr is expected to return a tree
 // and retrieves text of blob entries at that path

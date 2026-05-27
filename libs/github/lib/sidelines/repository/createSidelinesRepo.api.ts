@@ -1,9 +1,9 @@
 import type { BranchRef, RepositoryId } from '@sidelines/model'
+import { RepoNotFound, Timeout } from '@sidelines/model/errors'
 import { createCommitOnBranch } from '../../repository/mutationCreateCommitOnBranch.api.ts'
 import queryViewerRepoDefaultBranch from '../../repository/queryViewerRepoDefaultBranch.api.ts'
 import restPostForJson from '../../restPostForJson.ts'
 import restPostForResponse from '../../restPostForResponse.ts'
-import { RepoNotFound, Timeout } from '@sidelines/model/errors'
 
 // graphql mutation createCommitOnBranch requires a pre-existing ref
 // so we use a template repo to seed a commit at refs/head/main

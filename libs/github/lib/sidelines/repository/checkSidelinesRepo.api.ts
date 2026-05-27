@@ -1,6 +1,6 @@
-import { QCheckSidelinesRepo } from './gql.ts'
-import queryGraphqlApi from '../../queryGraphqlApi.ts'
 import type { QCheckSidelinesRepoGraph } from '../../graphs.ts'
+import queryGraphqlApi from '../../queryGraphqlApi.ts'
+import { QCheckSidelinesRepo } from './gql.ts'
 
 export type SidelinesRepoProblem = 'bad-url' | 'not-private'
 

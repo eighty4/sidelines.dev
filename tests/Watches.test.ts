@@ -1,13 +1,13 @@
 import { basename, dirname } from 'node:path/posix'
 import { expect, type Page, test } from '@playwright/test'
-import type { RepositoryId } from '@sidelines/model'
-import { login, userStoryWithSidelinesRepo } from './login.ts'
-import screenshotOnFailure from './screenshotOnFailure.ts'
-import { UserStory } from './github/UserStory.ts'
 import type {
     QRepoObjectGraph,
     QRepoObjectVars,
 } from '@sidelines/github/GRAPHS'
+import type { RepositoryId } from '@sidelines/model'
+import { login, userStoryWithSidelinesRepo } from './login.ts'
+import screenshotOnFailure from './screenshotOnFailure.ts'
+import { UserStory } from './github/UserStory.ts'
 
 test.afterEach(screenshotOnFailure)
 

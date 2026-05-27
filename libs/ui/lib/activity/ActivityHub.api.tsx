@@ -1,4 +1,3 @@
-import { type FC, useEffect, useMemo, useState } from 'react'
 import {
     rateLimitStateFromSession,
     rateLimitStateToSession,
@@ -8,6 +7,7 @@ import {
     type RateLimitUpdate,
     subscribeToGitHubRateLimits,
 } from '@sidelines/github/rateLimits'
+import { type FC, useEffect, useMemo, useState } from 'react'
 import styles from './ActivityHub.module.css'
 
 // todo notifications

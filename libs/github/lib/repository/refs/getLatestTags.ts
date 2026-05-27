@@ -1,7 +1,7 @@
 import type { RepositoryId } from '@sidelines/model'
-import { QRepoLatestTags, type QRepoLatestTagsVars } from './gql.ts'
 import queryGraphqlApi from '../../queryGraphqlApi.ts'
 import { NotFoundError } from '../../responses.ts'
+import { QRepoLatestTags, type QRepoLatestTagsVars } from './gql.ts'
 
 export async function getLatestTags(
     ghToken: string,

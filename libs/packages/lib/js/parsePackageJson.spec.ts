@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { BranchRef, RepositoryId } from '@sidelines/model'
-import { parsePackageJson } from './parsePackageJson.ts'
 import { TestDataProvider } from '../_testFindPackages.ts'
 import { FindPackagesApi } from '../findPackagesApi.ts'
+import { parsePackageJson } from './parsePackageJson.ts'
 
 const repo: RepositoryId = { owner: '', name: '' }
 const branchRef: BranchRef = {
