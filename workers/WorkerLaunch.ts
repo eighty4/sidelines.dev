@@ -1,9 +1,6 @@
 import { isMessageObject } from './messaging.ts'
 
-export type WorkerLaunchId =
-    | 'JOB_upgradeWorkflowActions'
-    | 'SYNC_packages'
-    | 'SYNC_watches'
+export type WorkerLaunchId = 'JOB_upgradeWorkflowActions'
 
 function createWorkerFromLaunchId(workerId: WorkerLaunchId): Worker {
     switch (workerId) {
@@ -12,14 +9,6 @@ function createWorkerFromLaunchId(workerId: WorkerLaunchId): Worker {
                 './jobs/forEachViewerOwnedRepo/UpgradeWorkflowActions.ts',
                 { name: 'Sidelines.dev - upgrade GitHub workflow actions' },
             )
-        case 'SYNC_packages':
-            return new Worker('./syncing/SyncPackagesDWorker.ts', {
-                name: 'Sidelines.dev - sync packages',
-            })
-        case 'SYNC_watches':
-            return new Worker('./syncing/SyncWatchesDWorker.ts', {
-                name: 'Sidelines.dev - sync watches',
-            })
     }
 }
 

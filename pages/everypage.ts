@@ -1,7 +1,6 @@
 import { ghTokenFromCookie } from '@sidelines/data/cookie'
 // import { onLoadComplete } from '@sidelines/pageload/ready'
 import startJobSchedulingWorker from '../workers/jobs/startJobsSWorker.ts'
-import startSyncRefsWorker from '../workers/syncing/startSyncRefsSWorker.ts'
 import { PageSideWorkerLauncher } from '../workers/WorkerLaunch.ts'
 
 if (dank.IS_DEV) {
@@ -47,7 +46,6 @@ function registerSharedWorkers() {
     const workerLauncher = new PageSideWorkerLauncher()
     window.addEventListener('beforeunload', () => workerLauncher.shutdown())
     startJobSchedulingWorker(ghToken)
-    startSyncRefsWorker(ghToken)
 }
 
 // recent chrome versions do not HTTP cache service workers
