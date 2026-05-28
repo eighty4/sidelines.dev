@@ -1,10 +1,14 @@
 import queryRepoDefaultBranch from '@sidelines/github/repository/queryRepoDefaultBranch'
-import type { BranchRef, RepositoryId } from '@sidelines/model'
+import type {
+    BranchRef,
+    RepoNameWithOwner,
+    RepositoryId,
+} from '@sidelines/model'
 import { RefNotFound, RepoNotFound } from '@sidelines/model/errors'
 import { connectToDb, DB_STORE_REPO_HEADS } from '../database.ts'
 
 type HeadRecord = {
-    nameWithOwner: string
+    nameWithOwner: RepoNameWithOwner
     defaultBranch: BranchRef
 }
 
@@ -15,7 +19,7 @@ export async function readRepoHead(
     ghToken: string,
     repo: RepositoryId,
 ): Promise<BranchRef | typeof RefNotFound | typeof RepoNotFound> {
-    const nameWithOwner = `${repo.owner}/${repo.name}`
+    const nameWithOwner: RepoNameWithOwner = `${repo.owner}/${repo.name}`
     try {
         const queried = await queryRepoDefaultBranch(ghToken, repo)
         console.log(LOG_LABEL, 'query', queried)
@@ -37,7 +41,9 @@ export async function readRepoHead(
     }
 }
 
-async function readFromDb(nameWithOwner: string): Promise<BranchRef | null> {
+async function readFromDb(
+    nameWithOwner: RepoNameWithOwner,
+): Promise<BranchRef | null> {
     const db = await connectToDb()
     return new Promise((res, rej) => {
         const tx = db.transaction(DB_STORE_REPO_HEADS, 'readonly')
@@ -55,7 +61,7 @@ async function readFromDb(nameWithOwner: string): Promise<BranchRef | null> {
 }
 
 async function writeToDb(
-    nameWithOwner: string,
+    nameWithOwner: RepoNameWithOwner,
     defaultBranch: BranchRef,
 ): Promise<void> {
     const db = await connectToDb()

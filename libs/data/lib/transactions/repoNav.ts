@@ -1,4 +1,4 @@
-import type { RepositoryId } from '@sidelines/model'
+import type { RepoNameWithOwner, RepositoryId } from '@sidelines/model'
 import {
     connectToDb,
     DB_INDEX_REPO_NAV_WHEN,
@@ -10,7 +10,7 @@ const LIMIT_NAV = 5
 
 // DB_STORE_REPO_NAV
 type NavRecord = {
-    nameWithOwner: string
+    nameWithOwner: RepoNameWithOwner
     repo: RepositoryId
     when: Date
 }

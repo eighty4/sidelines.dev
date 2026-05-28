@@ -1,4 +1,8 @@
-import type { RepoDefaultBranch, RepositoryId } from '@sidelines/model'
+import type {
+    RepoDefaultBranch,
+    RepoNameWithOwner,
+    RepositoryId,
+} from '@sidelines/model'
 import queryGraphqlApi from '../queryGraphqlApi.ts'
 
 export async function queryMultipleRepoHeadOids(
@@ -26,7 +30,7 @@ export async function queryMultipleRepoHeadOids(
 
     // collect results by nameWithOwner to dedupe explicit repos
     // that get picked up by OWNER or COLLABORATOR
-    const result: Record<string, RepoDefaultBranch> = {}
+    const result: Record<RepoNameWithOwner, RepoDefaultBranch> = {}
 
     // collect explicit repos from their `r0..` aliased node
     for (let i = 0; i < repos.length; i++) {
@@ -42,7 +46,7 @@ export async function queryMultipleRepoHeadOids(
 
     // collect OWNER and COLLABORATOR repos
     repositories.nodes.forEach((repo: RepoPath & RepoDefaultBranchHeadOid) => {
-        const nameWithOwner = `${repo.owner.login}/${repo.name}`
+        const nameWithOwner: RepoNameWithOwner = `${repo.owner.login}/${repo.name}`
         if (!result[nameWithOwner]) {
             result[nameWithOwner] = mapRepoDefaultBranch(
                 { owner: repo.owner.login, name: repo.name },

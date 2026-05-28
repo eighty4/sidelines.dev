@@ -2,6 +2,7 @@ import type {
     RepoCommitAddition,
     RepoCommitInputs,
     RepoCommitReview,
+    RepoNameWithOwner,
     RepositoryId,
 } from '@sidelines/model'
 import { ulid } from 'ulid'
@@ -11,7 +12,7 @@ import { opfsLookupDir, opfsWriteFile } from '../opfs.ts'
 // DB_STORE_COMMIT_REVIEW
 type CommitReviewRecord = {
     reviewId: string
-    nameWithOwner: string
+    nameWithOwner: RepoNameWithOwner
     additions?: Array<Omit<RepoCommitAddition, 'content'>>
 } & Pick<RepoCommitInputs, 'branch' | 'commitMessage' | 'deletions'>
 

@@ -1,4 +1,4 @@
-import type { RepositoryId } from '@sidelines/model'
+import type { RepoNameWithOwner, RepositoryId } from '@sidelines/model'
 import { isFetchFailed, Unavailable } from '@sidelines/model/errors'
 import {
     queryViewerRepoUserContext,
@@ -16,7 +16,7 @@ export type { ViewerRepoUserContext } from '@sidelines/github/repository/queryVi
 
 // DB_STORE_REPO_CONTEXT
 type RepoContextRecord = {
-    nameWithOwner: string
+    nameWithOwner: RepoNameWithOwner
     userContext: ViewerRepoUserContext
 }
 
@@ -27,7 +27,7 @@ export async function resolveRepoUserContext(
     ghToken: string,
     repo: RepositoryId,
 ): Promise<ViewerRepoUserContext | typeof Unavailable> {
-    const nameWithOwner = `${repo.owner}/${repo.name}`
+    const nameWithOwner: RepoNameWithOwner = `${repo.owner}/${repo.name}`
     let fromApi: ViewerRepoUserContext | null = null
     try {
         fromApi = await queryViewerRepoUserContext(ghToken, repo)

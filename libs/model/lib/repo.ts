@@ -1,3 +1,5 @@
+export type RepoNameWithOwner = `${string}/${string}`
+
 export type Repository = {
     owner: string
     name: string

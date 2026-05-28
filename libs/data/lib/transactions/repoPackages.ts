@@ -1,5 +1,6 @@
 import type {
     BranchRef,
+    RepoNameWithOwner,
     RepositoryId,
     RepositoryPackage,
 } from '@sidelines/model'
@@ -14,7 +15,7 @@ import { readRepoHead } from './repoHeads.ts'
 
 // DB_STORE_REPO_PACKAGES
 type PackagesRecord = {
-    nameWithOwner: string
+    nameWithOwner: RepoNameWithOwner
     defaultBranch: string
     headOid: string
     committedWhen: Date
@@ -37,7 +38,7 @@ export async function readRepoPackages(
         case RepoNotFound:
             return defaultBranch
     }
-    const nameWithOwner = `${repo.owner}/${repo.name}`
+    const nameWithOwner: RepoNameWithOwner = `${repo.owner}/${repo.name}`
     const fromDb = await readFromDb(nameWithOwner, defaultBranch)
     console.log(LOG_LABEL, 'read from db', fromDb)
     if (fromDb) {
@@ -53,7 +54,7 @@ export async function readRepoPackages(
 }
 
 async function readFromDb(
-    nameWithOwner: string,
+    nameWithOwner: RepoNameWithOwner,
     defaultBranch: BranchRef,
 ): Promise<Array<RepositoryPackage> | null> {
     const record = await idbGetRecord<PackagesRecord>(DB_STORE_REPO_PACKAGES, [
@@ -65,7 +66,7 @@ async function readFromDb(
 }
 
 async function writeToDb(
-    nameWithOwner: string,
+    nameWithOwner: RepoNameWithOwner,
     defaultBranch: BranchRef,
     packages: Array<RepositoryPackage>,
 ): Promise<void> {

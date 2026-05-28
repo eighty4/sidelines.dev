@@ -1,5 +1,6 @@
 import type {
     RepoDefaultBranch,
+    RepoNameWithOwner,
     SyncedRepoDefaultBranch,
 } from '@sidelines/model'
 import {
@@ -11,7 +12,7 @@ import {
 
 // DB_STORE_REPO_HEADS
 type RepoHeadRecord = {
-    nameWithOwner: string
+    nameWithOwner: RepoNameWithOwner
     defaultBranch: string
     sha: string
 }
@@ -19,7 +20,7 @@ type RepoHeadRecord = {
 // DB_STORE_REPO_SYNCING
 type SyncTasksRecord = {
     when: Date
-    nameWithOwner: string
+    nameWithOwner: RepoNameWithOwner
     tasks: Record<SyncTask, boolean>
 }
 
@@ -109,7 +110,7 @@ export function syncRefs(
                     { repo, defaultBranch },
                 ] of Object.entries(reposToRefs)) {
                     const record: RepoHeadRecord = {
-                        nameWithOwner,
+                        nameWithOwner: nameWithOwner as RepoNameWithOwner,
                         defaultBranch: defaultBranch.name,
                         sha: defaultBranch.headOid,
                     }

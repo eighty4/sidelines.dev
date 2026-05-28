@@ -1,4 +1,8 @@
-import type { RepositoryId, RepoWatches } from '@sidelines/model'
+import type {
+    RepoNameWithOwner,
+    RepositoryId,
+    RepoWatches,
+} from '@sidelines/model'
 import {
     connectToDb,
     DB_INDEX_READ_WATCHES_REPO,
@@ -9,7 +13,7 @@ import {
 
 // DB_STORE_READ_WATCHES
 type WatchRecord = {
-    nameWithOwner: string
+    nameWithOwner: RepoNameWithOwner
     path: string
     repo: RepositoryId
 }
