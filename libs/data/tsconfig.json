@@ -10,6 +10,7 @@
   "exclude": ["node_modules"],
   "references": [
     { "path": "../github/tsconfig.lib.json" },
+    { "path": "../jobs" },
     { "path": "../model/tsconfig.lib.json" },
     { "path": "../packages/tsconfig.lib.json" }
   ]

@@ -26,6 +26,7 @@ export type RepoJobExecStatus =
           state: 'error'
           when: Date
           error: string
+          message: string
           stack: string
       }
     | {

@@ -1,3 +1,4 @@
+import type { ExecRepoJobMessage } from '@sidelines/jobs/messaging'
 import type {
     RepositoryId,
     RepoJobExecStatus,
@@ -20,6 +21,7 @@ type JobLogRecord = {
       }
     | {
           kind: 'repo'
+          target: ExecRepoJobMessage['target']
           repos: Record<RepoNameWithOwner, RepoJobExecStatus>
       }
     | {
@@ -28,40 +30,23 @@ type JobLogRecord = {
       }
 )
 
-export async function createJobLogRecord(
+export async function createRepoJobLog(
     jobId: RepoJobId,
     jobExecId: string,
-    kind: JobLogRecord['kind'],
+    target: ExecRepoJobMessage['target'],
 ): Promise<void> {
-    await idbAddRecord<JobLogRecord>(
-        DB_STORE_JOB_LOG,
-        createRecord(jobId, jobExecId, kind),
-    )
+    await createJobLog({
+        jobId,
+        jobExecId,
+        kind: 'repo',
+        target,
+        whenInit: new Date(),
+        repos: {},
+    })
 }
 
-function createRecord(
-    jobId: RepoJobId,
-    jobExecId: string,
-    kind: JobLogRecord['kind'],
-) {
-    switch (kind) {
-        case 'schedule':
-            return {
-                jobId,
-                jobExecId,
-                whenInit: new Date(),
-                kind,
-            }
-        case 'refs':
-        case 'repo':
-            return {
-                jobId,
-                jobExecId,
-                whenInit: new Date(),
-                kind,
-                repos: {},
-            }
-    }
+async function createJobLog(record: JobLogRecord) {
+    await idbAddRecord<JobLogRecord>(DB_STORE_JOB_LOG, record)
 }
 
 // returns array of `jobExecId` that match certain criteria for `whenDone` and `whenLastActivity`

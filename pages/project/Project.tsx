@@ -73,7 +73,7 @@ const ProjectPage: FC<ProjectPageProps> = ({ repo, jobApi, userData }) => {
                 <h2>Run a job:</h2>
                 <JobList
                     availableJobs={JobApiClient.availableJobs()}
-                    execJob={(jobId, cb) => jobApi.exec(jobId, cb)}
+                    execJob={(jobId, cb) => jobApi.exec(jobId, cb, repo)}
                 />
             </div>
             <div id={styles.sidelines}>

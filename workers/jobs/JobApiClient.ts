@@ -4,6 +4,7 @@ import {
     type RepoJobExecUpdate,
     type RepoJobId,
     type RepoJobSpec,
+    type RepositoryId,
 } from '@sidelines/model'
 import {
     createJobApiChannel,
@@ -33,6 +34,7 @@ export default class JobApiClient {
     exec(
         jobId: RepoJobId,
         cb: DataCallback<RepoJobExecUpdate>,
+        repo?: RepositoryId,
     ): ChannelDataSubscription<RepoJobExecUpdate> {
         const channelId = crypto.randomUUID()
         const channel = createJobApiChannel('EXEC', channelId)
@@ -40,6 +42,7 @@ export default class JobApiClient {
             kind: 'EXEC',
             channelId,
             jobId: jobId,
+            repo,
         } satisfies JobApiRequest)
         return new ChannelDataSubscription(channel, cb)
     }

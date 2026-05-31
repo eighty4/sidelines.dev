@@ -11,7 +11,7 @@ declare const self: DedicatedWorkerGlobalScope
 //     .replace(/^\/workers\/jobs\//, '')
 //     .replace(/\.js$/, '')
 
-let updateChannel: BroadcastChannel
+const updateChannel = createJobUpdateChannel()
 
 function postUpdate(update: JobWorkerUpdateMessage) {
     updateChannel.postMessage(update)
@@ -27,7 +27,21 @@ export type RepoJobExec = {
 export function registerRepoJob(exec: RepoJobExec): void {
     self.onmessage = async (e: MessageEvent<unknown>) => {
         if (isExecRepoJobMessage(e.data)) {
-            await execJob(e.data.ghToken, e.data.jobExecId, exec)
+            const { ghToken, jobExecId } = e.data
+            switch (e.data.target.repos) {
+                case 'single':
+                    await execJobForRepo(
+                        ghToken,
+                        jobExecId,
+                        e.data.target.repo,
+                        exec,
+                    )
+                    break
+                case 'owner':
+                    const repos = await resolveJobRepos(ghToken, jobExecId)
+                    await execJobForRepos(ghToken, jobExecId, repos, exec)
+                    break
+            }
             postUpdate({
                 jobExecId: e.data.jobExecId,
                 jobKind: 'repo',
@@ -38,26 +52,34 @@ export function registerRepoJob(exec: RepoJobExec): void {
 }
 
 // todo use Promise.race to do concurrent batches
-async function execJob(
+async function execJobForRepos(
     ghToken: string,
     jobExecId: string,
+    repos: Array<RepositoryId>,
     exec: RepoJobExec,
 ): Promise<void> {
-    const repos = await resolveJobRepos(ghToken, jobExecId)
-    updateChannel = createJobUpdateChannel()
     for (const repo of repos) {
-        const status = await execJobForRepo(ghToken, repo, exec)
-        postUpdate({
-            kind: 'status',
-            jobKind: 'repo',
-            jobExecId,
-            repo,
-            status,
-        })
+        await execJobForRepo(ghToken, jobExecId, repo, exec)
     }
 }
 
 async function execJobForRepo(
+    ghToken: string,
+    jobExecId: string,
+    repo: RepositoryId,
+    exec: RepoJobExec,
+) {
+    const status = await execJobForRepoJobStatus(ghToken, repo, exec)
+    postUpdate({
+        kind: 'status',
+        jobKind: 'repo',
+        jobExecId,
+        repo,
+        status,
+    })
+}
+
+async function execJobForRepoJobStatus(
     ghToken: string,
     repo: RepositoryId,
     exec: RepoJobExec,
@@ -73,7 +95,8 @@ async function execJobForRepo(
         return {
             state: 'error',
             when: new Date(),
-            error: e.message,
+            error: e.constructor?.name ?? typeof e,
+            message: e.message,
             stack: e.stack,
         }
     }

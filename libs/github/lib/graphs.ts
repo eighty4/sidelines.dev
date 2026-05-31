@@ -155,6 +155,8 @@ export type QViewerRepoDirContentGraph = {
 
 /* QViewerRepoUserContext */
 
+export type { QViewerRepoUserContextVars } from './repository/gql.ts'
+
 // https://docs.github.com/en/graphql/reference/enums#repositorypermission
 export type RepoPermission = 'ADMIN' | 'MAINTAIN' | 'READ' | 'TRIAGE' | 'WRITE'
 

@@ -11,11 +11,12 @@ import { indexedDBStateFrom } from './indexedDBState.ts'
 import { login, userStoryWithSidelinesRepo } from './login.ts'
 import { readRepoCommitAddition } from './opfsState.ts'
 import screenshotOnFailure from './screenshotOnFailure.ts'
+import { userStoryProjectPage } from './project.ts'
 
 test.afterEach(screenshotOnFailure)
 
 test(
-    'creates commit with upgraded github action',
+    'on owned repos creates commit with upgraded github action',
     { tag: '@opfs' },
     async ({ baseURL, context, page }) => {
         await userStoryWithSidelinesRepo()
@@ -94,6 +95,107 @@ jobs:
             )
             .configureRoutes(page)
         await login(page)
+        const execButton = page.getByRole('button', { name: 'Exec' })
+        await expect(execButton).toBeVisible()
+        await execButton.click()
+        await expect(execButton).toBeDisabled()
+        const indexedDBState = await retryUntilCondition(
+            1000,
+            1000,
+            20000,
+            async () => {
+                const indexedDBState = await indexedDBStateFrom(
+                    baseURL!,
+                    context,
+                )
+                if (
+                    indexedDBState.records['job-log'].length === 1 &&
+                    indexedDBState.records['job-log'][0].whenDone instanceof
+                        Date
+                ) {
+                    return indexedDBState
+                }
+            },
+        )
+        expect(indexedDBState.records['commit-review'].length).toBe(1)
+        const commitReview = indexedDBState.records['commit-review'][0]
+        expect(commitReview.additions.length).toBe(1)
+        expect(commitReview.additions[0]).toStrictEqual({
+            dirpath: '.github/workflows',
+            filename: 'ci_verify.yml',
+        })
+        expect(
+            await readRepoCommitAddition(
+                page,
+                commitReview.reviewId,
+                { owner: 'eighty4', name: 'l3' },
+                commitReview.additions[0],
+            ),
+        ).toBe(
+            'on:\n  push:\njobs:\n  checkout-repo:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: echo "checked it out"\n',
+        )
+    },
+)
+
+test(
+    'on single repo creates commit with upgraded github action',
+    { tag: '@opfs' },
+    async ({ baseURL, context, page }) => {
+        await userStoryProjectPage()
+            .withGraphqlResponse(
+                'QViewerRepoDirContent',
+                {
+                    name: 'l3',
+                    objExpr: 'HEAD:.github/workflows',
+                } satisfies QViewerRepoDirContentVars,
+                {
+                    viewer: {
+                        repository: {
+                            object: {
+                                entries: [
+                                    {
+                                        name: 'ci_verify.yml',
+                                        object: {
+                                            byteSize: 1234,
+                                            text: `\
+on:
+  push:
+jobs:
+  checkout-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: echo "checked it out"
+`,
+                                        },
+                                        type: 'blob',
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                } satisfies QViewerRepoDirContentGraph,
+            )
+            .withGraphqlResponse(
+                'QMultipleReposLatestTags',
+                { tags: 10 } satisfies QMultipleReposLatestTagsVars,
+                {
+                    repo0: {
+                        refs: {
+                            edges: [
+                                {
+                                    node: {
+                                        name: 'v4',
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                } satisfies QMultipleReposLatestTagsGraph,
+            )
+            .configureRoutes(page)
+        await login(page)
+        await page.goto('eighty4/l3')
         const execButton = page.getByRole('button', { name: 'Exec' })
         await expect(execButton).toBeVisible()
         await execButton.click()

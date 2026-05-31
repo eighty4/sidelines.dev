@@ -1,4 +1,4 @@
-import { isMessageObject } from '@sidelines/model'
+import { isMessageObject, type RepositoryId } from '@sidelines/model'
 
 export type ExecJobMessage = {
     kind: 'EXEC'
@@ -6,7 +6,16 @@ export type ExecJobMessage = {
     jobExecId: string
 }
 
-export type ExecRepoJobMessage = ExecJobMessage & {}
+export type ExecRepoJobMessage = ExecJobMessage & {
+    target:
+        | {
+              repos: 'single'
+              repo: RepositoryId
+          }
+        | {
+              repos: 'owner'
+          }
+}
 
 export type ExecSyncedRefsJobMessage = ExecJobMessage & {}
 
@@ -16,7 +25,12 @@ function isExecJobMessage(data: unknown): data is ExecJobMessage {
     }
     switch (data.kind) {
         case 'EXEC':
-            return true
+            return (
+                'ghToken' in data &&
+                typeof data.ghToken === 'string' &&
+                'jobExecId' in data &&
+                typeof data.jobExecId === 'string'
+            )
         default:
             console.warn('ExecJobMessage invalid', data.kind)
             return false

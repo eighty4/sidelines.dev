@@ -73,7 +73,7 @@ async function onJobExecRequest(request: JobApiRequest) {
     }
     switch (request.kind) {
         case 'EXEC':
-            backend.exec(request.channelId, request.jobId)
+            backend.exec(request.channelId, request.jobId, request.repo)
             break
         case 'LS':
             backend.ls(request.channelId)

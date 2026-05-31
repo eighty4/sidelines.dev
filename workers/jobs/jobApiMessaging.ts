@@ -1,4 +1,4 @@
-import type { RepoJobId } from '@sidelines/model'
+import type { RepoJobId, RepositoryId } from '@sidelines/model'
 
 // initializing shared worker message posted from startJobsSWorker to initialize JobsSWorker
 export type JobSchedulingRequest = {
@@ -17,6 +17,7 @@ export type JobApiRequest =
           kind: 'EXEC'
           jobId: RepoJobId
           channelId: string
+          repo?: RepositoryId
       }
 
 // LS operation updates posted to client's channel

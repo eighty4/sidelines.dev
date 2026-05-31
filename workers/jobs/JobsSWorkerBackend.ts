@@ -1,5 +1,5 @@
 import {
-    createJobLogRecord,
+    createRepoJobLog,
     markJobDone,
     markRepoJobStatus,
 } from '@sidelines/data/tx/jobLog'
@@ -8,7 +8,7 @@ import {
     isJobWorkerUpdateMessage,
     type ExecRepoJobMessage,
 } from '@sidelines/jobs/messaging'
-import type { RepoJobId } from '@sidelines/model'
+import type { RepoJobId, RepositoryId } from '@sidelines/model'
 import { ulid } from 'ulid'
 import {
     SharedWorkerSideWorkerLauncher,
@@ -42,17 +42,20 @@ export default class JobsBackend {
         this.#updates.onmessage = this.#onJobUpdate
     }
 
-    exec(channelId: string, jobId: RepoJobId) {
+    exec(channelId: string, jobId: RepoJobId, repo?: RepositoryId) {
         console.log('job exec request')
         this.#createChannel('EXEC', channelId)
-        // todo create a record of job in database
         const jobExecId = ulid()
-        createJobLogRecord(jobId, jobExecId, 'repo')
+        const target: ExecRepoJobMessage['target'] = repo
+            ? { repos: 'single', repo }
+            : { repos: 'owner' }
+        createRepoJobLog(jobId, jobExecId, target)
             .then(() => {
                 this.#launcher.request(workerLaunchId(jobId), {
                     kind: 'EXEC',
                     ghToken: this.#ghToken,
                     jobExecId,
+                    target,
                 } satisfies ExecRepoJobMessage)
             })
             .catch((e: unknown) => {

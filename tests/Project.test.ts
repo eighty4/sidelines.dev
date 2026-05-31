@@ -1,15 +1,8 @@
 import { expect, test } from '@playwright/test'
-import type {
-    QRepoDefaultBranchGraph,
-    QRepoDefaultBranchVars,
-    QRepoMultipleObjectContentsGraph,
-    QRepoMultipleObjectContentsVars,
-    QViewerRepoUserContextGraph,
-} from '@sidelines/github/GRAPHS'
-import type { QViewerRepoUserContextVars } from '../libs/github/lib/repository/gql.ts'
 import { indexedDBStateFrom } from './indexedDBState.ts'
-import { login, userStoryWithSidelinesRepo } from './login.ts'
+import { login } from './login.ts'
 import screenshotOnFailure from './screenshotOnFailure.ts'
+import { userStoryProjectPage } from './project.ts'
 
 test.afterEach(screenshotOnFailure)
 
@@ -29,60 +22,19 @@ test.describe('showing package data', () => {
         page,
     }) => {
         const committedDate = new Date()
-        await userStoryWithSidelinesRepo()
-            .withGraphqlResponse(
-                'QViewerRepoUserContext',
-                {
-                    owner: 'eighty4',
-                    name: 'l3',
-                } satisfies QViewerRepoUserContextVars,
-                {
-                    viewer: {
-                        login: 'eighty4',
-                    },
-                    repository: {
-                        viewerPermission: 'ADMIN',
-                    },
-                } satisfies QViewerRepoUserContextGraph,
-            )
-            .withGraphqlResponse(
-                'QRepoDefaultBranch',
-                {
-                    owner: 'eighty4',
-                    name: 'l3',
-                } satisfies QRepoDefaultBranchVars,
-                {
-                    repository: {
-                        defaultBranchRef: {
-                            name: 'main',
-                            target: {
-                                history: {
-                                    edges: [
-                                        {
-                                            node: {
-                                                committedDate:
-                                                    committedDate.toISOString(),
-                                                oid: 'abcabc12',
-                                            },
-                                        },
-                                    ],
-                                },
-                            },
-                        },
-                    },
-                } satisfies QRepoDefaultBranchGraph,
-            )
-            .withGraphqlResponse(
-                'QRepoMultipleObjectContents',
-                {
-                    owner: 'eighty4',
-                    name: 'l3',
-                } satisfies QRepoMultipleObjectContentsVars,
-                createQRepoMultipleObjectContentsGraph({
-                    'Cargo.toml': `[package]\nname = "l3_cli"\nversion = "0.0.1"`,
-                }) satisfies QRepoMultipleObjectContentsGraph,
-            )
-            .configureRoutes(page)
+        await userStoryProjectPage({
+            login: 'eighty4',
+            repo: {
+                owner: 'eighty4',
+                name: 'l3',
+            },
+            defaultBranch: {
+                committedDate,
+            },
+            packageHintContents: {
+                'Cargo.toml': `[package]\nname = "l3_cli"\nversion = "0.0.1"`,
+            },
+        }).configureRoutes(page)
         await login(page)
         await page.goto('/eighty4/l3')
         await expect(page.getByRole('button', { name: 'Exec' })).toBeVisible()
@@ -110,60 +62,19 @@ test.describe('showing package data', () => {
     })
     test('offline retrieves from indexeddb cache', async ({ page }) => {
         const committedDate = new Date()
-        await userStoryWithSidelinesRepo()
-            .withGraphqlResponse(
-                'QViewerRepoUserContext',
-                {
-                    owner: 'eighty4',
-                    name: 'l3',
-                } satisfies QViewerRepoUserContextVars,
-                {
-                    viewer: {
-                        login: 'eighty4',
-                    },
-                    repository: {
-                        viewerPermission: 'ADMIN',
-                    },
-                } satisfies QViewerRepoUserContextGraph,
-            )
-            .withGraphqlResponse(
-                'QRepoDefaultBranch',
-                {
-                    owner: 'eighty4',
-                    name: 'l3',
-                } satisfies QRepoDefaultBranchVars,
-                {
-                    repository: {
-                        defaultBranchRef: {
-                            name: 'main',
-                            target: {
-                                history: {
-                                    edges: [
-                                        {
-                                            node: {
-                                                committedDate:
-                                                    committedDate.toISOString(),
-                                                oid: 'abcabc12',
-                                            },
-                                        },
-                                    ],
-                                },
-                            },
-                        },
-                    },
-                } satisfies QRepoDefaultBranchGraph,
-            )
-            .withGraphqlResponse(
-                'QRepoMultipleObjectContents',
-                {
-                    owner: 'eighty4',
-                    name: 'l3',
-                } satisfies QRepoMultipleObjectContentsVars,
-                createQRepoMultipleObjectContentsGraph({
-                    'Cargo.toml': `[package]\nname = "l3_cli"\nversion = "0.0.1"`,
-                }) satisfies QRepoMultipleObjectContentsGraph,
-            )
-            .configureRoutes(page)
+        await userStoryProjectPage({
+            login: 'eighty4',
+            repo: {
+                owner: 'eighty4',
+                name: 'l3',
+            },
+            defaultBranch: {
+                committedDate,
+            },
+            packageHintContents: {
+                'Cargo.toml': `[package]\nname = "l3_cli"\nversion = "0.0.1"`,
+            },
+        }).configureRoutes(page)
         await login(page)
         await page.goto('/eighty4/l3')
         await expect(page.getByRole('button', { name: 'Exec' })).toBeVisible()
@@ -178,28 +89,3 @@ test.describe('showing package data', () => {
         await expect(page.getByText('l3_cli')).toBeVisible()
     })
 })
-
-const PACKAGE_HINTS = [
-    'pubspec.yaml',
-    'go.mod',
-    'package.json',
-    'Cargo.toml',
-    'build.zig',
-    'build.zig.zon',
-    'pnpm-workspace.yaml',
-] as const
-
-type PackageHint = (typeof PACKAGE_HINTS)[number]
-
-function createQRepoMultipleObjectContentsGraph(
-    contents: Partial<Record<PackageHint, string>>,
-): QRepoMultipleObjectContentsGraph {
-    return {
-        repository: Object.fromEntries(
-            PACKAGE_HINTS.map((filename, i) => [
-                `obj${i}`,
-                contents[filename] ? { text: contents[filename] } : null,
-            ]),
-        ),
-    }
-}
