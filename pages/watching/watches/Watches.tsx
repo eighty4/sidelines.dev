@@ -1,6 +1,6 @@
-import { ghTokenFromCookie } from '@sidelines/data/cookie'
 import type { RepoWatches } from '@sidelines/model'
 import { onDomInteractive } from '@sidelines/pageload/ready'
+import { lookupGhToken } from '@sidelines/pageload/session'
 import { type FC, useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { WatchesApi } from '../../../workers/watches/WatchesApi.ts'
@@ -98,7 +98,7 @@ const Watches: FC<WatchesProps> = ({ ghToken }) => {
 }
 
 onDomInteractive(() => {
-    const ghToken = ghTokenFromCookie(document.cookie)
+    const ghToken = lookupGhToken()
     if (ghToken === null) {
         location.assign('/logout')
     } else {

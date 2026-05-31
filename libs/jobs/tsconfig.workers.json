@@ -1,0 +1,16 @@
+{
+  "extends": ["../../tsconfig.common.json"],
+  "compilerOptions": {
+    "rootDir": "lib/workers",
+    "outDir": "lib_js/workers",
+    "declarationDir": "lib_types/workers",
+    "composite": true,
+    "lib": ["DOM", "WebWorker"]
+  },
+  "include": ["lib/workers/**/*.ts"],
+  "exclude": ["node_modules"],
+  "references": [
+    { "path": "../model/tsconfig.lib.json" },
+    { "path": "./tsconfig.lib.json" }
+  ]
+}

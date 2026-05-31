@@ -12,13 +12,13 @@ export default function startJobSchedulingWorker(
 }
 
 function onError(e: ErrorEvent) {
-    console.error('SharedWorker(jobScheduling.ts).onerror', e)
+    console.error('SharedWorker(JobsSWorker).onerror', e)
 }
 
 function onMessage(e: MessageEvent<any>) {
-    console.log('SharedWorker(jobScheduling.ts).onmessage', e.data)
+    console.log('SharedWorker(JobsSWorker).onmessage', e.data)
 }
 
 function onMessageError(e: MessageEvent<any>) {
-    console.error('SharedWorker(jobScheduling.ts).onmessageerror', e.data)
+    console.error('SharedWorker(JobsSWorker).onmessageerror', e.data)
 }

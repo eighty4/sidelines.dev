@@ -1,4 +1,4 @@
-import type { JobApiRequest, JobSchedulingRequest } from './jobMessaging.ts'
+import type { JobApiRequest, JobSchedulingRequest } from './jobApiMessaging.ts'
 import JobsBackend from './JobsSWorkerBackend.ts'
 
 declare const self: SharedWorkerGlobalScope
@@ -48,7 +48,7 @@ async function onJobSchedulingRequest(request: JobSchedulingRequest) {
         if (backend === null) {
             backend = new JobsBackend(request.ghToken)
             refreshStartedJobs()
-        } else if (backend.ghTokenChanged(request.ghToken)) {
+        } else if (backend.hasGhTokenChanged(request.ghToken)) {
             backend.shutdown()
             backend = null
             console.warn('new auth, closing ports')

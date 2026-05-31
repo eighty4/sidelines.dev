@@ -1,12 +1,12 @@
 const DB_NAME = 'sidelines-dev'
 const DB_VERSION = 1
 
-/*****************/
-/*** REPO JOBS ***/
-/*****************/
+/***************/
+/*** JOB LOG ***/
+/***************/
 
-export const DB_STORE_REPO_JOBS = 'repo-jobs'
-const DB_STORE_REPO_JOBS_KEY = 'jobExecId'
+export const DB_STORE_JOB_LOG = 'job-log'
+const DB_STORE_JOB_LOG_KEY = 'jobExecId'
 
 export const DB_STORE_COMMIT_REVIEW = 'commit-review'
 const DB_STORE_COMMIT_REVIEW_KEY = ['reviewId']
@@ -82,8 +82,8 @@ function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
             db.createObjectStore(DB_STORE_REPO_CONTEXT, {
                 keyPath: DB_STORE_REPO_CONTEXT_KEY,
             })
-            db.createObjectStore(DB_STORE_REPO_JOBS, {
-                keyPath: DB_STORE_REPO_JOBS_KEY,
+            db.createObjectStore(DB_STORE_JOB_LOG, {
+                keyPath: DB_STORE_JOB_LOG_KEY,
             })
             db.createObjectStore(DB_STORE_COMMIT_REVIEW, {
                 keyPath: DB_STORE_COMMIT_REVIEW_KEY,

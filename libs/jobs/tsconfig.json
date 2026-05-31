@@ -1,0 +1,10 @@
+{
+  "extends": ["../../tsconfig.common.json"],
+  "compilerOptions": {
+    "composite": true
+  },
+  "references": [
+    { "path": "./tsconfig.lib.json" },
+    { "path": "./tsconfig.workers.json" }
+  ]
+}

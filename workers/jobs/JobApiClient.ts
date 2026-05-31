@@ -6,10 +6,10 @@ import {
     type RepoJobSpec,
 } from '@sidelines/model'
 import {
-    createChannel,
+    createJobApiChannel,
     type JobApiRequest,
     type JobListingUpdate,
-} from './jobMessaging.ts'
+} from './jobApiMessaging.ts'
 import startJobSchedulingWorker from './startJobsSWorker.ts'
 
 export default class JobApiClient {
@@ -35,7 +35,7 @@ export default class JobApiClient {
         cb: DataCallback<RepoJobExecUpdate>,
     ): ChannelDataSubscription<RepoJobExecUpdate> {
         const channelId = crypto.randomUUID()
-        const channel = createChannel('EXEC', channelId)
+        const channel = createJobApiChannel('EXEC', channelId)
         this.#sw.port.postMessage({
             kind: 'EXEC',
             channelId,
@@ -48,7 +48,7 @@ export default class JobApiClient {
         cb: DataCallback<JobListingUpdate>,
     ): ChannelDataSubscription<JobListingUpdate> {
         const channelId = crypto.randomUUID()
-        const channel = createChannel('LS', channelId)
+        const channel = createJobApiChannel('LS', channelId)
         this.#sw.port.postMessage({
             kind: 'LS',
             channelId,

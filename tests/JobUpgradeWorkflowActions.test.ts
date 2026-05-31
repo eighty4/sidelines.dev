@@ -108,8 +108,8 @@ jobs:
                     context,
                 )
                 if (
-                    indexedDBState.records['repo-jobs'].length === 1 &&
-                    indexedDBState.records['repo-jobs'][0].whenDone instanceof
+                    indexedDBState.records['job-log'].length === 1 &&
+                    indexedDBState.records['job-log'][0].whenDone instanceof
                         Date
                 ) {
                     return indexedDBState

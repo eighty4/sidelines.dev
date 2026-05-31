@@ -23,6 +23,7 @@
     "@eighty4/model-t": "0.0.5-4",
     "@sidelines/data": "workspace:*",
     "@sidelines/github": "workspace:*",
+    "@sidelines/jobs": "workspace:*",
     "@sidelines/model": "workspace:*",
     "@sidelines/packages": "workspace:*",
     "@sidelines/pageload": "workspace:*",

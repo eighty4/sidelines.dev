@@ -1,5 +1,6 @@
 import { readWorkflowModel } from '@eighty4/model-t'
 import { saveRepoCommitReview } from '@sidelines/data/tx/commitReview'
+import { registerRepoJob } from '@sidelines/jobs/workers/repos'
 import { NotFoundError } from '@sidelines/github'
 import { queryViewerRepoWorkflowContents } from '@sidelines/github/actions/queryViewerRepoWorkflowContents'
 import { isFloatingMajorTag } from '@sidelines/github/repository/refs/floatingMajorTag'
@@ -9,16 +10,9 @@ import {
     RepositoryValues,
     type RepositoryId,
 } from '@sidelines/model'
-import { ExecJobWorker } from '../ExecJobWorker.ts'
 import replaceActionsVersions from './replaceActionsVersions.ts'
 
-declare const self: DedicatedWorkerGlobalScope
-
-const w = new ExecJobWorker({
-    forEachViewerOwnedRepo: upgradeWorkflowActions,
-})
-
-self.onmessage = w.onmessage
+registerRepoJob({ forRepo: upgradeWorkflowActions })
 
 async function upgradeWorkflowActions(ghToken: string, repo: RepositoryId) {
     console.log('UpgradeWorkflowActions starting on', repo)

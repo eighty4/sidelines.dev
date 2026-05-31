@@ -30,12 +30,16 @@ export type RepoJobExecStatus =
       }
     | {
           state: 'review'
-          commitId?: string
+          commitId: string
           when: Date
       }
 
+export type SyncedRefsJobExecStatus = {}
+
+// export type RepoSyncRefsReason = 'project' | 'watch'
+
 export type RepoCommitReview = {
-    reviewId: string
+    id: string
     commit: RepoCommitInputs
 }
 

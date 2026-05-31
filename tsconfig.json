@@ -22,6 +22,7 @@
   "references": [
     { "path": "./libs/data" },
     { "path": "./libs/github/tsconfig.lib.json" },
+    { "path": "./libs/jobs" },
     { "path": "./libs/model/tsconfig.lib.json" },
     { "path": "./libs/packages/tsconfig.lib.json" },
     { "path": "./libs/pageload" },

@@ -1,21 +1,25 @@
-import { createRepoJobRecord } from '@sidelines/data/tx/jobLog'
+import {
+    createJobLogRecord,
+    markJobDone,
+    markRepoJobStatus,
+} from '@sidelines/data/tx/jobLog'
+import {
+    createUpdateChannel,
+    isJobWorkerUpdateMessage,
+    type ExecRepoJobMessage,
+} from '@sidelines/jobs/messaging'
 import type { RepoJobId } from '@sidelines/model'
 import { ulid } from 'ulid'
 import {
     SharedWorkerSideWorkerLauncher,
     type WorkerLaunchId,
 } from '../WorkerLaunch.ts'
-import {
-    createChannel,
-    type JobApiRequest,
-    type JobListingUpdate,
-} from './jobMessaging.ts'
-import type { ExecJobWorkerRequest } from './ExecJobWorker.ts'
+import { createJobApiChannel, type JobApiRequest } from './jobApiMessaging.ts'
 
 function workerLaunchId(jobId: RepoJobId): WorkerLaunchId {
     switch (jobId) {
         case 'UPGRADE_ACTIONS':
-            return 'JOB_upgradeWorkflowActions'
+            return 'JOB_REPO_upgradeWorkflowActions'
     }
 }
 
@@ -27,6 +31,7 @@ export default class JobsBackend {
     #ghToken: string
     #launcher: SharedWorkerSideWorkerLauncher =
         new SharedWorkerSideWorkerLauncher()
+    #updates: BroadcastChannel = createUpdateChannel()
 
     get ghToken(): string {
         return this.#ghToken
@@ -34,6 +39,7 @@ export default class JobsBackend {
 
     constructor(ghToken: string) {
         this.#ghToken = ghToken
+        this.#updates.onmessage = this.#onJobUpdate
     }
 
     exec(channelId: string, jobId: RepoJobId) {
@@ -41,28 +47,24 @@ export default class JobsBackend {
         this.#createChannel('EXEC', channelId)
         // todo create a record of job in database
         const jobExecId = ulid()
-        createRepoJobRecord(jobId, jobExecId)
+        createJobLogRecord(jobId, jobExecId, 'repo')
             .then(() => {
                 this.#launcher.request(workerLaunchId(jobId), {
                     kind: 'EXEC',
                     ghToken: this.#ghToken,
                     jobExecId,
-                } satisfies ExecJobWorkerRequest)
+                } satisfies ExecRepoJobMessage)
             })
-            .catch(e => {
+            .catch((e: unknown) => {
                 console.error('JobSWorkerBackend error initializing exec', e)
             })
     }
 
-    ls(channelId: string) {
+    ls(_channelId: string) {
         throw Error()
-        console.log('job ls request', this.#channels.LS.length)
-        this.#createChannel('LS', channelId)
-        const update: JobListingUpdate = {}
-        this.#postJobListingUpdate(update)
     }
 
-    ghTokenChanged(ghToken: string): boolean {
+    hasGhTokenChanged(ghToken: string): boolean {
         return this.ghToken !== ghToken
     }
 
@@ -74,18 +76,36 @@ export default class JobsBackend {
         }
     }
 
-    // #channel(kind: JobApiRequest['kind'], channelId: string): BroadcastChannel | undefined {
-    //     return this.#channels[kind].find(c => c.name.endsWith(channelId))
-    // }
-
     #createChannel(kind: JobApiRequest['kind'], channelId: string) {
-        const channel = createChannel(kind, channelId)
+        const channel = createJobApiChannel(kind, channelId)
         this.#channels[kind].push(channel)
     }
 
-    #postJobListingUpdate(update: JobListingUpdate) {
-        for (const c of this.#channels['LS']) {
-            c.postMessage(update)
+    async #onJobUpdate(e: MessageEvent<unknown>) {
+        if (!isJobWorkerUpdateMessage(e.data)) {
+            console.warn(
+                'JobsSWorker update channel invalid JobWorkerUpdateMessage',
+                e.data,
+            )
+            return
+        }
+        switch (e.data.jobKind) {
+            case 'repo':
+                switch (e.data.kind) {
+                    case 'status':
+                        await markRepoJobStatus(
+                            e.data.jobExecId,
+                            e.data.repo,
+                            e.data.status,
+                        )
+                        break
+                    case 'complete':
+                        await markJobDone(e.data.jobExecId)
+                        break
+                }
+                break
+            default:
+                throw Error('todo')
         }
     }
 }

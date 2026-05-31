@@ -44,6 +44,9 @@ importers:
       '@sidelines/github':
         specifier: workspace:*
         version: link:libs/github
+      '@sidelines/jobs':
+        specifier: workspace:*
+        version: link:libs/jobs
       '@sidelines/model':
         specifier: workspace:*
         version: link:libs/model
@@ -133,6 +136,16 @@ importers:
       graphql:
         specifier: 'catalog:'
         version: 16.14.0
+
+  libs/jobs:
+    dependencies:
+      '@sidelines/model':
+        specifier: workspace:*
+        version: link:../model
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
 
   libs/model:
     devDependencies:

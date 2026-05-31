@@ -53,6 +53,18 @@ export async function readRepoPackages(
     return fromApi
 }
 
+export async function updateRepoPackages(
+    ghToken: string,
+    repo: RepositoryId,
+    defaultBranch: BranchRef,
+) {
+    const packages = await findRepoPackages(ghToken, repo, defaultBranch)
+    if (packages === RepoNotFound) {
+        return
+    }
+    await writeToDb(`${repo.owner}/${repo.name}`, defaultBranch, packages)
+}
+
 async function readFromDb(
     nameWithOwner: RepoNameWithOwner,
     defaultBranch: BranchRef,

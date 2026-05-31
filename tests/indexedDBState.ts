@@ -54,7 +54,7 @@ type IndexedDBIndexStorageState = {
 }
 
 const SidelinesColumnFamilies = [
-    'repo-jobs',
+    'job-log',
     'commit-review',
     // 'read-commits',
     'read-watches',
@@ -96,7 +96,7 @@ export async function indexedDBStateFrom(
     }
     const indexedDBState = originState.indexedDB[0]
     const records: IndexedDBContent['records'] = {
-        'repo-jobs': [],
+        'job-log': [],
         'commit-review': [],
         // 'read-commits': [],
         'read-watches': [],

@@ -19,18 +19,15 @@ type CommitReviewRecord = {
 export async function saveRepoCommitReview(
     commit: RepoCommitInputs,
 ): Promise<RepoCommitReview> {
-    const reviewId = ulid()
+    const id = ulid()
     if (commit.additions) {
-        await writeAdditionsToOpfs(reviewId, commit.repo, commit.additions)
+        await writeAdditionsToOpfs(id, commit.repo, commit.additions)
     }
     await idbPutRecord<CommitReviewRecord>(
         DB_STORE_COMMIT_REVIEW,
-        createRecord(reviewId, commit),
+        createRecord(id, commit),
     )
-    return {
-        reviewId,
-        commit,
-    }
+    return { id, commit }
 }
 
 function createRecord(

@@ -1,14 +1,29 @@
-import { isMessageObject } from './messaging.ts'
+import { isMessageObject } from '@sidelines/model'
 
-export type WorkerLaunchId = 'JOB_upgradeWorkflowActions'
+export type WorkerLaunchId =
+    | 'JOB_SCHEDULED_sync'
+    | 'JOB_SYNC_packages'
+    | 'JOB_SYNC_watches'
+    | 'JOB_REPO_upgradeWorkflowActions'
 
 function createWorkerFromLaunchId(workerId: WorkerLaunchId): Worker {
     switch (workerId) {
-        case 'JOB_upgradeWorkflowActions':
-            return new Worker(
-                './jobs/forEachViewerOwnedRepo/UpgradeWorkflowActions.ts',
-                { name: 'Sidelines.dev - upgrade GitHub workflow actions' },
-            )
+        case 'JOB_SCHEDULED_sync':
+            return new Worker('./jobs/scheduled/SyncRefs.ts', {
+                name: 'Sidelines.dev - sync refs',
+            })
+        case 'JOB_SYNC_packages':
+            return new Worker('./jobs/syncedRefs/SyncPackages.ts', {
+                name: 'Sidelines.dev - sync packages',
+            })
+        case 'JOB_SYNC_watches':
+            return new Worker('./jobs/syncedRefs/SyncWatches.ts', {
+                name: 'Sidelines.dev - sync watches',
+            })
+        case 'JOB_REPO_upgradeWorkflowActions':
+            return new Worker('./jobs/repos/UpgradeWorkflowActions.ts', {
+                name: 'Sidelines.dev - upgrade GitHub workflow actions',
+            })
     }
 }
 
