@@ -23,3 +23,14 @@ export function isFetchFailed(e: unknown): boolean {
     }
     return false
 }
+
+export function isError(e: unknown): e is Error {
+    return (
+        e !== null &&
+        typeof e === 'object' &&
+        'message' in e &&
+        typeof e.message === 'string' &&
+        'name' in e &&
+        typeof e.name === 'string'
+    )
+}

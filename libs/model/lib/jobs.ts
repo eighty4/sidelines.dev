@@ -26,13 +26,18 @@ export type RepoJobExecStatus =
           state: 'error'
           when: Date
           error: string
-          message: string
-          stack: string
+      }
+    | {
+          state: 'exception'
+          when: Date
+          error: string
+          message?: string
+          stack?: string
       }
     | {
           state: 'review'
-          commitId: string
           when: Date
+          commitId: string
       }
 
 export type SyncedRefsJobExecStatus = {}

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { suite, test } from 'node:test'
 import * as errors from './errors.api.ts'
 
-const NOT_ERROR_CODE = ['isFetchFailed']
+const NOT_ERROR_CODE = ['isError', 'isFetchFailed']
 
 const isErrorCode = (name: string) => !NOT_ERROR_CODE.includes(name)
 
@@ -18,6 +18,15 @@ test('export values are unique strings', () => {
         new Set(Object.values(errorCodes)).size,
         'expected unique string values',
     )
+})
+
+test('isError', () => {
+    assert.ok(!errors.isError('error'))
+    assert.ok(!errors.isError(false))
+    assert.ok(!errors.isError(new Object()))
+    assert.ok(errors.isError(Error()))
+    assert.ok(errors.isError(TypeError()))
+    assert.ok(errors.isError(new (class MyError extends Error {})()))
 })
 
 suite('isFetchFailed', () => {

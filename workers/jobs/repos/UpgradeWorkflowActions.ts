@@ -8,19 +8,31 @@ import { queryMultipleReposLatestFloatingMajorTag } from '@sidelines/github/repo
 import {
     RepositorySet,
     RepositoryValues,
+    type RepoJobExecStatus,
     type RepositoryId,
 } from '@sidelines/model'
 import replaceActionsVersions from './replaceActionsVersions.ts'
 
 registerRepoJob({ forRepo: upgradeWorkflowActions })
 
-async function upgradeWorkflowActions(ghToken: string, repo: RepositoryId) {
+async function upgradeWorkflowActions(
+    ghToken: string,
+    repo: RepositoryId,
+): Promise<RepoJobExecStatus | void> {
     console.log('UpgradeWorkflowActions starting on', repo)
     const workflowContents = await queryViewerRepoWorkflowContents(
         ghToken,
         repo.name,
     )
     if (workflowContents instanceof NotFoundError) {
+        console.error('UpgradeWorkflowActions repo', repo, 'not found')
+        return {
+            state: 'error',
+            error: 'repo does not exist',
+            when: new Date(),
+        }
+    }
+    if (Object.keys(workflowContents).length === 0) {
         console.log('UpgradeWorkflowActions', repo, 'no workflows found')
         return
     }
@@ -58,11 +70,14 @@ async function upgradeWorkflowActions(ghToken: string, repo: RepositoryId) {
     }
     for (const { path, yaml } of upgraded) {
         if (readWorkflowModel(yaml).schemaErrors.length > 0) {
-            // todo job logging to continue to upgrade commit review
-            throw Error(path + ' not valid after upgrading github actions')
+            return {
+                state: 'error',
+                error: path + ' not valid after upgrading github actions',
+                when: new Date(),
+            }
         }
     }
-    await saveRepoCommitReview({
+    const commit = await saveRepoCommitReview({
         repo,
         branch: {
             name: 'main',
@@ -75,7 +90,18 @@ async function upgradeWorkflowActions(ghToken: string, repo: RepositoryId) {
             content: wf.yaml,
         })),
     })
-    console.log('upgradeWorkflowActions job on', repo, 'saved commit to review')
+    console.log(
+        'UpgradeWorkflowActions',
+        repo,
+        'saved commit',
+        commit.id,
+        'to review',
+    )
+    return {
+        state: 'review',
+        commitId: commit.id,
+        when: new Date(),
+    }
 }
 
 type WorkflowParsedActions = {
@@ -87,7 +113,6 @@ type WorkflowParsedActions = {
 function collectActionsUsedByWorkflow(
     workflowYaml: string,
 ): Array<RepositoryId> | null {
-    const actions = new Array()
     let readWorkflowResult
     try {
         readWorkflowResult = readWorkflowModel(workflowYaml)
@@ -97,6 +122,7 @@ function collectActionsUsedByWorkflow(
     if (readWorkflowResult.schemaErrors.length) {
         return null
     }
+    const actions = new Array()
     for (const [_jobName, jobModel] of Object.entries(
         readWorkflowResult.workflow.jobs,
     )) {
@@ -115,7 +141,11 @@ function collectActionsUsedByWorkflow(
             }
         }
     }
-    return actions
+    if (actions.length) {
+        return actions
+    } else {
+        return null
+    }
 }
 
 function upgradeOutOfDateActions(

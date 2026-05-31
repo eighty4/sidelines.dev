@@ -1,15 +1,16 @@
 import queryViewerOwnedRepoNames from '@sidelines/github/repositories/queryViewerOwnedRepoNames'
 import { queryUserLogin } from '@sidelines/github/user/queryUserLogin'
 import type { RepoJobExecStatus, RepositoryId } from '@sidelines/model'
+import { isError } from '@sidelines/model/errors'
 import { createJobUpdateChannel } from '../messaging/channel.ts'
 import { isExecRepoJobMessage } from '../messaging/exec.ts'
 import type { JobWorkerUpdateMessage } from '../messaging/update.ts'
 
 declare const self: DedicatedWorkerGlobalScope
 
-// const LABEL = self.location.pathname
-//     .replace(/^\/workers\/jobs\//, '')
-//     .replace(/\.js$/, '')
+const LABEL = self.location.pathname
+    .replace(/^\/workers\/jobs\//, '')
+    .replace(/\.js$/, '')
 
 const updateChannel = createJobUpdateChannel()
 
@@ -26,7 +27,10 @@ export type RepoJobExec = {
 
 export function registerRepoJob(exec: RepoJobExec): void {
     self.onmessage = async (e: MessageEvent<unknown>) => {
-        if (isExecRepoJobMessage(e.data)) {
+        if (!isExecRepoJobMessage(e.data)) {
+            console.error(LABEL, 'exec repo job invalid message')
+        } else {
+            console.log(LABEL, 'repo job starting', e.data.target)
             const { ghToken, jobExecId } = e.data
             switch (e.data.target.repos) {
                 case 'single':
@@ -42,6 +46,7 @@ export function registerRepoJob(exec: RepoJobExec): void {
                     await execJobForRepos(ghToken, jobExecId, repos, exec)
                     break
             }
+            console.log(LABEL, 'repo job finished')
             postUpdate({
                 jobExecId: e.data.jobExecId,
                 jobKind: 'repo',
@@ -91,13 +96,22 @@ async function execJobForRepoJobStatus(
                 when: new Date(),
             }
         )
-    } catch (e: any) {
-        return {
-            state: 'error',
-            when: new Date(),
-            error: e.constructor?.name ?? typeof e,
-            message: e.message,
-            stack: e.stack,
+    } catch (e: unknown) {
+        console.error(LABEL, 'repo job error on', repo, e)
+        if (isError(e)) {
+            return {
+                state: 'exception',
+                when: new Date(),
+                error: e.name,
+                message: e.message,
+                stack: e.stack,
+            }
+        } else {
+            return {
+                state: 'exception',
+                when: new Date(),
+                error: JSON.stringify(e),
+            }
         }
     }
 }
