@@ -1,7 +1,6 @@
 import { readWorkflowModel } from '@eighty4/model-t'
 import { saveRepoCommitReview } from '@sidelines/data/tx/commitReview'
 import { registerRepoJob } from '@sidelines/jobs/workers/repos'
-import { NotFoundError } from '@sidelines/github'
 import { queryViewerRepoWorkflowContents } from '@sidelines/github/actions/queryViewerRepoWorkflowContents'
 import { isFloatingMajorTag } from '@sidelines/github/repository/refs/floatingMajorTag'
 import { queryMultipleReposLatestFloatingMajorTag } from '@sidelines/github/repository/refs/queryMultipleReposLatestFloatingMajorTag'
@@ -11,6 +10,7 @@ import {
     type RepoJobExecStatus,
     type RepositoryId,
 } from '@sidelines/model'
+import { RepoNotFound } from '@sidelines/model/errors'
 import replaceActionsVersions from './replaceActionsVersions.ts'
 
 registerRepoJob({ forRepo: upgradeWorkflowActions })
@@ -24,7 +24,7 @@ async function upgradeWorkflowActions(
         ghToken,
         repo.name,
     )
-    if (workflowContents instanceof NotFoundError) {
+    if (workflowContents === RepoNotFound) {
         console.error('UpgradeWorkflowActions repo', repo, 'not found')
         return {
             state: 'error',

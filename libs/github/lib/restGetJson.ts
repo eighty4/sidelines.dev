@@ -15,18 +15,20 @@ export default async function restGetJson(
         },
     })
     dispatchRateLimitUpdate(response.headers)
-    if (response.status === 401) {
-        throw new UnauthorizedError('401 ' + url)
+    switch (response.status) {
+        case 401:
+            throw new UnauthorizedError('401 ' + url)
+        case 403:
+            if (response.headers.get('x-ratelimit-remaining') === '0') {
+                throw new Error('api rate limit reached')
+            } else {
+                throw new Error('forbidden')
+            }
+        case 404:
+            throw new NotFoundError()
+        case 500:
+            throw new Error(await response.text())
+        default:
+            return await response.json()
     }
-    if (response.status === 403) {
-        if (response.headers.get('x-ratelimit-remaining') === '0') {
-            throw new Error('api rate limit reached')
-        } else {
-            throw new Error('forbidden')
-        }
-    }
-    if (response.status === 404) {
-        throw new NotFoundError()
-    }
-    return await response.json()
 }

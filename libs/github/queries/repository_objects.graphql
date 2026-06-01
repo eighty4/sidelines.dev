@@ -51,7 +51,7 @@ query QRepoDirListing($owner: String!, $name: String!, $objExpr: String!) {
     }
 }
 
-query QViewerRepoDirContent($name: String!, $objExpr: String!) {
+query QViewerRepoDirContents($name: String!, $objExpr: String!) {
     viewer {
         repository(name: $name) {
             object(expression: $objExpr) {
@@ -61,7 +61,6 @@ query QViewerRepoDirContent($name: String!, $objExpr: String!) {
                         type
                         object {
                             ... on Blob {
-                                byteSize
                                 text
                             }
                         }

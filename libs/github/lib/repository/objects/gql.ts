@@ -25,13 +25,13 @@ export type QRepoDirListingVars = {
 export const QRepoDirListing: string =
     'query QRepoDirListing($owner: String!, $name: String!, $objExpr: String!) { repository(owner: $owner, name: $name) { object(expression: $objExpr) { ... on Tree { entries { name type object { ... on Blob { byteSize } } } } } } }'
 
-export type QViewerRepoDirContentVars = {
+export type QViewerRepoDirContentsVars = {
     name: string
     objExpr: string
 }
 
-export const QViewerRepoDirContent: string =
-    'query QViewerRepoDirContent($name: String!, $objExpr: String!) { viewer { repository(name: $name) { object(expression: $objExpr) { ... on Tree { entries { name type object { ... on Blob { byteSize text } } } } } } } }'
+export const QViewerRepoDirContents: string =
+    'query QViewerRepoDirContents($name: String!, $objExpr: String!) { viewer { repository(name: $name) { object(expression: $objExpr) { ... on Tree { entries { name type object { ... on Blob { text } } } } } } } }'
 
 export type QViewerRepoObjectHistoryVars = {
     repo: string

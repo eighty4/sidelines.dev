@@ -6,6 +6,8 @@ export const RefNotFound = 'fer-nf'
 
 export const Timeout = 'timeout'
 
+export const TreeObjectNotFound = 'tree-nf'
+
 // when Network is followed by nothing in local cache
 export const Unavailable = 'nvlbl'
 

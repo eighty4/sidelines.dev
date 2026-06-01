@@ -4,8 +4,8 @@ import {
     type GHWorkflowSchemaError,
 } from '@eighty4/model-t'
 import { isWorkflowPassing } from '@sidelines/github/actions/isWorkflowPassing'
-import { queryViewerRepoDirContent } from '@sidelines/github/repository/objects/queryViewerRepoDirContent'
-import type { RepositoryObject } from '@sidelines/model'
+import { queryViewerRepoWorkflowContents } from '@sidelines/github/actions/queryViewerRepoWorkflowContents'
+import { RepoNotFound, TreeObjectNotFound } from '@sidelines/model/errors'
 
 declare const self: DedicatedWorkerGlobalScope
 
@@ -95,24 +95,23 @@ async function checkRepoWorkflows(
     ghLogin: string,
     repo: string,
 ) {
-    const workflowDirFiles = await queryViewerRepoDirContent(
+    const workflowContents = await queryViewerRepoWorkflowContents(
         ghToken,
         repo,
-        '.github/workflows',
     )
-    if (workflowDirFiles === 'repo-does-not-exist') {
+    if (workflowContents === RepoNotFound) {
         sendUpdate({
             kind: 'error',
             message: 'repo does not exist',
         })
+    } else if (workflowContents === TreeObjectNotFound) {
+        sendUpdate({
+            kind: 'error',
+            message: 'repo does not have .github/workflows',
+        })
     } else {
-        const workflowFiles: Array<{ name: string; content: string }> =
-            workflowDirFiles.filter(
-                (workflow: RepositoryObject) =>
-                    workflow.type === 'file-cat' &&
-                    /.*\.ya?ml$/.test(workflow.name),
-            ) as Array<{ name: string; content: string }>
-        if (!workflowFiles.length) {
+        const workflowContentsEntries = Object.entries(workflowContents)
+        if (!workflowContentsEntries.length) {
             sendUpdate({
                 kind: 'cicd',
                 repo,
@@ -125,17 +124,11 @@ async function checkRepoWorkflows(
             sendUpdate({
                 kind: 'pending',
                 repo,
-                workflows: workflowFiles.map(workflow => workflow.name),
+                workflows: workflowContentsEntries.map(([name]) => name),
             })
             const workflows = await Promise.all(
-                workflowFiles.map(file =>
-                    checkWorkflow(
-                        ghToken,
-                        ghLogin,
-                        repo,
-                        file.name,
-                        file.content,
-                    ),
+                workflowContentsEntries.map(([name, content]) =>
+                    checkWorkflow(ghToken, ghLogin, repo, name, content),
                 ),
             )
             const cicd: Array<CicdCallToAction> = (

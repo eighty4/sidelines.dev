@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test'
 import type {
     QMultipleReposLatestTagsGraph,
     QMultipleReposLatestTagsVars,
-    QViewerRepoDirContentGraph,
-    QViewerRepoDirContentVars,
+    QViewerRepoDirContentsGraph,
+    QViewerRepoDirContentsVars,
     QViewerReposNamesGraph,
     QViewerReposNamesVars,
 } from '@sidelines/github/GRAPHS'
@@ -43,11 +43,11 @@ test(
                 } satisfies QViewerReposNamesGraph,
             )
             .withGraphqlResponse(
-                'QViewerRepoDirContent',
+                'QViewerRepoDirContents',
                 {
                     name: 'l3',
                     objExpr: 'HEAD:.github/workflows',
-                } satisfies QViewerRepoDirContentVars,
+                } satisfies QViewerRepoDirContentsVars,
                 {
                     viewer: {
                         repository: {
@@ -56,7 +56,6 @@ test(
                                     {
                                         name: 'ci_verify.yml',
                                         object: {
-                                            byteSize: 1234,
                                             text: `\
 on:
   push:
@@ -74,7 +73,7 @@ jobs:
                             },
                         },
                     },
-                } satisfies QViewerRepoDirContentGraph,
+                } satisfies QViewerRepoDirContentsGraph,
             )
             .withGraphqlResponse(
                 'QMultipleReposLatestTags',
@@ -143,11 +142,11 @@ test(
     async ({ baseURL, context, page }) => {
         await userStoryProjectPage()
             .withGraphqlResponse(
-                'QViewerRepoDirContent',
+                'QViewerRepoDirContents',
                 {
                     name: 'l3',
                     objExpr: 'HEAD:.github/workflows',
-                } satisfies QViewerRepoDirContentVars,
+                } satisfies QViewerRepoDirContentsVars,
                 {
                     viewer: {
                         repository: {
@@ -156,7 +155,6 @@ test(
                                     {
                                         name: 'ci_verify.yml',
                                         object: {
-                                            byteSize: 1234,
                                             text: `\
 on:
   push:
@@ -174,7 +172,7 @@ jobs:
                             },
                         },
                     },
-                } satisfies QViewerRepoDirContentGraph,
+                } satisfies QViewerRepoDirContentsGraph,
             )
             .withGraphqlResponse(
                 'QMultipleReposLatestTags',

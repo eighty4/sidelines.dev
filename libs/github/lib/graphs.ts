@@ -124,11 +124,11 @@ export type QViewerRepoDefaultBranchGraph = {
     viewer: QRepoDefaultBranchGraph
 }
 
-/* QViewerRepoDirContent */
+/* QViewerRepoDirContents */
 
-export type { QViewerRepoDirContentVars } from './repository/objects/gql.ts'
+export type { QViewerRepoDirContentsVars } from './repository/objects/gql.ts'
 
-export type QViewerRepoDirContentGraph = {
+export type QViewerRepoDirContentsGraph = {
     viewer: {
         repository: {
             object: {
@@ -139,7 +139,6 @@ export type QViewerRepoDirContentGraph = {
                         | {
                               type: 'blob'
                               object: {
-                                  byteSize: number
                                   text: string
                               }
                           }
