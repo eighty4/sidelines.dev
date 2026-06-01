@@ -71,6 +71,43 @@ query QViewerRepoDirContents($name: String!, $objExpr: String!) {
     }
 }
 
+query QViewerRepoDefaultBranchDirContents($name: String!, $objExpr: String!) {
+    viewer {
+        repository(name: $name) {
+            defaultBranchRef {
+                name
+                target {
+                    ... on Commit {
+                        history(first: 1) {
+                            edges {
+                                node {
+                                    ... on Commit {
+                                        committedDate
+                                        oid
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            object(expression: $objExpr) {
+                ... on Tree {
+                    entries {
+                        name
+                        type
+                        object {
+                            ... on Blob {
+                                text
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 query QViewerRepoObjectHistory(
     $repo: String!
     $branch: String!

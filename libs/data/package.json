@@ -28,6 +28,9 @@
       "types": "./lib_types/storage.d.ts",
       "node": "./lib_js/storage.js",
       "default": "./lib/storage.ts"
+    },
+    "./RECORDS": {
+      "types": "./lib_types/records.d.ts"
     }
   },
   "scripts": {

@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test'
+import type { CommitReviewRecord } from '@sidelines/data/RECORDS'
 import type {
     QMultipleReposLatestTagsGraph,
     QMultipleReposLatestTagsVars,
-    QViewerRepoDirContentsGraph,
-    QViewerRepoDirContentsVars,
+    QViewerRepoDefaultBranchDirContentsGraph,
+    QViewerRepoDefaultBranchDirContentsVars,
     QViewerReposNamesGraph,
     QViewerReposNamesVars,
 } from '@sidelines/github/GRAPHS'
@@ -19,6 +20,7 @@ test(
     'on owned repos creates commit with upgraded github action',
     { tag: '@opfs' },
     async ({ baseURL, context, page }) => {
+        const committedDate = new Date()
         await userStoryWithSidelinesRepo()
             .withGraphqlResponse(
                 'QViewerReposNames',
@@ -43,14 +45,30 @@ test(
                 } satisfies QViewerReposNamesGraph,
             )
             .withGraphqlResponse(
-                'QViewerRepoDirContents',
+                'QViewerRepoDefaultBranchDirContents',
                 {
                     name: 'l3',
                     objExpr: 'HEAD:.github/workflows',
-                } satisfies QViewerRepoDirContentsVars,
+                } satisfies QViewerRepoDefaultBranchDirContentsVars,
                 {
                     viewer: {
                         repository: {
+                            defaultBranchRef: {
+                                name: 'master',
+                                target: {
+                                    history: {
+                                        edges: [
+                                            {
+                                                node: {
+                                                    oid: 'abcabc12',
+                                                    committedDate:
+                                                        committedDate.toISOString(),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            },
                             object: {
                                 entries: [
                                     {
@@ -73,7 +91,7 @@ jobs:
                             },
                         },
                     },
-                } satisfies QViewerRepoDirContentsGraph,
+                } satisfies QViewerRepoDefaultBranchDirContentsGraph,
             )
             .withGraphqlResponse(
                 'QMultipleReposLatestTags',
@@ -117,9 +135,14 @@ jobs:
             },
         )
         expect(indexedDBState.records['commit-review'].length).toBe(1)
-        const commitReview = indexedDBState.records['commit-review'][0]
-        expect(commitReview.additions.length).toBe(1)
-        expect(commitReview.additions[0]).toStrictEqual({
+        const commitReview: CommitReviewRecord =
+            indexedDBState.records['commit-review'][0]
+        expect(commitReview.branch).toStrictEqual({
+            name: 'master',
+            headOid: 'abcabc12',
+        })
+        expect(commitReview.additions!.length).toBe(1)
+        expect(commitReview.additions![0]).toStrictEqual({
             dirpath: '.github/workflows',
             filename: 'ci_verify.yml',
         })
@@ -128,7 +151,7 @@ jobs:
                 page,
                 commitReview.reviewId,
                 { owner: 'eighty4', name: 'l3' },
-                commitReview.additions[0],
+                commitReview.additions![0],
             ),
         ).toBe(
             'on:\n  push:\njobs:\n  checkout-repo:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: echo "checked it out"\n',
@@ -140,16 +163,33 @@ test(
     'on single repo creates commit with upgraded github action',
     { tag: '@opfs' },
     async ({ baseURL, context, page }) => {
+        const committedDate = new Date()
         await userStoryProjectPage()
             .withGraphqlResponse(
-                'QViewerRepoDirContents',
+                'QViewerRepoDefaultBranchDirContents',
                 {
                     name: 'l3',
                     objExpr: 'HEAD:.github/workflows',
-                } satisfies QViewerRepoDirContentsVars,
+                } satisfies QViewerRepoDefaultBranchDirContentsVars,
                 {
                     viewer: {
                         repository: {
+                            defaultBranchRef: {
+                                name: 'master',
+                                target: {
+                                    history: {
+                                        edges: [
+                                            {
+                                                node: {
+                                                    oid: 'abcabc12',
+                                                    committedDate:
+                                                        committedDate.toISOString(),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            },
                             object: {
                                 entries: [
                                     {
@@ -172,7 +212,7 @@ jobs:
                             },
                         },
                     },
-                } satisfies QViewerRepoDirContentsGraph,
+                } satisfies QViewerRepoDefaultBranchDirContentsGraph,
             )
             .withGraphqlResponse(
                 'QMultipleReposLatestTags',
@@ -217,9 +257,14 @@ jobs:
             },
         )
         expect(indexedDBState.records['commit-review'].length).toBe(1)
-        const commitReview = indexedDBState.records['commit-review'][0]
-        expect(commitReview.additions.length).toBe(1)
-        expect(commitReview.additions[0]).toStrictEqual({
+        const commitReview: CommitReviewRecord =
+            indexedDBState.records['commit-review'][0]
+        expect(commitReview.branch).toStrictEqual({
+            name: 'master',
+            headOid: 'abcabc12',
+        })
+        expect(commitReview.additions!.length).toBe(1)
+        expect(commitReview.additions![0]).toStrictEqual({
             dirpath: '.github/workflows',
             filename: 'ci_verify.yml',
         })
@@ -228,7 +273,7 @@ jobs:
                 page,
                 commitReview.reviewId,
                 { owner: 'eighty4', name: 'l3' },
-                commitReview.additions[0],
+                commitReview.additions![0],
             ),
         ).toBe(
             'on:\n  push:\njobs:\n  checkout-repo:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: echo "checked it out"\n',

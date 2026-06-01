@@ -1,5 +1,5 @@
 import type { BranchRef, RepositoryId } from '@sidelines/model'
-import type { RepoNotFound } from '@sidelines/model/errors'
+import { RepoNotFound } from '@sidelines/model/errors'
 import type { QRepoDefaultBranchGraph } from '../graphs.ts'
 import queryGraphqlApi from '../queryGraphqlApi.ts'
 import { mapBranchRef } from './_map.ts'
@@ -16,5 +16,9 @@ export default async function queryRepoDefaultBranch(
         owner: repo.owner,
         name: repo.name,
     })
-    return mapBranchRef(json.data)
+    const { repository } = json.data
+    if (!repository) {
+        return RepoNotFound
+    }
+    return mapBranchRef(repository.defaultBranchRef)
 }

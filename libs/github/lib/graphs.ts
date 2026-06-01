@@ -8,6 +8,26 @@
  * from `@sidelines/github` just for Playwright testing.
  */
 
+/*************************************************/
+/*** MODELED GRAPHS REUSED IN MULTIPLE QUERIES ***/
+/*************************************************/
+
+/* Repository.defaultBranchRef */
+
+export type MRepoDefaultBranch = {
+    name: string
+    target: {
+        history: {
+            edges: Array<{
+                node: {
+                    oid: string
+                    committedDate: string
+                }
+            }>
+        }
+    }
+}
+
 /*************************************************************/
 /*** GRAPHS OF QUERIED DATA FROM GRAPHQL GENERATED QUERIES ***/
 /*************************************************************/
@@ -101,7 +121,7 @@ export type QRepoObjectGraph = {
 export type { QRepoDefaultBranchVars } from './repository/gql.ts'
 
 export type QRepoDefaultBranchGraph = {
-    repository: {
+    repository?: {
         defaultBranchRef: {
             name: string
             target: {
@@ -132,6 +152,47 @@ export type QViewerRepoDirContentsGraph = {
     viewer: {
         repository: {
             object: {
+                entries: Array<
+                    {
+                        name: string
+                    } & (
+                        | {
+                              type: 'blob'
+                              object: {
+                                  text: string
+                              }
+                          }
+                        | {
+                              type: 'tree'
+                          }
+                    )
+                >
+            }
+        }
+    }
+}
+
+/* QViewerRepoDefaultBranchDirContents */
+
+export type { QViewerRepoDefaultBranchDirContentsVars } from './repository/objects/gql.ts'
+
+export type QViewerRepoDefaultBranchDirContentsGraph = {
+    viewer: {
+        repository?: {
+            defaultBranchRef: {
+                name: string
+                target: {
+                    history: {
+                        edges: Array<{
+                            node: {
+                                oid: string
+                                committedDate: string
+                            }
+                        }>
+                    }
+                }
+            }
+            object?: {
                 entries: Array<
                     {
                         name: string

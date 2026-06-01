@@ -1,7 +1,7 @@
 import { readWorkflowModel } from '@eighty4/model-t'
 import { saveRepoCommitReview } from '@sidelines/data/tx/commitReview'
 import { registerRepoJob } from '@sidelines/jobs/workers/repos'
-import { queryViewerRepoWorkflowContents } from '@sidelines/github/actions/queryViewerRepoWorkflowContents'
+import { queryViewerRepoDefaultBranchDirContents } from '@sidelines/github/repository/objects/queryViewerRepoDefaultBranchDirContents'
 import { isFloatingMajorTag } from '@sidelines/github/repository/refs/floatingMajorTag'
 import { queryMultipleReposLatestFloatingMajorTag } from '@sidelines/github/repository/refs/queryMultipleReposLatestFloatingMajorTag'
 import {
@@ -10,7 +10,7 @@ import {
     type RepoJobExecStatus,
     type RepositoryId,
 } from '@sidelines/model'
-import { RepoNotFound } from '@sidelines/model/errors'
+import { RepoNotFound, TreeObjectNotFound } from '@sidelines/model/errors'
 import replaceActionsVersions from './replaceActionsVersions.ts'
 
 registerRepoJob({ forRepo: upgradeWorkflowActions })
@@ -20,11 +20,12 @@ async function upgradeWorkflowActions(
     repo: RepositoryId,
 ): Promise<RepoJobExecStatus | void> {
     console.log('UpgradeWorkflowActions starting on', repo)
-    const workflowContents = await queryViewerRepoWorkflowContents(
+    const queryWorkflowResult = await queryViewerRepoDefaultBranchDirContents(
         ghToken,
         repo.name,
+        '.github/workflows',
     )
-    if (workflowContents === RepoNotFound) {
+    if (queryWorkflowResult === RepoNotFound) {
         console.error('UpgradeWorkflowActions repo', repo, 'not found')
         return {
             state: 'error',
@@ -32,20 +33,23 @@ async function upgradeWorkflowActions(
             when: new Date(),
         }
     }
-    if (Object.keys(workflowContents).length === 0) {
+    if (
+        queryWorkflowResult === TreeObjectNotFound ||
+        Object.keys(queryWorkflowResult).length === 0
+    ) {
         console.log('UpgradeWorkflowActions', repo, 'no workflows found')
         return
     }
     const actionsUsed = new RepositorySet()
     const workflows: Array<WorkflowParsedActions> = Object.entries(
-        workflowContents,
+        queryWorkflowResult.contents,
     )
-        .map(([path, yaml]) => {
+        .map(([filename, yaml]) => {
             const foundActions = collectActionsUsedByWorkflow(yaml)
             if (foundActions) {
                 actionsUsed.addAll(foundActions)
                 return {
-                    path,
+                    filename,
                     yaml,
                     actionsUsed: new RepositorySet(foundActions),
                 }
@@ -68,11 +72,11 @@ async function upgradeWorkflowActions(
         console.log('UpgradeWorkflowActions', repo, 'no actions upgrades found')
         return
     }
-    for (const { path, yaml } of upgraded) {
+    for (const { filename, yaml } of upgraded) {
         if (readWorkflowModel(yaml).schemaErrors.length > 0) {
             return {
                 state: 'error',
-                error: path + ' not valid after upgrading github actions',
+                error: filename + ' not valid after upgrading github actions',
                 when: new Date(),
             }
         }
@@ -80,13 +84,13 @@ async function upgradeWorkflowActions(
     const commit = await saveRepoCommitReview({
         repo,
         branch: {
-            name: 'main',
-            headOid: 'abcdefg',
+            name: queryWorkflowResult.defaultBranch.name,
+            headOid: queryWorkflowResult.defaultBranch.headOid,
         },
         commitMessage: 'Upgrade GitHub actions',
         additions: upgraded.map(wf => ({
             dirpath: '.github/workflows',
-            filename: wf.path.substring(wf.path.lastIndexOf('/') + 1),
+            filename: wf.filename,
             content: wf.yaml,
         })),
     })
@@ -105,7 +109,7 @@ async function upgradeWorkflowActions(
 }
 
 type WorkflowParsedActions = {
-    path: string
+    filename: string
     yaml: string
     actionsUsed: RepositorySet
 }
