@@ -76,8 +76,8 @@ importers:
         version: 3.0.2
     devDependencies:
       '@eighty4/dank':
-        specifier: 0.0.5-9
-        version: 0.0.5-9
+        specifier: 0.0.5-10
+        version: 0.0.5-10
       '@playwright/test':
         specifier: ^1.59.1
         version: 1.59.1
@@ -218,8 +218,8 @@ importers:
 
 packages:
 
-  '@eighty4/dank@0.0.5-9':
-    resolution: {integrity: sha512-MRqaGxfbXZvxscVJhpXVdOOlezMki7NFYEr5791ZndYLyxe5oFMw80xqR7B8yOp2yrWyyyk4Zyoj1kdZ8/NagQ==}
+  '@eighty4/dank@0.0.5-10':
+    resolution: {integrity: sha512-diuyRXv+y1ClfxM/iuXsEBw9Zf0hV0jClAt4lpWln/EshedUuxhFK6f3AQEHB2TMLa3B2AavwsU7I/6T7OqUPw==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -498,7 +498,7 @@ packages:
 
 snapshots:
 
-  '@eighty4/dank@0.0.5-9':
+  '@eighty4/dank@0.0.5-10':
     dependencies:
       esbuild: 0.28.0
       mime: 4.1.0
