@@ -1,12 +1,22 @@
-import type { ExecRepoJobMessage } from '@sidelines/jobs/messaging'
 import type {
     RepositoryId,
     RepoJobExecStatus,
     RepoJobId,
+    RepoJobTarget,
     RepoNameWithOwner,
     SyncedRefsJobExecStatus,
 } from '@sidelines/model'
 import { connectToDb, DB_STORE_JOB_LOG, idbAddRecord } from '../database.ts'
+
+// retrieve a model of incomplete jobs from a previous browser session
+// used to initialize the SharedWorker of JobsSWorkerBackend
+export type OutstandingJobs = {
+    repos: Array<{
+        jobId: RepoJobId
+        jobExecId: string
+        target: RepoJobTarget
+    }>
+}
 
 // DB_STORE_JOB_LOG
 type JobLogRecord = {
@@ -21,7 +31,7 @@ type JobLogRecord = {
       }
     | {
           kind: 'repo'
-          target: ExecRepoJobMessage['target']
+          target: RepoJobTarget
           repos: Record<RepoNameWithOwner, RepoJobExecStatus>
       }
     | {
@@ -33,7 +43,7 @@ type JobLogRecord = {
 export async function createRepoJobLog(
     jobId: RepoJobId,
     jobExecId: string,
-    target: ExecRepoJobMessage['target'],
+    target: RepoJobTarget,
 ): Promise<void> {
     await createJobLog({
         jobId,
@@ -49,49 +59,72 @@ async function createJobLog(record: JobLogRecord) {
     await idbAddRecord<JobLogRecord>(DB_STORE_JOB_LOG, record)
 }
 
-// returns array of `jobExecId` that match certain criteria for `whenDone` and `whenLastActivity`
-export async function readRepoJobsUncompleted(): Promise<Array<string>> {
+// returns jobs matching criteria for `whenDone` and `whenLastActivity`
+export async function readOutsandingJobs(
+    minutesSinceLastActivity?: number,
+): Promise<OutstandingJobs> {
     const db = await connectToDb()
     return await new Promise((res, rej) => {
         const request: IDBRequest<IDBCursorWithValue | null> = db
             .transaction(DB_STORE_JOB_LOG, 'readonly')
             .objectStore(DB_STORE_JOB_LOG)
             .openCursor()
-        const jobExecIds: Array<string> = []
-        const lastActivityThreshold = createLastActivityThreshold()
+        const predicate = outstandingJobPredicate(minutesSinceLastActivity)
+        const result: OutstandingJobs = {
+            repos: [],
+        }
         request.onsuccess = () => {
             const cursor = request.result
             if (cursor) {
                 const record = cursor.value as JobLogRecord
-                if (isRepoJobUncompleted(record, lastActivityThreshold)) {
-                    jobExecIds.push(record.jobExecId)
+                if (predicate(record)) {
+                    switch (record.kind) {
+                        case 'repo':
+                            result.repos.push({
+                                jobId: record.jobId,
+                                jobExecId: record.jobExecId,
+                                target: record.target,
+                            })
+                            break
+                        case 'refs':
+                        case 'schedule':
+                            break
+                    }
                 }
                 cursor.continue()
             } else {
-                res(jobExecIds)
+                res(result)
             }
         }
         request.onerror = rej
     })
 }
 
-function createLastActivityThreshold(): Date {
+function outstandingJobPredicate(
+    minutesSinceLastActivity?: number,
+): (record: JobLogRecord) => boolean {
+    if (minutesSinceLastActivity) {
+        const lastActivityCutoff = minutesAgoDate(
+            minutesSinceLastActivity,
+        ).getTime()
+        return record =>
+            !record.whenDone &&
+            lastActivityCutoff <
+                (record.whenLastActivity ?? record.whenInit).getTime()
+    } else {
+        return record => !record.whenDone
+    }
+}
+
+function minutesAgoDate(minutes: number): Date {
     const date = new Date()
-    date.setTime(date.getTime() - 10 * 60 * 1000)
+    date.setTime(date.getTime() - minutes * 60 * 1000)
     return date
 }
 
-function isRepoJobUncompleted(record: JobLogRecord, tenMinsAgo: Date): boolean {
-    if (record.whenDone) {
-        return false
-    }
-    const toCompare = record.whenLastActivity ?? record.whenInit
-    return toCompare.getTime() < tenMinsAgo.getTime()
-}
-
-// returns all of job's repos resolved with a completion state
-// used when restarting a job to diff with all viewer repos
-export async function readRepoJobCompletedRepos(
+// returns all of a job's completed repos
+// used when restarting a repo job to diff with all viewer repos
+export async function readRepoJobReposCompleted(
     jobExecId: string,
 ): Promise<Array<RepositoryId>> {
     const db = await connectToDb()

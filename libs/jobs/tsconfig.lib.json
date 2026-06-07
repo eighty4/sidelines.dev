@@ -9,5 +9,9 @@
   },
   "include": ["lib/**/*.ts"],
   "exclude": ["node_modules", "lib/workers/**/*.ts"],
-  "references": [{ "path": "../model/tsconfig.lib.json" }]
+  "references": [
+    { "path": "../data" },
+    { "path": "../github/tsconfig.lib.json" },
+    { "path": "../model/tsconfig.lib.json" }
+  ]
 }

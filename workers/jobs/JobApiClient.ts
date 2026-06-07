@@ -17,7 +17,7 @@ export default class JobApiClient {
     static availableJobs(): Array<RepoJobSpec> {
         return [
             {
-                jobId: 'UPGRADE_ACTIONS',
+                jobId: 'JOB_repos_UPGRADE_ACTIONS',
                 label: 'Upgrade Workflow Actions',
             },
         ]

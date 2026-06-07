@@ -47,7 +47,6 @@ async function onJobSchedulingRequest(request: JobSchedulingRequest) {
     } else if (request.kind === 'INIT') {
         if (backend === null) {
             backend = new JobsBackend(request.ghToken)
-            refreshStartedJobs()
         } else if (backend.hasGhTokenChanged(request.ghToken)) {
             backend.shutdown()
             backend = null
@@ -80,5 +79,3 @@ async function onJobExecRequest(request: JobApiRequest) {
             break
     }
 }
-
-function refreshStartedJobs() {}

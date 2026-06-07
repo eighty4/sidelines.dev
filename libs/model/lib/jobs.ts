@@ -1,21 +1,42 @@
 import type { BranchRef, RepositoryId } from './repo.ts'
 
-export const RepoJobIds = ['UPGRADE_ACTIONS'] as const
+const JobKinds = ['scheduled', 'repos', 'syncedRefs'] as const
 
-export type RepoJobId = (typeof RepoJobIds)[number]
+export type JobKind = (typeof JobKinds)[number]
+
+export function isJobKind(v: unknown): v is JobKind {
+    return (
+        typeof v === 'string' &&
+        (JobKinds as Readonly<Array<string>>).includes(v)
+    )
+}
+
+export type JobId = `JOB_${JobKind}_${string}`
+
+export type RepoJobId = `JOB_repos_${string}`
 
 export type RepoJobSpec = {
     jobId: RepoJobId
     label: string
 }
 
-export type RepoJobWorkflowUpgradeActions = 'UPGRADE_ACTIONS'
-
 export type RepoJobExecUpdate = {
     jobId: RepoJobId
     jobExecId: string
     status: RepoJobExecStatus
 }
+
+// defines scope of a repo job
+// dispatched to a repo job from the jobs backend
+// in `@sidelines/model` because it is saved to IndexedDB job logging
+export type RepoJobTarget =
+    | {
+          repos: 'single'
+          repo: RepositoryId
+      }
+    | {
+          repos: 'owner'
+      }
 
 export type RepoJobExecStatus =
     | {
@@ -41,8 +62,6 @@ export type RepoJobExecStatus =
       }
 
 export type SyncedRefsJobExecStatus = {}
-
-// export type RepoSyncRefsReason = 'project' | 'watch'
 
 export type RepoCommitReview = {
     id: string

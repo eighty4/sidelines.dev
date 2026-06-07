@@ -2,6 +2,6 @@
 
 a,
 button {
-    display: block;
+    display: inline-block;
     margin: 0.35rem 1rem;
 }

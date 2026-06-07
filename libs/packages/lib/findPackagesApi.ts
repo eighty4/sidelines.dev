@@ -79,7 +79,6 @@ export class DefaultFindPackagesDataProvider implements FindPackagesDataProvider
     async contents(
         paths: string | Array<string>,
     ): Promise<Record<string, string | null>> {
-        console.log('asdgasdgasdg')
         if (typeof paths === 'string') {
             return {
                 [paths]: await queryRepoObjectContent(

@@ -39,7 +39,6 @@
   },
   "dependencies": {
     "@sidelines/github": "workspace:*",
-    "@sidelines/jobs": "workspace:*",
     "@sidelines/model": "workspace:*",
     "@sidelines/packages": "workspace:*"
   }

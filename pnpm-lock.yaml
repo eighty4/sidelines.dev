@@ -111,9 +111,6 @@ importers:
       '@sidelines/github':
         specifier: workspace:*
         version: link:../github
-      '@sidelines/jobs':
-        specifier: workspace:*
-        version: link:../jobs
       '@sidelines/model':
         specifier: workspace:*
         version: link:../model
@@ -142,6 +139,12 @@ importers:
 
   libs/jobs:
     dependencies:
+      '@sidelines/data':
+        specifier: workspace:*
+        version: link:../data
+      '@sidelines/github':
+        specifier: workspace:*
+        version: link:../github
       '@sidelines/model':
         specifier: workspace:*
         version: link:../model
