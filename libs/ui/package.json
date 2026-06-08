@@ -15,7 +15,10 @@
     "build:clean": "rm -rf lib_js lib_types *.tsbuildinfo"
   },
   "dependencies": {
-    "@sidelines/model": "workspace:"
+    "@codemirror/merge": "^6.12.1",
+    "@codemirror/state": "^6.6.0",
+    "@sidelines/model": "workspace:",
+    "codemirror": "^6.0.2"
   },
   "devDependencies": {
     "@types/react": "catalog:",
