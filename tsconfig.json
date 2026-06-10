@@ -11,6 +11,7 @@
   "include": [
     "pages/**/*.ts",
     "pages/**/*.tsx",
+    "scripts/**/*.ts",
     "tests/**/*.ts",
     "workers/**/*.ts",
     "types/*.d.ts",

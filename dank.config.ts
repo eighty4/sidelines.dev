@@ -22,6 +22,9 @@ export default defineConfig({
             '.html': 'text',
             '.woff': 'file',
             '.woff2': 'file',
+
+            // for `monaco-editor` codeicon.ttf
+            '.ttf': 'file',
         },
     },
     port: 3000,

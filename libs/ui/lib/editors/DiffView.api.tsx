@@ -1,48 +1,52 @@
-import { MergeView } from '@codemirror/merge'
-import { EditorView, basicSetup } from 'codemirror'
-import { EditorState } from '@codemirror/state'
-import { type FC, useEffect, useState } from 'react'
+// import { type FC, lazy, Suspense } from 'react'
 
 export type DiffViewProps = {
-    before: string
-    after: string
-    readonly?: boolean
+    modified: string
+    original: string
 }
 
-export const DiffView: FC<DiffViewProps> = ({before, after, readonly}) => {
-    const [parent, setParent] = useState<HTMLDivElement | undefined>()
+export { default as CodeMirrorDiffView } from './codemirror/CodeMirrorDiffView.tsx'
 
-    useEffect(() => {
-        if (!parent) return
-        const mergeView = new MergeView({
-            highlightChanges: true,
-            gutter: true,
-            collapseUnchanged: {
-                margin: 3,
-                minSize: 4,
-            },
-            a: {
-                doc: before,
-                extensions: readonly ? [
-                    basicSetup,
-                    EditorView.editable.of(false),
-                    EditorState.readOnly.of(true),
-                ] : basicSetup,
-            },
-            b: {
-                doc: after,
-                extensions: [
-                    basicSetup,
-                    EditorView.editable.of(false),
-                    EditorState.readOnly.of(true),
-                ],
-            },
-            parent: document.body,
-        })
-        return () => {
-            mergeView.destroy()
-        }
-    }, [parent])
+export { default as MonacoDiffView } from './monaco/MonacoDiffView.tsx'
 
-    return <div ref={setParent as (node: HTMLDivElement | null) => void}></div>
-}
+/*** async bundling of monaco bundling `monaco-editor` CSS does not get added to page ***/
+/*** otherwise this module would intend to support async bundling of user selectable UI ***/
+
+// export type EditorKind = 'codemirror' // | 'monaco'
+
+// export type EditorProps = {
+//     editor: EditorKind
+// }
+
+// const CodeMirrorDiffView = lazy(
+//     () => import('./codemirror/CodeMirrorDiffView.tsx'),
+// )
+
+// const MonacoDiffView = lazy(() => import('./monaco/MonacoDiffView.tsx'))
+
+// function getEditor(editor: EditorKind): FC<DiffViewProps> {
+//     switch (editor) {
+//         case 'codemirror':
+//             return CodeMirrorDiffView
+//         case 'monaco':
+//             return MonacoDiffView
+//         default:
+//             throw TypeError(editor + ' not supported')
+//     }
+// }
+
+// export const DiffView: FC<DiffViewProps & EditorProps> = ({
+//     editor,
+//     original,
+//     modified,
+// }) => {
+//     const ActiveDiffView = getEditor(editor)
+//     return (
+//         <Suspense fallback={<div>Loading!</div>}>
+//             <ActiveDiffView
+//                 original={original}
+//                 modified={modified}
+//             />
+//         </Suspense>
+//     )
+// }
