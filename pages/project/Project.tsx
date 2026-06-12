@@ -2,6 +2,7 @@ import {
     resolveRepoUserContext,
     type ViewerRepoUserContext,
 } from '@sidelines/data/tx/repoContext'
+import { UnauthorizedError } from '@sidelines/github'
 import type { RepositoryId } from '@sidelines/model'
 import { Unavailable } from '@sidelines/model/errors'
 import { onDomInteractive } from '@sidelines/pageload/ready'
@@ -14,6 +15,7 @@ import { type FC, Suspense, use, useEffect, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
 import JobApiClient from '../../workers/jobs/JobApiClient.ts'
 import { UserDataClient } from '../../workers/userData/UserDataClient.ts'
+import { logout } from '../nav.ts'
 import { ProjectPageAnonUser } from './ProjectAnonUser.tsx'
 import { ProjectNav } from './ProjectNav.tsx'
 import { LoadingProjectPackages } from './ProjectPackages.tsx'
@@ -97,8 +99,6 @@ const ProjectPage: FC<ProjectPageProps> = ({ repo, jobApi, userData }) => {
     )
 }
 
-// todo special handling with ErrorFallback & Unauthorized from GitHub
-// todo or make all expected/special errors a typed result and ErrorFallback is generic catch-all
 onDomInteractive(async () => {
     const repo = expectRepoFromLocation()
     const ghToken = lookupGhToken()
@@ -106,7 +106,7 @@ onDomInteractive(async () => {
     if (ghToken) {
         const loadingUserContext = resolveRepoUserContext(ghToken, repo)
         root.render(
-            <ErrorFallback fallback={<div>error</div>}>
+            <ErrorFallback fallback={<div>error</div>} callback={onPageError}>
                 <Suspense fallback={<div>loading</div>}>
                     <LoadingProjectPage
                         ghToken={ghToken}
@@ -120,3 +120,9 @@ onDomInteractive(async () => {
         root.render(<ProjectPageAnonUser repo={repo} />)
     }
 })
+
+function onPageError(e: Error) {
+    if (e instanceof UnauthorizedError) {
+        logout()
+    }
+}

@@ -1,11 +1,7 @@
-import {
-    captureOwnerStack,
-    Component,
-    type ErrorInfo,
-    type ReactNode,
-} from 'react'
+import { Component, type ErrorInfo, type ReactNode } from 'react'
 
 export type ErrorFallbackProps = {
+    callback?: (e: Error) => void
     children: ReactNode
     fallback: ReactNode
 }
@@ -34,6 +30,14 @@ export default class ErrorFallback extends Component<
     }
 
     componentDidCatch(error: Error, info: ErrorInfo) {
-        console.error(error, info.componentStack, captureOwnerStack())
+        console.error(
+            'ErrorFallback caught',
+            error,
+            'with component stack:',
+            info.componentStack,
+        )
+        if (this.props.callback) {
+            this.props.callback(error)
+        }
     }
 }
