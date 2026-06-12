@@ -2,6 +2,7 @@ import type { RepositoryId, RepositoryObject } from '@sidelines/model'
 import queryGraphqlApi from '../../queryGraphqlApi.ts'
 import { sortRepoObjects } from './_sort.ts'
 import { QRepoDirListing, type QRepoDirListingVars } from './gql.ts'
+import { directoryObjExpr } from './objExpr.ts'
 
 // repo obj query where obj expr is expected to return a tree
 export default async function queryRepoDirListing(
@@ -14,7 +15,7 @@ export default async function queryRepoDirListing(
 ): Promise<Array<RepositoryObject> | 'repo-not-found'> {
     const vars = {
         ...repo,
-        objExpr: dirpath === null ? `HEAD:''` : `HEAD:${dirpath}`,
+        objExpr: directoryObjExpr(dirpath),
     }
     const json = await queryGraphqlApi<QRepoDirListingVars, GraphData>(
         ghToken,

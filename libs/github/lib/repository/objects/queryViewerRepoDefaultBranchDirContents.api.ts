@@ -7,6 +7,7 @@ import {
     QViewerRepoDefaultBranchDirContents,
     type QViewerRepoDefaultBranchDirContentsVars,
 } from './gql.ts'
+import { directoryObjExpr } from './objExpr.ts'
 
 export type RepoDefaultBranchDirContents = {
     defaultBranch: BranchRef
@@ -28,7 +29,7 @@ export async function queryViewerRepoDefaultBranchDirContents(
         QViewerRepoDefaultBranchDirContentsGraph
     >(ghToken, QViewerRepoDefaultBranchDirContents, {
         name: repo,
-        objExpr: `HEAD:${dirpath.length ? dirpath : `''`}`,
+        objExpr: directoryObjExpr(dirpath),
     })
     const { repository } = json.data.viewer
     if (!repository) {

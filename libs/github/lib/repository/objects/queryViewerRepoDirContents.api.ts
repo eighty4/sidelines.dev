@@ -5,6 +5,7 @@ import {
     QViewerRepoDirContents,
     type QViewerRepoDirContentsVars,
 } from './gql.ts'
+import { directoryObjExpr } from './objExpr.ts'
 
 export type RepoDirContents = {
     contents: Record<string, string>
@@ -22,7 +23,7 @@ export async function queryViewerRepoDirContents(
         QViewerRepoDirContentsGraph
     >(ghToken, QViewerRepoDirContents, {
         name: repo,
-        objExpr: `${ref}:${dirpath.length ? dirpath : `''`}`,
+        objExpr: directoryObjExpr(dirpath, ref),
     })
     if (!json.data.viewer.repository) {
         return RepoNotFound
