@@ -136,13 +136,11 @@ function isDefinitionUsingVars(
 }
 
 function buildGqlString(definition: UsableOperation) {
-    const query = minify(
-        definition.loc.source.body.substring(
-            definition.loc.start,
-            definition.loc.end,
-        ),
+    const gql = definition.loc.source.body.substring(
+        definition.loc.start,
+        definition.loc.end,
     )
-    return `export const ${definition.name.value}: string = '${query}'`
+    return `export const ${definition.name.value}: string = '${minify(stripLineComments(gql))}'`
 }
 
 function buildVarsType(
@@ -180,6 +178,21 @@ function tsType(gqlType: string): string {
             return 'number'
         default:
             throw TypeError()
+    }
+}
+
+function stripLineComments(gql: string): string {
+    let changed = false
+    const lines = gql.split('\n').map(line =>
+        line.replace(/^(.*)#.*$/, (_, cgBeforeComment) => {
+            changed = true
+            return cgBeforeComment
+        }),
+    )
+    if (changed) {
+        return lines.join('\n')
+    } else {
+        return gql
     }
 }
 
