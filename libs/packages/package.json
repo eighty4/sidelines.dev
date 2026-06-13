@@ -12,7 +12,8 @@
   },
   "scripts": {
     "build": "tsc --build tsconfig.lib.json",
-    "build:clean": "rm -rf lib_js lib_types *.tsbuildinfo"
+    "build:clean": "rm -rf lib_js lib_types *.tsbuildinfo",
+    "typecheck": "tsc"
   },
   "dependencies": {
     "@sidelines/github": "workspace:*",

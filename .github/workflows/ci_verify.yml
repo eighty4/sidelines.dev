@@ -33,6 +33,7 @@ jobs:
           cache: true
           run_install: true
       - run: pnpm -r build
+      - run: pnpm -r typecheck
       - run: pnpm typecheck
       - run: pnpm build
 

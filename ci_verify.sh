@@ -58,6 +58,7 @@ fi
 pnpm -r build:clean
 pnpm graphql
 pnpm -r build
+pnpm -r typecheck
 pnpm typecheck
 pnpm test
 pnpm build
