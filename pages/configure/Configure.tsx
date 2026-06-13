@@ -4,7 +4,7 @@ import {
     checkSidelinesRepo,
     type SidelinesRepoProblem,
 } from '@sidelines/github/sidelines/repository/checkSidelinesRepo'
-import { expectGhLogin, expectGhToken } from '@sidelines/pageload/session'
+import { expectGhToken } from '@sidelines/pageload/session'
 import { onDomInteractive } from '@sidelines/pageload/ready'
 import { useEffect, useState, type FC } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -23,14 +23,13 @@ type ConfigureState =
     | `repo-misconfigured`
     | 'all-good'
 
-interface ConfigurePageProps {
+type ConfigurePageProps = {
     ghToken: string
-    ghLogin: string
 }
 
 // todo provide alternatives to repositorySelection === all
 //  `gh repo create --template eighty4/.sidelines.template` with .sidelines as an installed repository
-const Configure: FC<ConfigurePageProps> = ({ ghToken, ghLogin }) => {
+const Configure: FC<ConfigurePageProps> = ({ ghToken }) => {
     const [installationId, setInstallationId] = useState<number | undefined>()
     const [appState, setConfigureState] = useState<ConfigureState>('loading')
     const [repoProblems, setRepoProblems] =
@@ -87,7 +86,6 @@ const Configure: FC<ConfigurePageProps> = ({ ghToken, ghLogin }) => {
             return (
                 <MakeSidelinesRepo
                     ghToken={ghToken}
-                    ghLogin={ghLogin}
                     onRepoMade={() => setConfigureState('all-good')}
                 />
             )
@@ -126,9 +124,8 @@ const Configure: FC<ConfigurePageProps> = ({ ghToken, ghLogin }) => {
 onDomInteractive(async () => {
     try {
         const ghToken = expectGhToken()
-        const ghLogin = await expectGhLogin(ghToken)
         createRoot(document.getElementById('root')!).render(
-            <Configure ghToken={ghToken} ghLogin={ghLogin} />,
+            <Configure ghToken={ghToken} />,
         )
     } catch (e) {
         if (e instanceof UnauthorizedError) {

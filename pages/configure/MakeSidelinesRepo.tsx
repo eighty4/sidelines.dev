@@ -1,20 +1,14 @@
 import { type FC, useState } from 'react'
-import { createSidelinesRepo } from '@sidelines/github/sidelines/repository/createSidelinesRepo'
-import type { RepositoryId } from '@sidelines/model'
+import createSidelinesRepo from '@sidelines/github/sidelines/repository/createSidelinesRepo'
 import { InitializingError } from '@sidelines/ui/messaging/InitializingError'
 
 export interface MakeSidelinesRepoProps {
     ghToken: string
-    ghLogin: string
-    // optionally provide name of project repo to init sidelines repo with
-    repo?: RepositoryId
     onRepoMade: () => void
 }
 
 export const MakeSidelinesRepo: FC<MakeSidelinesRepoProps> = ({
     ghToken,
-    ghLogin,
-    repo,
     onRepoMade,
 }) => {
     const [creating, setCreating] = useState(false)
@@ -23,7 +17,7 @@ export const MakeSidelinesRepo: FC<MakeSidelinesRepoProps> = ({
     async function createRepository() {
         setCreating(true)
         try {
-            await createSidelinesRepo(ghToken, ghLogin, repo?.name)
+            await createSidelinesRepo(ghToken)
             onRepoMade()
         } catch (e) {
             console.error(e)

@@ -1,103 +1,31 @@
-import type { BranchRef, RepositoryId } from '@sidelines/model'
-import { RepoNotFound, Timeout } from '@sidelines/model/errors'
-import { createCommitOnBranch } from '../../repository/mutationCreateCommitOnBranch.api.ts'
-import queryViewerRepoDefaultBranch from '../../repository/queryViewerRepoDefaultBranch.api.ts'
-import restPostForJson from '../../restPostForJson.ts'
 import restPostForResponse from '../../restPostForResponse.ts'
 
-// graphql mutation createCommitOnBranch requires a pre-existing ref
-// so we use a template repo to seed a commit at refs/head/main
+// creates the .sidelines repo for user notes
+// repo will always be validated for intentional use & integrity
+// by checking repo homepage url is "https://sidelines.dev"
+// and repo visibility is private to user
 //
-// generating from template does not allow setting homepage url
-// so we update that after generating from template
-//  homepage url is used to check the gh user's .sidelines repo
-//  before any mutations to ensure its meant for sidelines.dev
-export async function createSidelinesRepo(
-    ghToken: string,
-    owner: string,
-    repo?: string,
-) {
-    await generateNotesRepoFromTemplate(ghToken)
-    await updateSidelinesRepoHomepage(ghToken, owner)
-    if (repo) {
-        const sidelinesRepoId: RepositoryId = {
-            owner,
-            name: '.sidelines',
-        }
-        const branch = await pollForDefaultBranchAfterCreatingRepo(
-            ghToken,
-            sidelinesRepoId.name,
-        )
-        await createCommitOnBranch(ghToken, {
-            repo: sidelinesRepoId,
-            commitMessage: `add ${owner}/${repo} notes README.md`,
-            branch,
-            additions: [
-                {
-                    dirpath: repo,
-                    filename: 'README.md',
-                    content: btoa(`# ${owner}/${repo}`),
-                },
-            ],
-        })
-    }
-}
-
-async function generateNotesRepoFromTemplate(ghToken: string): Promise<void> {
+// graphql mutation createCommitOnBranch requires a pre-existing ref
+// so we use `auto_init=true` to seed a commit at refs/head/main
+// and the graphql mutation will be able to create commits
+export default async function createSidelinesRepo(ghToken: string) {
     const response = await restPostForResponse(
         ghToken,
-        'https://api.github.com/repos/eighty4/.sidelines.template/generate',
+        'https://api.github.com/user/repos',
         {
             name: '.sidelines',
-            description: 'Note taking on Sidelines.dev',
+            description: 'Notes on Sidelines.dev',
+            homepage: 'https://sidelines.dev',
+            auto_init: true,
             private: true,
+            has_issues: false,
+            has_projects: false,
+            has_wiki: false,
+            has_discussions: false,
         },
     )
     if (response.status !== 201) {
         console.error(await response.text())
-        throw new Error(
-            'generate notes repo from template failed with ' + response.status,
-        )
+        throw Error(`create .sidelines repo got ${response.status}`)
     }
-}
-
-async function pollForDefaultBranchAfterCreatingRepo(
-    ghToken: string,
-    repo: string,
-): Promise<BranchRef> {
-    const DELAY_MS = 200
-    const INTERVAL_MS = 50
-    const TIMEOUT_MS = 5000
-    await new Promise(res => setTimeout(res, DELAY_MS))
-    const timeout: Promise<'timeout'> = new Promise(res =>
-        setTimeout(() => res('timeout'), TIMEOUT_MS),
-    )
-    let fetching: ReturnType<typeof queryViewerRepoDefaultBranch>
-    while (true) {
-        fetching = queryViewerRepoDefaultBranch(ghToken, repo)
-        let branch:
-            | Awaited<ReturnType<typeof queryViewerRepoDefaultBranch>>
-            | typeof Timeout
-        branch = await Promise.race([timeout, fetching])
-        if (branch === Timeout) {
-            throw Error('timed out')
-        } else if (branch === RepoNotFound) {
-            await new Promise(res => setTimeout(res, INTERVAL_MS))
-        } else {
-            return branch
-        }
-    }
-}
-
-async function updateSidelinesRepoHomepage(
-    ghToken: string,
-    owner: string,
-): Promise<void> {
-    await restPostForJson(
-        ghToken,
-        `https://api.github.com/repos/${owner}/.sidelines`,
-        {
-            homepage: 'https://sidelines.dev',
-        },
-    )
 }
