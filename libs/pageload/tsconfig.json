@@ -1,17 +1,8 @@
 {
-  "extends": ["../../tsconfig.common.json"],
+  "extends": ["./tsconfig.lib.json"],
   "compilerOptions": {
-    "rootDir": "lib",
-    "outDir": "lib_js",
-    "declarationDir": "lib_types",
-    "composite": true,
-    "types": ["node"]
+    "types": ["node"],
+    "noEmit": true
   },
-  "include": ["lib/**/*.ts"],
-  "exclude": ["node_modules"],
-  "references": [
-    { "path": "../data" },
-    { "path": "../github/tsconfig.lib.json" },
-    { "path": "../model/tsconfig.lib.json" }
-  ]
+  "exclude": ["node_modules"]
 }
