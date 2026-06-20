@@ -1,7 +1,7 @@
 // import { readFile, writeFile } from 'node:fs/promises'
 import { defineConfig } from '@eighty4/dank'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
     devPages: {
         '/__data': './_dev/data/Data.html',
     },
@@ -31,7 +31,10 @@ export default defineConfig({
     previewPort: 4000,
     services: [
         {
-            command: `node --env-file-if-exists .env.local local.ts`,
+            command:
+                mode === 'preview'
+                    ? `node --env-file-if-exists .env.local local.ts`
+                    : `node --env-file-if-exists .env.local --watch local.ts`,
             http: {
                 port: 3333,
             },
@@ -53,4 +56,4 @@ export default defineConfig({
     //         JSON.stringify(jobsMetadata),
     //     )
     // },
-})
+}))
