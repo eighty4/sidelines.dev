@@ -35,6 +35,9 @@ export default defineConfig(({ mode }) => ({
                 mode === 'preview'
                     ? `node --env-file-if-exists .env.local local.ts`
                     : `node --env-file-if-exists .env.local --watch local.ts`,
+            env: {
+                WEBAPP_ADDRESS: `http://127.0.0.1:${mode === 'preview' ? 4000 : 3000}`,
+            },
             http: {
                 port: 3333,
             },
