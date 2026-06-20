@@ -18,13 +18,23 @@ export type ServerEnv = {
     WEBAPP_ADDRESS: string
 }
 
-export function hasServerEnvValues(obj: any): obj is ServerEnv {
+export function hasServerEnvValues(env: unknown): env is ServerEnv {
     return (
-        typeof obj.GH_APP_ID === 'string' &&
-        typeof obj.GH_CLIENT_ID === 'string' &&
-        typeof obj.GH_CLIENT_SECRET === 'string' &&
-        typeof obj.WEBAPP_ADDRESS === 'string'
+        env !== null &&
+        typeof env === 'object' &&
+        'GH_APP_ID' in env &&
+        isString(env.GH_APP_ID) &&
+        'GH_CLIENT_ID' in env &&
+        isString(env.GH_CLIENT_ID) &&
+        'GH_CLIENT_SECRET' in env &&
+        isString(env.GH_CLIENT_SECRET) &&
+        'WEBAPP_ADDRESS' in env &&
+        isString(env.WEBAPP_ADDRESS)
     )
+}
+
+function isString(v: unknown): v is string {
+    return typeof v === 'string' && v.length > 0
 }
 
 type RouteFactories = Record<
