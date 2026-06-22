@@ -1,4 +1,5 @@
 import { isMessageObject } from '@sidelines/model'
+import { makeChannel } from '@sidelines/model/channels'
 import { ulid } from 'ulid'
 
 export type WorkerLaunchId =
@@ -155,24 +156,49 @@ function isPageToSharedWorkerMessage(
     }
 }
 
+const makeAPC = () => makeChannel('sidelines.WorkerLaunch.pages')
+const makePC = (pageId: string) =>
+    makeChannel(`sidelines.WorkerLaunch.page.${pageId}`)
+const makeSWC = () => makeChannel('sidelines.WorkerLaunch.sharedWorker')
+
 class WorkerLaunchPageChannels {
-    readonly allPages: BroadcastChannel = new BroadcastChannel(
-        'sidelines.WorkerLaunch.pages',
-    )
+    readonly allPages: BroadcastChannel = makeAPC()
     readonly page: BroadcastChannel
-    readonly sharedWorker: BroadcastChannel = new BroadcastChannel(
-        'sidelines.WorkerLaunch.sharedWorker',
-    )
+    readonly sharedWorker: BroadcastChannel = makeSWC()
 
     constructor(pageId: string) {
-        this.page = new BroadcastChannel(
-            `sidelines.WorkerLaunch.page.${pageId}`,
-        )
+        this.page = makePC(pageId)
     }
 
-    close() {
+    dispose() {
         this.allPages.close()
         this.page.close()
+        this.sharedWorker.close()
+    }
+}
+
+class WorkerLaunchSharedWorkerChannels {
+    readonly allPages: BroadcastChannel = makeAPC()
+    readonly #pages: Record<string, BroadcastChannel> = {}
+    readonly sharedWorker: BroadcastChannel = makeSWC()
+
+    page(pageId: string): BroadcastChannel {
+        const page = this.#pages[pageId]
+        if (page) {
+            return page
+        } else {
+            return (this.#pages[pageId] = makePC(pageId))
+        }
+    }
+
+    closePage(pageId: string) {
+        this.#pages[pageId]?.close()
+        delete this.#pages[pageId]
+    }
+
+    dispose() {
+        this.allPages.close()
+        Object.values(this.#pages).forEach(p => p.close())
         this.sharedWorker.close()
     }
 }
@@ -194,7 +220,7 @@ export class PageSideWorkerLauncher {
             kind: 'closing',
             pageId: this.#pageId,
         })
-        this.#channels.close()
+        this.#channels.dispose()
     }
 
     #launch(workerId: WorkerLaunchId, instanceId: string, payload: any) {
@@ -286,33 +312,6 @@ export class PageSideWorkerLauncher {
     }
 }
 
-class WorkerLaunchSharedWorkerChannels {
-    readonly allPages: BroadcastChannel = new BroadcastChannel(
-        'sidelines.WorkerLaunch.pages',
-    )
-    readonly #pages: Record<string, BroadcastChannel> = {}
-    readonly sharedWorker: BroadcastChannel = new BroadcastChannel(
-        'sidelines.WorkerLaunch.sharedWorker',
-    )
-
-    page(pageId: string): BroadcastChannel {
-        const page = this.#pages[pageId]
-        if (page) {
-            return page
-        } else {
-            return (this.#pages[pageId] = new BroadcastChannel(
-                `sidelines.WorkerLaunch.page.${pageId}`,
-            ))
-        }
-    }
-
-    close() {
-        this.allPages.close()
-        Object.values(this.#pages).forEach(p => p.close())
-        this.sharedWorker.close()
-    }
-}
-
 export class SharedWorkerSideWorkerLauncher {
     #channels = new WorkerLaunchSharedWorkerChannels()
     // map requestId uuid to payload
@@ -358,6 +357,7 @@ export class SharedWorkerSideWorkerLauncher {
 
     #onPageClosing(msg: PageToSharedWorkerMessage & { kind: 'closing' }) {
         console.log('WorkerLaunch.#onPageClosing', msg)
+        this.#channels.closePage(msg.pageId)
     }
 
     #onPageToSharedWorkerMessage = (e: MessageEvent<unknown>) => {

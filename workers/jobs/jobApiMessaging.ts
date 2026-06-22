@@ -1,4 +1,5 @@
 import type { RepoJobId, RepositoryId } from '@sidelines/model'
+import { makeChannel } from '@sidelines/model/channels'
 
 // initializing shared worker message posted from startJobsSWorker to initialize JobsSWorker
 export type JobSchedulingRequest = {
@@ -39,5 +40,5 @@ export function createJobApiChannel(
     kind: JobApiRequest['kind'],
     channelId: string,
 ): BroadcastChannel {
-    return new BroadcastChannel(`sidelines.job.api.${kind}.${channelId}`)
+    return makeChannel(`sidelines.job.api.${kind}.${channelId}`)
 }

@@ -5,12 +5,12 @@ import {
     type RepositoryId,
 } from '@sidelines/model'
 import { isError } from '@sidelines/model/errors'
-import { createJobUpdateChannel } from '../messaging/channel.ts'
+import { isExecRepoJobMessage } from '../messaging/exec.ts'
 import {
-    isExecRepoJobMessage,
+    createJobUpdateChannel,
     type ExecRepoJobMessage,
-} from '../messaging/exec.ts'
-import type { JobWorkerUpdateMessage } from '../messaging/update.ts'
+    type JobWorkerUpdateMessage,
+} from '../messaging.api.ts'
 
 declare const self: DedicatedWorkerGlobalScope
 

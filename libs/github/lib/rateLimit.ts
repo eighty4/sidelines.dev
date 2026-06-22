@@ -1,3 +1,4 @@
+import { makeChannel } from '@sidelines/model/channels'
 import { GH_API_VERSION } from './apiVersion.ts'
 
 // https://docs.github.com/en/rest/rate-limit/rate-limit
@@ -39,11 +40,11 @@ export async function debugGetRateLimit(
     return await request.json()
 }
 
-export function createChannel(): BroadcastChannel {
-    return new BroadcastChannel('sl.github.api.limit')
+export function createRateLimitChannel(): BroadcastChannel {
+    return makeChannel('sl.github.api.limit')
 }
 
-const channel = createChannel()
+const channel = createRateLimitChannel()
 
 export function dispatchRateLimitUpdate(headers: Headers) {
     const resource = headers.get('x-ratelimit-resource')

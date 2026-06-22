@@ -6,7 +6,7 @@ import {
     readRepoJobReposCompleted,
 } from '@sidelines/data/tx/jobLog'
 import {
-    createUpdateChannel,
+    createJobUpdateChannel,
     isJobWorkerUpdateMessage,
     type ExecRepoJobMessage,
 } from '@sidelines/jobs/messaging'
@@ -19,6 +19,7 @@ import {
     type RepoNameWithOwner,
     type RepositoryId,
 } from '@sidelines/model'
+import { makeChannel, type SidelinesJobDataCN } from '@sidelines/model/channels'
 import { ulid } from 'ulid'
 import {
     SharedWorkerSideWorkerLauncher,
@@ -82,7 +83,7 @@ export default class JobsBackend {
         repos: {},
         syncedRefs: {},
     }
-    #updates: BroadcastChannel = createUpdateChannel()
+    #updates: BroadcastChannel = createJobUpdateChannel()
 
     get ghToken(): string {
         return this.#ghToken
@@ -264,8 +265,7 @@ async function fetchViewerRepoNames(
     ghToken: string,
 ): Promise<Set<RepoNameWithOwner>> {
     return await new Promise<Set<RepoNameWithOwner>>(res => {
-        const channel = 'sl.job.data.' + ulid()
-        const c = new BroadcastChannel(channel)
+        const c = makeChannel(`sl.job.data.${ulid()}`)
         c.onmessage = (e: MessageEvent<ResolveRepoJobReposWorkerResult>) => {
             c.onmessage = null
             c.close()
@@ -273,7 +273,7 @@ async function fetchViewerRepoNames(
         }
         launcher.request('DATA_resolveRepoJobRepos', {
             ghToken,
-            channel,
+            channel: c.name as SidelinesJobDataCN,
         } satisfies ResolveRepoJobReposWorkerInit)
     })
 }

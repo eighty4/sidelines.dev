@@ -3,7 +3,7 @@ import {
     type DataSubscription,
 } from '@sidelines/model'
 import {
-    createChannel,
+    createRateLimitChannel,
     type RateLimitedResource,
     type RateLimitUpdate,
 } from './rateLimit.ts'
@@ -22,5 +22,5 @@ export type RateLimitState = Partial<
 export function subscribeToGitHubRateLimits(
     cb: (update: RateLimitUpdate) => void,
 ): DataSubscription {
-    return new ChannelDataSubscription(createChannel(), cb)
+    return new ChannelDataSubscription(createRateLimitChannel(), cb)
 }
