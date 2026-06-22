@@ -49,6 +49,7 @@ export type { QViewerReposNamesVars } from './repositories/gql.ts'
 
 export type QViewerReposNamesGraph = {
     viewer: {
+        login: string
         repositories: {
             nodes: Array<{
                 name: string

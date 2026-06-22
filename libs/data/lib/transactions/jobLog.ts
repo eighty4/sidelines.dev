@@ -1,12 +1,16 @@
 import type {
-    RepositoryId,
+    JobExecState,
     RepoJobExecStatus,
     RepoJobId,
     RepoJobTarget,
     RepoNameWithOwner,
-    SyncedRefsJobExecStatus,
 } from '@sidelines/model'
-import { connectToDb, DB_STORE_JOB_LOG, idbAddRecord } from '../database.ts'
+import {
+    connectToDb,
+    DB_STORE_JOB_LOG,
+    idbAddRecord,
+    idbGetRecord,
+} from '../database.ts'
 
 // retrieve a model of incomplete jobs from a previous browser session
 // used to initialize the SharedWorker of JobsSWorkerBackend
@@ -19,26 +23,15 @@ export type OutstandingJobs = {
 }
 
 // DB_STORE_JOB_LOG
-type JobLogRecord = {
-    jobId: RepoJobId
+export type JobLogRecord = {
+    // DB_STORE_JOB_LOG_KEY
     jobExecId: string
+
+    jobId: RepoJobId
     whenInit: Date
     whenLastActivity?: Date
     whenDone?: Date
-} & (
-    | {
-          kind: 'schedule'
-      }
-    | {
-          kind: 'repo'
-          target: RepoJobTarget
-          repos: Record<RepoNameWithOwner, RepoJobExecStatus>
-      }
-    | {
-          kind: 'refs'
-          repos: Record<RepoNameWithOwner, SyncedRefsJobExecStatus>
-      }
-)
+} & JobExecState
 
 export async function createRepoJobLog(
     jobId: RepoJobId,
@@ -57,6 +50,13 @@ export async function createRepoJobLog(
 
 async function createJobLog(record: JobLogRecord) {
     await idbAddRecord<JobLogRecord>(DB_STORE_JOB_LOG, record)
+}
+
+// not happy about returning the record type
+export async function readJobExec(
+    jobExecId: string,
+): Promise<JobLogRecord | null> {
+    return await idbGetRecord(DB_STORE_JOB_LOG, jobExecId)
 }
 
 // returns jobs matching criteria for `whenDone` and `whenLastActivity`
@@ -126,7 +126,7 @@ function minutesAgoDate(minutes: number): Date {
 // used when restarting a repo job to diff with all viewer repos
 export async function readRepoJobReposCompleted(
     jobExecId: string,
-): Promise<Array<RepositoryId>> {
+): Promise<Set<RepoNameWithOwner>> {
     const db = await connectToDb()
     return await new Promise((res, rej) => {
         const tx = db.transaction(DB_STORE_JOB_LOG, 'readonly')
@@ -142,14 +142,11 @@ export async function readRepoJobReposCompleted(
             if (req.result.kind !== 'repo') {
                 throw Error('not a repo job')
             }
-            const completed: Array<RepositoryId> = []
-            for (const nameWithOwner of Object.keys(req.result.repos)) {
-                const separator = nameWithOwner.indexOf('/')
-                const owner = nameWithOwner.substring(0, separator)
-                const name = nameWithOwner.substring(separator + 1)
-                completed.push({ owner, name })
-            }
-            res(completed)
+            res(
+                new Set(
+                    Object.keys(req.result.repos) as Array<RepoNameWithOwner>,
+                ),
+            )
         }
         tx.onerror = rej
     })
@@ -157,16 +154,17 @@ export async function readRepoJobReposCompleted(
 
 export async function markRepoJobStatus(
     jobExecId: string,
-    repo: RepositoryId,
+    repo: RepoNameWithOwner,
     status: RepoJobExecStatus,
-): Promise<void> {
+): Promise<Date> {
     const db = await connectToDb()
-    await new Promise<void>((res, rej) => {
+    return await new Promise((res, rej) => {
         const tx = db.transaction(DB_STORE_JOB_LOG, 'readwrite')
         const objectStore = tx.objectStore(DB_STORE_JOB_LOG)
         const req: IDBRequest<JobLogRecord> = tx
             .objectStore(DB_STORE_JOB_LOG)
             .get(jobExecId)
+        const whenLastActivity = new Date()
         req.onsuccess = () => {
             if (req.result === null) {
                 throw Error('not found')
@@ -174,11 +172,11 @@ export async function markRepoJobStatus(
             if (req.result.kind !== 'repo') {
                 throw Error('not a repo job')
             }
-            req.result.repos[`${repo.owner}/${repo.name}`] = status
+            req.result.repos[repo] = status
             req.result.whenLastActivity = new Date()
             objectStore.put(req.result)
         }
-        tx.oncomplete = () => res()
+        tx.oncomplete = () => res(whenLastActivity)
         tx.onerror = rej
     })
 }

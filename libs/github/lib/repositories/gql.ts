@@ -4,7 +4,7 @@ export type QViewerReposNamesVars = {
 }
 
 export const QViewerReposNames: string =
-    'query QViewerReposNames($pageSize: Int!, $cursor: String) { viewer { repositories(affiliations: [OWNER], first: $pageSize, after: $cursor) { nodes { ... on Repository { name } } pageInfo { endCursor hasNextPage } } } }'
+    'query QViewerReposNames($pageSize: Int!, $cursor: String) { viewer { login repositories(affiliations: [OWNER], first: $pageSize, after: $cursor) { nodes { ... on Repository { name } } pageInfo { endCursor hasNextPage } } } }'
 
 export type QViewerReposActivityDataVars = {
     pageSize: number

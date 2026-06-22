@@ -1,4 +1,4 @@
-import type { BranchRef, RepositoryId } from './repo.ts'
+import type { BranchRef, RepoNameWithOwner, RepositoryId } from './repo.ts'
 
 const JobKinds = ['scheduled', 'repos', 'syncedRefs'] as const
 
@@ -13,6 +13,18 @@ export function isJobKind(v: unknown): v is JobKind {
 
 export type JobId = `JOB_${JobKind}_${string}`
 
+// union of completion states for jobs
+export type JobExecState =
+    | {
+          kind: 'schedule'
+      }
+    | RepoJobExecState
+    | SyncedRefsJobExecState
+
+/*****************/
+/*** REPO JOBS ***/
+/*****************/
+
 export type RepoJobId = `JOB_repos_${string}`
 
 export type RepoJobSpec = {
@@ -24,6 +36,14 @@ export type RepoJobExecUpdate = {
     jobId: RepoJobId
     jobExecId: string
     status: RepoJobExecStatus
+}
+
+// completion state of a job execution
+// saved to db with JobLogRecord
+export type RepoJobExecState = {
+    kind: 'repo'
+    target: RepoJobTarget
+    repos: Record<RepoNameWithOwner, RepoJobExecStatus>
 }
 
 // defines scope of a repo job
@@ -38,30 +58,62 @@ export type RepoJobTarget =
           repos: 'owner'
       }
 
+// result of job on a repo
 export type RepoJobExecStatus =
-    | {
-          state: 'done'
-          when: Date
-      }
-    | {
-          state: 'error'
-          when: Date
-          error: string
-      }
-    | {
-          state: 'exception'
-          when: Date
-          error: string
-          message?: string
-          stack?: string
-      }
-    | {
-          state: 'review'
-          when: Date
-          commitId: string
-      }
+    | RepoJobExecResultDone
+    | RepoJobExecResultFailed
+    | RepoJobExecResultException
+    | RepoJobExecResultCommitReview
+    | RepoJobExecResultCommitMerged
 
+export type RepoJobExecResultDone = {
+    state: 'done'
+    when: Date
+}
+
+export type RepoJobExecResultFailed = {
+    state: 'failed'
+    when: Date
+    error: string
+}
+
+export type RepoJobExecResultException = {
+    state: 'exception'
+    when: Date
+    error: string
+    message?: string
+    stack?: string
+}
+
+export type RepoJobExecResultCommitReview = {
+    state: 'review'
+    when: Date
+    commitId: string
+}
+
+export type RepoJobExecResultCommitMerged = {
+    state: 'merged'
+    when: Date
+    sha: string
+}
+
+/************************/
+/*** SYNCED REFS JOBS ***/
+/************************/
+
+// completion state of a job execution
+// saved to db with JobLogRecord
+export type SyncedRefsJobExecState = {
+    kind: 'refs'
+    repos: Record<RepoNameWithOwner, SyncedRefsJobExecStatus>
+}
+
+// result of job on a repo's synced refs
 export type SyncedRefsJobExecStatus = {}
+
+/**************************/
+/*** REPO COMMIT REVIEW ***/
+/**************************/
 
 export type RepoCommitReview = {
     id: string

@@ -11,8 +11,8 @@ import type {
 import { indexedDBStateFrom } from './indexedDBState.ts'
 import { login, userStoryWithSidelinesRepo } from './login.ts'
 import { readRepoCommitAddition } from './opfsState.ts'
-import screenshotOnFailure from './screenshotOnFailure.ts'
 import { userStoryProjectPage } from './project.ts'
+import screenshotOnFailure from './screenshotOnFailure.ts'
 
 test.afterEach(screenshotOnFailure)
 
@@ -27,6 +27,7 @@ test(
                 { cursor: null, pageSize: 100 } satisfies QViewerReposNamesVars,
                 {
                     viewer: {
+                        login: 'eighty4',
                         repositories: {
                             nodes: [
                                 {

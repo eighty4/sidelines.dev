@@ -1,10 +1,15 @@
-import { readRepoJobReposCompleted } from '@sidelines/data/tx/jobLog'
-import queryViewerOwnedRepoNames from '@sidelines/github/repositories/queryViewerOwnedRepoNames'
-import { queryUserLogin } from '@sidelines/github/user/queryUserLogin'
-import type { RepoJobExecStatus, RepositoryId } from '@sidelines/model'
+import {
+    splitRepoName,
+    type RepoJobExecStatus,
+    type RepoNameWithOwner,
+    type RepositoryId,
+} from '@sidelines/model'
 import { isError } from '@sidelines/model/errors'
 import { createJobUpdateChannel } from '../messaging/channel.ts'
-import { isExecRepoJobMessage } from '../messaging/exec.ts'
+import {
+    isExecRepoJobMessage,
+    type ExecRepoJobMessage,
+} from '../messaging/exec.ts'
 import type { JobWorkerUpdateMessage } from '../messaging/update.ts'
 
 declare const self: DedicatedWorkerGlobalScope
@@ -30,55 +35,47 @@ export function registerRepoJob(exec: RepoJobExec): void {
     self.onmessage = async (e: MessageEvent<unknown>) => {
         if (!isExecRepoJobMessage(e.data)) {
             console.error(LABEL, 'invalid ExecRepoJobMessage')
+            self.close()
         } else {
-            console.log(LABEL, 'repo job starting', e.data.target)
-            const { ghToken, jobExecId } = e.data
-            switch (e.data.target.repos) {
-                case 'single':
-                    await execJobForRepo(
-                        ghToken,
-                        jobExecId,
-                        e.data.target.repo,
-                        exec,
-                    )
-                    break
-                case 'owner':
-                    const repos = await resolveJobRepos(ghToken, jobExecId)
-                    await execJobForRepos(ghToken, jobExecId, repos, exec)
-                    break
-            }
-            console.log(LABEL, 'repo job finished')
-            postUpdate({
-                jobExecId: e.data.jobExecId,
-                jobKind: 'repos',
-                kind: 'complete',
-            })
-
-            // todo make this WorkerLaunch detail less like magic fudge
-            postMessage({ kind: 'finished' })
+            await onExecRepoJob(e.data, exec)
         }
+        // todo make this WorkerLaunch detail less like magic fudge
+        postMessage({ kind: 'finished' })
     }
 }
 
-// todo use Promise.race to do concurrent batches
-async function execJobForRepos(
-    ghToken: string,
-    jobExecId: string,
-    repos: Array<RepositoryId>,
+async function onExecRepoJob(
+    { ghToken, jobExecId, repos }: ExecRepoJobMessage,
     exec: RepoJobExec,
-): Promise<void> {
+) {
+    console.log(LABEL, 'repo job starting on', repos.length, 'repos')
+    postUpdate({
+        kind: 'starting',
+        jobKind: 'repos',
+        jobExecId,
+    })
     for (const repo of repos) {
         await execJobForRepo(ghToken, jobExecId, repo, exec)
     }
+    console.log(LABEL, 'repo job finished')
+    postUpdate({
+        jobExecId,
+        jobKind: 'repos',
+        kind: 'complete',
+    })
 }
 
 async function execJobForRepo(
     ghToken: string,
     jobExecId: string,
-    repo: RepositoryId,
+    repo: RepoNameWithOwner,
     exec: RepoJobExec,
 ) {
-    const status = await execJobForRepoJobStatus(ghToken, repo, exec)
+    const status = await execJobForRepoJobStatus(
+        ghToken,
+        splitRepoName(repo),
+        exec,
+    )
     postUpdate({
         kind: 'status',
         jobKind: 'repos',
@@ -118,29 +115,4 @@ async function execJobForRepoJobStatus(
             }
         }
     }
-}
-
-async function resolveJobRepos(
-    ghToken: string,
-    jobExecId: string,
-): Promise<Array<RepositoryId>> {
-    // todo one network request
-    const fetchingViewerRepoNames = queryViewerOwnedRepoNames(ghToken)
-    const readingCompletedRepos = readRepoJobReposCompleted(jobExecId)
-    const owner = await queryUserLogin(ghToken)
-    const viewerRepoNames = await fetchingViewerRepoNames
-    const completed: Set<string> = new Set(
-        (await readingCompletedRepos).map(repo => `${repo.owner}/${repo.name}`),
-    )
-    console.log(
-        LABEL,
-        'resolveJobRepos:',
-        viewerRepoNames.length,
-        'total',
-        completed.size,
-        'previously complted',
-    )
-    return viewerRepoNames
-        .filter(repo => !completed.has(`${owner}/${repo}`))
-        .map(name => ({ owner, name }))
 }

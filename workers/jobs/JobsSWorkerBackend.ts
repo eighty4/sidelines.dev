@@ -3,19 +3,32 @@ import {
     markJobDone,
     markRepoJobStatus,
     readOutsandingJobs,
+    readRepoJobReposCompleted,
 } from '@sidelines/data/tx/jobLog'
 import {
     createUpdateChannel,
     isJobWorkerUpdateMessage,
     type ExecRepoJobMessage,
 } from '@sidelines/jobs/messaging'
-import type { JobId, JobKind, RepoJobId, RepositoryId } from '@sidelines/model'
+import {
+    joinRepoName,
+    type JobId,
+    type JobKind,
+    type RepoJobId,
+    type RepoJobTarget,
+    type RepoNameWithOwner,
+    type RepositoryId,
+} from '@sidelines/model'
 import { ulid } from 'ulid'
 import {
     SharedWorkerSideWorkerLauncher,
     type WorkerLaunchId,
 } from '../WorkerLaunch.ts'
 import { createJobApiChannel, type JobApiRequest } from './jobApiMessaging.ts'
+import type {
+    ResolveRepoJobReposWorkerInit,
+    ResolveRepoJobReposWorkerResult,
+} from './ResolveRepoJobReposWorker.ts'
 
 function workerLaunchId(jobId: JobId): WorkerLaunchId {
     switch (jobId) {
@@ -27,13 +40,33 @@ function workerLaunchId(jobId: JobId): WorkerLaunchId {
 }
 
 // jobKind to jobExecId to running repo
-type RunningJobs = Record<JobKind, Record<string, RunningRepoJob>>
+type RunningJobs = Record<JobKind, Record<string, RunningRepoJob<any>>>
 
-type RunningRepoJob = {
+type RunningRepoJob<S extends RunningRepoJobState> = {
     jobId: RepoJobId
     jobExecId: string
     lastActivity: Date
-    target: ExecRepoJobMessage['target']
+    target: RepoJobTarget
+    state: S
+}
+
+type RunningRepoJobState =
+    | RunningRepoJobStateResolving
+    | RunningRepoJobStateLaunching
+    | RunningRepoJobStateRunning
+
+type RunningRepoJobStateResolving = { kind: 'resolving' }
+
+type RunningRepoJobStateLaunching = {
+    kind: 'launching'
+    repos: Set<RepoNameWithOwner>
+    completed: Set<RepoNameWithOwner>
+}
+
+type RunningRepoJobStateRunning = {
+    kind: 'running'
+    repos: Set<RepoNameWithOwner>
+    completed: Set<RepoNameWithOwner>
 }
 
 export default class JobsBackend {
@@ -62,28 +95,22 @@ export default class JobsBackend {
     }
 
     exec(channelId: string, jobId: RepoJobId, repo?: RepositoryId) {
-        console.log('job exec request')
         this.#createChannel('EXEC', channelId)
         const jobExecId = ulid()
-        const target: ExecRepoJobMessage['target'] = repo
+        const target: RepoJobTarget = repo
             ? { repos: 'single', repo }
             : { repos: 'owner' }
         createRepoJobLog(jobId, jobExecId, target)
-            .then(() =>
-                this.#launchRepoJob({
-                    jobId,
-                    jobExecId,
-                    target,
-                    lastActivity: new Date(),
-                }),
-            )
+            .then(() => {
+                this.#launchRepoJob(jobId, jobExecId, target)
+            })
             .catch((e: unknown) => {
-                console.error('JobSWorkerBackend error initializing exec', e)
+                console.error('JobSWorker error initializing exec', e)
             })
     }
 
     ls(_channelId: string) {
-        throw Error()
+        throw Error('todo')
     }
 
     hasGhTokenChanged(ghToken: string): boolean {
@@ -103,38 +130,70 @@ export default class JobsBackend {
         this.#channels[kind].push(channel)
     }
 
-    #launchRepoJob(job: RunningRepoJob) {
-        this.#running.repos[job.jobExecId] = job
-        this.#launcher.request(workerLaunchId(job.jobId), {
-            kind: 'EXEC',
-            ghToken: this.#ghToken,
-            jobExecId: job.jobExecId,
-            target: job.target,
-        } satisfies ExecRepoJobMessage)
+    #launchRepoJob(jobId: RepoJobId, jobExecId: string, target: RepoJobTarget) {
+        const job = (this.#running.repos[jobExecId] = {
+            jobId,
+            jobExecId,
+            target,
+            lastActivity: new Date(),
+            state: {
+                kind: 'resolving',
+            },
+        })
+        this.#resolveRepoJobRepos(jobExecId, target).then(launching => {
+            job.state = launching
+            this.#launcher.request(workerLaunchId(jobId), {
+                kind: 'EXEC',
+                ghToken: this.#ghToken,
+                jobExecId,
+                repos: Array.from(
+                    launching.repos.difference(launching.completed),
+                ),
+            } satisfies ExecRepoJobMessage)
+        })
     }
 
     #onJobUpdate = async (e: MessageEvent<unknown>) => {
         if (!isJobWorkerUpdateMessage(e.data)) {
             console.warn(
-                'JobsSWorker update channel invalid JobWorkerUpdateMessage',
+                'JobSWorker update channel invalid JobWorkerUpdateMessage',
                 e.data,
             )
             return
         }
-        switch (e.data.jobKind) {
+        const { jobKind, kind, jobExecId } = e.data
+        switch (jobKind) {
             case 'repos':
-                switch (e.data.kind) {
+                switch (kind) {
+                    case 'starting':
+                        this.#runningJobLookup<
+                            | RunningRepoJobStateLaunching
+                            | RunningRepoJobStateRunning
+                        >(jobKind, jobExecId, 'launching').state.kind =
+                            'running'
+                        break
                     case 'status':
-                        await markRepoJobStatus(
-                            e.data.jobExecId,
+                        const runningJob =
+                            this.#runningJobLookup<RunningRepoJobStateRunning>(
+                                jobKind,
+                                jobExecId,
+                                'running',
+                            )
+                        runningJob.state.completed.add(e.data.repo)
+                        runningJob.lastActivity = await markRepoJobStatus(
+                            jobExecId,
                             e.data.repo,
                             e.data.status,
                         )
-                        this.#runningJobActivity('repos', e.data.jobExecId)
                         break
                     case 'complete':
-                        await markJobDone(e.data.jobExecId)
-                        this.#runningJobComplete('repos', e.data.jobExecId)
+                        console.log(
+                            'JobsSWorker job',
+                            this.#running[jobKind][jobExecId].jobId,
+                            'complete',
+                        )
+                        await markJobDone(jobExecId)
+                        delete this.#running[jobKind][jobExecId]
                         break
                 }
                 break
@@ -152,28 +211,69 @@ export default class JobsBackend {
                 restartables,
             )
             for (const { jobId, jobExecId, target } of restartables.repos) {
-                this.#launchRepoJob({
-                    jobId,
-                    jobExecId,
-                    target,
-                    lastActivity: new Date(),
-                })
+                this.#launchRepoJob(jobId, jobExecId, target)
             }
         } catch (e) {
             console.error('JobsSWorker refresh error', e)
         }
     }
 
-    #runningJobActivity(jobKind: JobKind, jobExecId: string) {
-        this.#running[jobKind][jobExecId].lastActivity = new Date()
+    async #resolveRepoJobRepos(
+        jobExecId: string,
+        target: RepoJobTarget,
+    ): Promise<RunningRepoJobStateLaunching> {
+        if (target.repos === 'single') {
+            return {
+                kind: 'launching',
+                completed: new Set(),
+                repos: new Set([joinRepoName(target.repo)]),
+            }
+        }
+        // todo this SharedWorker calls GitHub API directly
+        // const fetchingViewerRepoNames = queryViewerOwnedRepoNames(this.#ghToken)
+        const fetchingViewerRepoNames = fetchViewerRepoNames(
+            this.#launcher,
+            this.#ghToken,
+        )
+        const completed = await readRepoJobReposCompleted(jobExecId)
+        const repos = new Set(await fetchingViewerRepoNames)
+        return {
+            kind: 'launching',
+            completed,
+            repos,
+        }
     }
 
-    #runningJobComplete(jobKind: JobKind, jobExecId: string) {
-        console.log(
-            'JobsSWorker job',
-            this.#running[jobKind][jobExecId].jobId,
-            'complete',
-        )
-        delete this.#running[jobKind][jobExecId]
+    #runningJobLookup<S extends RunningRepoJobState>(
+        jobKind: JobKind,
+        jobExecId: string,
+        expect: S['kind'],
+    ): RunningRepoJob<S> {
+        const job = this.#running[jobKind][jobExecId]
+        if (job.state.kind !== expect) {
+            throw Error(`invalid state ${job.state.kind} for job ${jobExecId}`)
+        }
+        return job
     }
+}
+
+// PlayWright does not support intercepting requests in a SharedWorker
+// the network requst is delegated to a WorkerLaunch dedicated worker
+async function fetchViewerRepoNames(
+    launcher: SharedWorkerSideWorkerLauncher,
+    ghToken: string,
+): Promise<Set<RepoNameWithOwner>> {
+    return await new Promise<Set<RepoNameWithOwner>>(res => {
+        const channel = 'sl.job.data.' + ulid()
+        const c = new BroadcastChannel(channel)
+        c.onmessage = (e: MessageEvent<ResolveRepoJobReposWorkerResult>) => {
+            c.onmessage = null
+            c.close()
+            res(new Set(e.data.repos))
+        }
+        launcher.request('DATA_resolveRepoJobRepos', {
+            ghToken,
+            channel,
+        } satisfies ResolveRepoJobReposWorkerInit)
+    })
 }

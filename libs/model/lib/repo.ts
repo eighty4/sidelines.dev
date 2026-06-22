@@ -9,6 +9,15 @@ export type Repository = {
 
 export type RepositoryId = Pick<Repository, 'owner' | 'name'>
 
+export function joinRepoName(repo: RepositoryId): RepoNameWithOwner {
+    return `${repo.owner}/${repo.name}`
+}
+
+export function splitRepoName(repo: RepoNameWithOwner): RepositoryId {
+    const [owner, name] = repo.split('/', 2)
+    return { owner, name }
+}
+
 export type RepoDefaultBranch = {
     repo: RepositoryId
     defaultBranch: BranchRef

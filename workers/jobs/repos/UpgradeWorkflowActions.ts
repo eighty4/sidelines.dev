@@ -28,7 +28,7 @@ async function upgradeWorkflowActions(
     if (queryWorkflowResult === RepoNotFound) {
         console.error('UpgradeWorkflowActions repo', repo, 'not found')
         return {
-            state: 'error',
+            state: 'failed',
             error: 'repo does not exist',
             when: new Date(),
         }
@@ -75,7 +75,7 @@ async function upgradeWorkflowActions(
     for (const { filename, yaml } of upgraded) {
         if (readWorkflowModel(yaml).schemaErrors.length > 0) {
             return {
-                state: 'error',
+                state: 'failed',
                 error: filename + ' not valid after upgrading github actions',
                 when: new Date(),
             }

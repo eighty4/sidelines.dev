@@ -2,6 +2,7 @@ import { isMessageObject } from '@sidelines/model'
 import { ulid } from 'ulid'
 
 export type WorkerLaunchId =
+    | 'DATA_resolveRepoJobRepos'
     | 'JOB_SCHEDULED_sync'
     | 'JOB_SYNC_packages'
     | 'JOB_SYNC_watches'
@@ -9,6 +10,10 @@ export type WorkerLaunchId =
 
 function createWorkerFromLaunchId(workerId: WorkerLaunchId): Worker {
     switch (workerId) {
+        case 'DATA_resolveRepoJobRepos':
+            return new Worker('./jobs/ResolveRepoJobReposWorker.ts', {
+                name: 'Sidelines.dev - resolve repo job repos',
+            })
         case 'JOB_SCHEDULED_sync':
             return new Worker('./jobs/scheduled/SyncRefs.ts', {
                 name: 'Sidelines.dev - sync refs',

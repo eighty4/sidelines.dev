@@ -1,4 +1,4 @@
-import { isMessageObject, type RepoJobTarget } from '@sidelines/model'
+import { isMessageObject, type RepoNameWithOwner } from '@sidelines/model'
 
 export type ExecJobMessage = {
     kind: 'EXEC'
@@ -7,7 +7,7 @@ export type ExecJobMessage = {
 }
 
 export type ExecRepoJobMessage = ExecJobMessage & {
-    target: RepoJobTarget
+    repos: Array<RepoNameWithOwner>
 }
 
 export type ExecSyncedRefsJobMessage = ExecJobMessage & {}
