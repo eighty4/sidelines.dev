@@ -1,4 +1,5 @@
 import { isMessageObject } from '@sidelines/model'
+import { ulid } from 'ulid'
 
 export type WorkerLaunchId =
     | 'JOB_SCHEDULED_sync'
@@ -32,16 +33,22 @@ type RequestedWorker = {
     payload: any
 }
 
-type RunningWorker = RequestedWorker & { pageId: string }
+type RunningWorker = RequestedWorker & {
+    pageId: string
+    instanceId: string
+}
 
 type LaunchedWorker = {
-    id: WorkerLaunchId
+    workerId: WorkerLaunchId
+    // scheduling requestId becomes instanceId
+    instanceId: string
     w: Worker
     startedWhen: Date
 }
 
 type SharedWorkerToPageMessage = {
     kind: 'launch'
+    instanceId: string
     pageId: string
     workerId: WorkerLaunchId
     payload: any
@@ -59,11 +66,16 @@ type PageToSharedWorkerMessage =
           requestId: string
       }
     | {
+          kind: 'finished'
+          pageId: string
+          instanceId: string
+      }
+    | {
           kind: 'closing'
           pageId: string
       }
 
-type LaunchedWorkerMessage = {
+export type LaunchedWorkerMessage = {
     kind: 'finished'
 }
 
@@ -180,11 +192,12 @@ export class PageSideWorkerLauncher {
         this.#channels.close()
     }
 
-    #launch(workerId: WorkerLaunchId, payload: any) {
+    #launch(workerId: WorkerLaunchId, instanceId: string, payload: any) {
         console.log('WorkerLaunch launching', workerId, payload)
         const w = createWorkerFromLaunchId(workerId)
-        const launched = {
-            id: workerId,
+        const launched: LaunchedWorker = {
+            workerId,
+            instanceId,
             w,
             startedWhen: new Date(),
         }
@@ -208,6 +221,11 @@ export class PageSideWorkerLauncher {
         switch (e.data.kind) {
             case 'finished':
                 this.#removeLaunchedWorker(launched)
+                this.#postToSharedWorker({
+                    kind: 'finished',
+                    pageId: this.#pageId,
+                    instanceId: launched.instanceId,
+                })
                 break
         }
     }
@@ -244,7 +262,7 @@ export class PageSideWorkerLauncher {
         console.log('WorkerLaunch received SharedWorkerToPageMessage', e.data)
         switch (e.data.kind) {
             case 'launch':
-                this.#launch(e.data.workerId, e.data.payload)
+                this.#launch(e.data.workerId, e.data.instanceId, e.data.payload)
                 break
         }
     }
@@ -254,9 +272,9 @@ export class PageSideWorkerLauncher {
         this.#channels.sharedWorker.postMessage(reply)
     }
 
-    #removeLaunchedWorker(running: LaunchedWorker) {
-        running.w.terminate()
-        const i = this.#running.indexOf(running)
+    #removeLaunchedWorker(finished: LaunchedWorker) {
+        finished.w.terminate()
+        const i = this.#running.indexOf(finished)
         if (i !== -1) {
             this.#running.splice(i, 1)
         }
@@ -303,7 +321,7 @@ export class SharedWorkerSideWorkerLauncher {
     }
 
     request(workerId: WorkerLaunchId, payload: any) {
-        const requestId = crypto.randomUUID()
+        const requestId = ulid()
         this.#requests[requestId] = { workerId, payload }
         this.#channels.allPages.postMessage({
             kind: 'request',
@@ -320,11 +338,13 @@ export class SharedWorkerSideWorkerLauncher {
             }
             this.#running[msg.pageId].push({
                 ...requested,
+                instanceId: msg.requestId,
                 pageId: msg.pageId,
             })
             this.#channels.page(msg.pageId).postMessage({
                 kind: 'launch',
                 pageId: msg.pageId,
+                instanceId: msg.requestId,
                 payload: requested.payload,
                 workerId: requested.workerId,
             } satisfies SharedWorkerToPageMessage)
@@ -350,6 +370,16 @@ export class SharedWorkerSideWorkerLauncher {
             case 'closing':
                 this.#onPageClosing(e.data)
                 break
+            case 'finished':
+                this.#onWorkerFinished(e.data.pageId, e.data.instanceId)
+        }
+    }
+
+    #onWorkerFinished(pageId: string, instanceId: string) {
+        const pageWorkers = this.#running[pageId]
+        const i = pageWorkers.findIndex(w => w.instanceId === instanceId)
+        if (i !== -1) {
+            pageWorkers.splice(i, 1)
         }
     }
 }

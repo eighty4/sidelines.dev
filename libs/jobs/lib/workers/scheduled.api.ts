@@ -1,3 +1,5 @@
+declare const self: DedicatedWorkerGlobalScope
+
 export type ScheduledJobExecContext = {
     lastRun?: Date
 }
@@ -9,4 +11,7 @@ export type ScheduledJobExec = {
     ): Promise<void> | void
 }
 
-export function registerScheduledJob(_exec: ScheduledJobExec): void {}
+export function registerScheduledJob(_exec: ScheduledJobExec): void {
+    // todo make this WorkerLaunch detail less like magic fudge
+    postMessage({ kind: 'finished' })
+}

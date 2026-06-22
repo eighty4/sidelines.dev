@@ -53,6 +53,9 @@ export function registerRepoJob(exec: RepoJobExec): void {
                 jobKind: 'repos',
                 kind: 'complete',
             })
+
+            // todo make this WorkerLaunch detail less like magic fudge
+            postMessage({ kind: 'finished' })
         }
     }
 }
