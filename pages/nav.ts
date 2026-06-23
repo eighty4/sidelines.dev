@@ -19,11 +19,25 @@ export function getAppInstallationConfigureUrl(installationId: number): string {
 }
 
 export function logout() {
+    const form = createLogoutForm()
+    document.body.append(form)
+    form.submit()
+}
+
+function createLogoutForm(): HTMLFormElement {
     const form = document.createElement('form')
     form.action = '/logout'
     form.method = 'POST'
-    document.body.append(form)
-    form.submit()
+    return form
+}
+
+export function createLogoutButton(): HTMLFormElement {
+    const form = createLogoutForm()
+    const button = document.createElement('button')
+    button.type = 'submit'
+    button.innerText = 'Logout'
+    form.appendChild(button)
+    return form
 }
 
 export function navToProject(repo: RepositoryId) {

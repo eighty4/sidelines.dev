@@ -1,7 +1,11 @@
 import { onDomInteractive } from '@sidelines/pageload/ready'
 import { lookupGhToken } from '@sidelines/pageload/session'
 import { UserDataClient } from '../../workers/userData/UserDataClient.ts'
-import { buildProjectUrl, loginRedirectUrl } from '../nav.ts'
+import {
+    buildProjectUrl,
+    createLogoutButton,
+    loginRedirectUrl,
+} from '../nav.ts'
 
 onDomInteractive(async () => {
     const ghToken = lookupGhToken()
@@ -18,7 +22,7 @@ onDomInteractive(async () => {
                 `Project ${repo.owner}/${repo.name}`,
             )
         }
-        createLogoutButton()
+        document.body.appendChild(createLogoutButton())
     }
 })
 
@@ -27,11 +31,4 @@ function createLink(href: string, text: string) {
     a.href = href
     a.innerText = text
     document.body.appendChild(a)
-}
-
-function createLogoutButton() {
-    document.body.insertAdjacentHTML(
-        'beforeend',
-        `<form action="/logout" method="POST"><button type="submit">Logout</button></form>`,
-    )
 }

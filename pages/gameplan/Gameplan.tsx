@@ -5,7 +5,7 @@ import { JobList } from '@sidelines/ui/jobs/JobList'
 import { type FC } from 'react'
 import { createRoot } from 'react-dom/client'
 import JobApiClient from '../../workers/jobs/JobApiClient.ts'
-import { logout } from '../nav.ts'
+import { createLogoutButton, logout } from '../nav.ts'
 
 interface GameplanPageProps {
     ghToken: string
@@ -51,4 +51,5 @@ onDomInteractive(async () => {
             jobApiClient={jobApiClient}
         />,
     )
+    document.body.appendChild(createLogoutButton())
 })
