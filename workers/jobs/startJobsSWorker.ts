@@ -1,3 +1,5 @@
+import type { JobSchedulingRequest } from './jobApiMessaging.ts'
+
 export default function startJobSchedulingWorker(
     ghToken: string,
 ): SharedWorker {
@@ -7,7 +9,10 @@ export default function startJobSchedulingWorker(
     sw.onerror = onError
     sw.port.onmessage = onMessage
     sw.port.onmessageerror = onMessageError
-    sw.port.postMessage({ kind: 'INIT', ghToken })
+    sw.port.postMessage({
+        kind: 'INIT',
+        ghToken,
+    } satisfies JobSchedulingRequest)
     return sw
 }
 

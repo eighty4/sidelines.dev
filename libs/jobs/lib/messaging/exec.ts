@@ -1,4 +1,10 @@
-import { isMessageObject, type RepoNameWithOwner } from '@sidelines/model'
+import type { RepoNameWithOwner } from '@sidelines/model'
+import {
+    isArray,
+    isMessageObject,
+    isRepoName,
+    isString,
+} from '@sidelines/model/validate'
 
 export type ExecJobMessage = {
     kind: 'EXEC'
@@ -12,38 +18,29 @@ export type ExecRepoJobMessage = ExecJobMessage & {
 
 export type ExecSyncedRefsJobMessage = ExecJobMessage & {}
 
-function isExecJobMessage(data: unknown): data is ExecJobMessage {
-    if (!isMessageObject(data)) {
-        return false
-    }
-    switch (data.kind) {
-        case 'EXEC':
-            return (
-                'ghToken' in data &&
-                typeof data.ghToken === 'string' &&
-                'jobExecId' in data &&
-                typeof data.jobExecId === 'string'
-            )
-        default:
-            console.warn('ExecJobMessage invalid', data.kind)
-            return false
-    }
-}
-
 export function isExecRepoJobMessage(
     data: unknown,
 ): data is ExecRepoJobMessage {
-    if (!isExecJobMessage(data)) {
-        return false
-    }
-    return true
+    return isExecJobMessage(data) && isArray(data.repos, isRepoName)
 }
 
 export function isExecSyncedRefsJobMessage(
     data: unknown,
 ): data is ExecSyncedRefsJobMessage {
-    if (!isExecJobMessage(data)) {
+    return isExecJobMessage(data)
+}
+
+function isExecJobMessage(
+    data: unknown,
+): data is ExecJobMessage & { [key: string]: unknown } {
+    if (!isMessageObject(data)) {
         return false
     }
-    return true
+    switch (data.kind) {
+        case 'EXEC':
+            return isString(data.ghToken) && isString(data.jobExecId)
+        default:
+            console.warn('ExecJobMessage invalid', data.kind)
+            return false
+    }
 }

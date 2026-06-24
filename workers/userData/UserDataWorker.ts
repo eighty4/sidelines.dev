@@ -12,11 +12,20 @@ import type {
     RepositoryPackage,
 } from '@sidelines/model'
 import type { RefNotFound, RepoNotFound } from '@sidelines/model/errors'
+import {
+    isMessageObject,
+    isNullOrString,
+    isString,
+    isRepoId,
+    isOptionalNumber,
+} from '@sidelines/model/validate'
 
 declare const self: DedicatedWorkerGlobalScope
 
 export type UserDataMessageBase<KIND> = {
     kind: KIND
+} & {
+    [key: string]: unknown
 }
 
 export type UserDataRpcMessageBase<KIND> = UserDataMessageBase<KIND> & {
@@ -117,28 +126,36 @@ async function processRpcRequest(
     }
 }
 
-function isMessage(req: unknown): req is UserDataMessageBase<any> {
-    if (req === null || typeof req !== 'object') {
-        return false
-    }
-    return 'kind' in req && typeof req.kind === 'string'
-}
-
 function isRpcRequest(
     req: UserDataMessageBase<any>,
 ): req is UserDataRpcRequest {
+    if (!isString(req.id)) {
+        return false
+    }
     switch (req.kind) {
         case 'nav-get':
+            return isOptionalNumber(req.limit)
         case 'repo-cat':
+            return (
+                isString(req.ghToken) &&
+                isRepoId(req.repo) &&
+                isNullOrString(req.dirpath) &&
+                isString(req.filename)
+            )
         case 'repo-ls':
+            return (
+                isString(req.ghToken) &&
+                isRepoId(req.repo) &&
+                isNullOrString(req.dirpath)
+            )
         case 'repo-pkgs':
-            return 'id' in req && typeof req.id === 'string'
+            return isString(req.ghToken) && isRepoId(req.repo)
     }
     return false
 }
 
 self.onmessage = async (e: MessageEvent<UserDataRequest>) => {
-    if (!isMessage(e.data)) {
+    if (!isMessageObject(e.data)) {
         console.error('workers/userData.js onmessage bad input', e.data)
         self.close()
     } else {

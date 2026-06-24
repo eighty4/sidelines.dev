@@ -1,4 +1,6 @@
-export type WorkerMsg<KIND extends string> = { kind: KIND }
+export type WorkerMsg<KIND extends string> = { kind: KIND } & {
+    [key: string]: unknown
+}
 
 export type WorkerRpcMsg<KIND extends string> = WorkerMsg<KIND> & { id: string }
 

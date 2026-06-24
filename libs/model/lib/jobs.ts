@@ -1,15 +1,8 @@
 import type { BranchRef, RepoNameWithOwner, RepositoryId } from './repo.ts'
 
-const JobKinds = ['scheduled', 'repos', 'syncedRefs'] as const
+export const JobKinds = ['scheduled', 'repos', 'syncedRefs'] as const
 
 export type JobKind = (typeof JobKinds)[number]
-
-export function isJobKind(v: unknown): v is JobKind {
-    return (
-        typeof v === 'string' &&
-        (JobKinds as Readonly<Array<string>>).includes(v)
-    )
-}
 
 export type JobId = `JOB_${JobKind}_${string}`
 

@@ -41,7 +41,7 @@ export default class JobApiClient {
         this.#sw.port.postMessage({
             kind: 'EXEC',
             channelId,
-            jobId: jobId,
+            jobId,
             repo,
         } satisfies JobApiRequest)
         return new ChannelDataSubscription(channel, cb)

@@ -4,6 +4,7 @@ import {
     getAllWatches,
     getWatchesForRepo,
 } from '@sidelines/data/tx/readWatches'
+import { isMessageObject, isString } from '@sidelines/model/validate'
 import type { WorkerMsg } from '../WorkerClient.ts'
 import type { WatchAsyncReq, WatchRpcReq, WatchRpcRes } from './WatchesApi.ts'
 
@@ -44,20 +45,13 @@ async function processRpcRequest(request: WatchRpcReq): Promise<WatchRpcRes> {
     }
 }
 
-function isWorkerMessage(req: unknown): req is WorkerMsg<any> {
-    if (req === null || typeof req !== 'object') {
-        return false
-    }
-    return 'kind' in req && typeof req.kind === 'string'
-}
-
-function isRpcRequest(req: any): req is WatchRpcReq {
-    return 'id' in req && typeof req.id === 'string'
+function isRpcRequest(req: WorkerMsg<any>): req is WatchRpcReq {
+    return isString(req.id)
 }
 
 self.onmessage = async (e: MessageEvent<WatchAsyncReq | WatchRpcReq>) => {
     const req = e.data
-    if (!isWorkerMessage(req)) {
+    if (!isMessageObject(req)) {
         console.error('watches.js onmessage bad input', req)
         self.close()
     } else {

@@ -1,9 +1,13 @@
 import {
-    isJobKind,
-    isMessageObject,
     type RepoJobExecStatus,
     type RepoNameWithOwner,
 } from '@sidelines/model'
+import {
+    isMessageObject,
+    isJobKind,
+    isString,
+    isRepoName,
+} from '@sidelines/model/validate'
 
 export type JobWorkerUpdateMessage =
     | {
@@ -33,29 +37,16 @@ export function isJobWorkerUpdateMessage(
     if ('kind' in data) {
         switch (data.kind) {
             case 'starting':
-                return (
-                    'jobKind' in data &&
-                    isJobKind(data.jobKind) &&
-                    'jobExecId' in data &&
-                    typeof data.jobExecId === 'string'
-                )
+                return isJobKind(data.jobKind) && isString(data.jobExecId)
             case 'status':
                 return (
-                    'jobKind' in data &&
                     isJobKind(data.jobKind) &&
-                    'jobExecId' in data &&
-                    typeof data.jobExecId === 'string' &&
-                    'repo' in data &&
-                    typeof data.repo === 'string' &&
+                    isString(data.jobExecId) &&
+                    isRepoName(data) &&
                     'status' in data
                 )
             case 'complete':
-                return (
-                    'jobKind' in data &&
-                    isJobKind(data.jobKind) &&
-                    'jobExecId' in data &&
-                    typeof data.jobExecId === 'string'
-                )
+                return isJobKind(data.jobKind) && isString(data.jobExecId)
         }
     }
     return false

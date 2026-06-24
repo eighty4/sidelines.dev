@@ -1,5 +1,5 @@
-import { isMessageObject } from '@sidelines/model'
 import { makeChannel } from '@sidelines/model/channels'
+import { isMessageObject, isString } from '@sidelines/model/validate'
 import { ulid } from 'ulid'
 
 export type WorkerLaunchId =
@@ -60,9 +60,49 @@ type SharedWorkerToPageMessage = {
     payload: any
 }
 
+function isSharedWorkerToPageMessage(
+    data: unknown,
+): data is SharedWorkerToPageMessage {
+    if (!isMessageObject(data)) {
+        return false
+    }
+    switch (data.kind) {
+        case 'launch':
+            return (
+                isString(data.pageId) &&
+                isString(data.instanceId) &&
+                isString(data.workerId)
+            )
+        default:
+            console.warn(
+                'WorkerLaunch isSharedWorkerToPageMessage invalid',
+                data.kind,
+            )
+            return false
+    }
+}
+
 type SharedWorkerToAllPagesMessage = {
     kind: 'request'
     requestId: string
+}
+
+function isSharedWorkerToAllPagesMessage(
+    data: unknown,
+): data is SharedWorkerToAllPagesMessage {
+    if (!isMessageObject(data)) {
+        return false
+    }
+    switch (data.kind) {
+        case 'request':
+            return isString(data.requestId)
+        default:
+            console.warn(
+                'WorkerLaunch isSharedWorkerToAllPagesMessage invalid',
+                data.kind,
+            )
+            return false
+    }
 }
 
 type PageToSharedWorkerMessage =
@@ -81,6 +121,28 @@ type PageToSharedWorkerMessage =
           pageId: string
       }
 
+function isPageToSharedWorkerMessage(
+    data: unknown,
+): data is PageToSharedWorkerMessage {
+    if (!isMessageObject(data)) {
+        return false
+    }
+    switch (data.kind) {
+        case 'available':
+            return isString(data.pageId) && isString(data.requestId)
+        case 'closing':
+            return isString(data.pageId)
+        case 'finished':
+            return isString(data.pageId) && isString(data.instanceId)
+        default:
+            console.warn(
+                'WorkerLaunch isPageToSharedWorkerMessage invalid',
+                data.kind,
+            )
+            return false
+    }
+}
+
 export type LaunchedWorkerMessage = {
     kind: 'finished'
 }
@@ -95,61 +157,6 @@ function isLaunchedWorkerMessage(data: unknown): data is LaunchedWorkerMessage {
         default:
             console.warn(
                 'WorkerLaunch isLaunchedWorkerMessage invalid',
-                data.kind,
-            )
-            return false
-    }
-}
-
-function isSharedWorkerToAllPagesMessage(
-    data: unknown,
-): data is SharedWorkerToAllPagesMessage {
-    if (!isMessageObject(data)) {
-        return false
-    }
-    switch (data.kind) {
-        case 'request':
-            return true
-        default:
-            console.warn(
-                'WorkerLaunch isSharedWorkerToAllPagesMessage invalid',
-                data.kind,
-            )
-            return false
-    }
-}
-
-function isSharedWorkerToPageMessage(
-    data: unknown,
-): data is SharedWorkerToPageMessage {
-    if (!isMessageObject(data)) {
-        return false
-    }
-    switch (data.kind) {
-        case 'launch':
-            return true
-        default:
-            console.warn(
-                'WorkerLaunch isSharedWorkerToPageMessage invalid',
-                data.kind,
-            )
-            return false
-    }
-}
-
-function isPageToSharedWorkerMessage(
-    data: unknown,
-): data is PageToSharedWorkerMessage {
-    if (!isMessageObject(data)) {
-        return false
-    }
-    switch (data.kind) {
-        case 'available':
-        case 'closing':
-            return true
-        default:
-            console.warn(
-                'WorkerLaunch isPageToSharedWorkerMessage invalid',
                 data.kind,
             )
             return false

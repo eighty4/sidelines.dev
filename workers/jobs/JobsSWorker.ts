@@ -1,3 +1,8 @@
+import {
+    isMessageObject,
+    isOptionalRepoId,
+    isString,
+} from '@sidelines/model/validate'
 import type { JobApiRequest, JobSchedulingRequest } from './jobApiMessaging.ts'
 import JobsBackend from './JobsSWorkerBackend.ts'
 
@@ -29,14 +34,11 @@ async function onMessage(e: MessageEvent<unknown>) {
     }
 }
 
-function isJobSchedulingRequest(
-    request: Object,
-): request is JobSchedulingRequest {
-    if ('kind' in request) {
-        switch (request.kind) {
-            case 'INIT':
-                return true
-        }
+function isJobSchedulingRequest(req: Object): req is JobSchedulingRequest {
+    if (!isMessageObject(req)) return false
+    switch (req.kind) {
+        case 'INIT':
+            return isString(req.ghToken)
     }
     return false
 }
@@ -55,13 +57,17 @@ async function onJobSchedulingRequest(request: JobSchedulingRequest) {
     }
 }
 
-function isJobExecRequest(request: Object): request is JobApiRequest {
-    if ('kind' in request) {
-        switch (request.kind) {
-            case 'LS':
-            case 'EXEC':
-                return true
-        }
+function isJobExecRequest(req: unknown): req is JobApiRequest {
+    if (!isMessageObject(req)) return false
+    switch (req.kind) {
+        case 'LS':
+            return isString(req.channelId)
+        case 'EXEC':
+            return (
+                isString(req.channelId) &&
+                isString(req.jobId) &&
+                isOptionalRepoId(req.repo)
+            )
     }
     return false
 }

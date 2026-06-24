@@ -5,7 +5,6 @@ import { makeChannel } from '@sidelines/model/channels'
 export type JobSchedulingRequest = {
     kind: 'INIT'
     ghToken: string
-    pageId: string
 }
 
 // api messages posted from JobApiClient to JobSWorker
