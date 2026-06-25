@@ -14,6 +14,8 @@ install_git_hook() {
 
 for arg in "$@"; do
   case $arg in
+    "--lite")
+      pnpm -r build && pnpm build && pnpm -r typecheck && pnpm typecheck && pnpm fmtcheck && exit 0 || exit 1;;
     "--on-git-commit")
       install_git_hook pre-commit;;
     "--on-git-push")
