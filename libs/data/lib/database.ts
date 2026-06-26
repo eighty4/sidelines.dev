@@ -41,13 +41,6 @@ const DB_STORE_REPO_NAV_KEY = 'nameWithOwner'
 export const DB_INDEX_REPO_NAV_WHEN = 'repo-nav-visited'
 const DB_INDEX_REPO_NAV_WHEN_KEY = 'when'
 
-/********************/
-/*** REPO OBJECTS ***/
-/********************/
-
-export const DB_STORE_REPO_FILES = 'repo-objects'
-const DB_STORE_REPO_FILES_KEY = ['owner', 'name', 'sha', 'dirpath']
-
 /******************/
 /*** REPO HEADS ***/
 /******************/
@@ -91,9 +84,6 @@ function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
             db.createObjectStore(DB_STORE_REPO_NAV, {
                 keyPath: DB_STORE_REPO_NAV_KEY,
             }).createIndex(DB_INDEX_REPO_NAV_WHEN, DB_INDEX_REPO_NAV_WHEN_KEY)
-            db.createObjectStore(DB_STORE_REPO_FILES, {
-                keyPath: DB_STORE_REPO_FILES_KEY,
-            })
             db.createObjectStore(DB_STORE_REPO_PACKAGES, {
                 keyPath: DB_STORE_REPO_PACKAGES_KEY,
             })

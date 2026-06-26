@@ -33,24 +33,6 @@ query QRepoObjectContent($owner: String!, $name: String!, $objExpr: String!) {
     }
 }
 
-query QRepoDirListing($owner: String!, $name: String!, $objExpr: String!) {
-    repository(owner: $owner, name: $name) {
-        object(expression: $objExpr) {
-            ... on Tree {
-                entries {
-                    name
-                    type
-                    object {
-                        ... on Blob {
-                            byteSize
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 query QViewerRepoDirContents($name: String!, $objExpr: String!) {
     viewer {
         repository(name: $name) {

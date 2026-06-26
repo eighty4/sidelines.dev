@@ -16,15 +16,6 @@ export type QRepoObjectContentVars = {
 export const QRepoObjectContent: string =
     'query QRepoObjectContent($owner: String!, $name: String!, $objExpr: String!) { repository(owner: $owner, name: $name) { object(expression: $objExpr) { ... on Blob { text } } } }'
 
-export type QRepoDirListingVars = {
-    owner: string
-    name: string
-    objExpr: string
-}
-
-export const QRepoDirListing: string =
-    'query QRepoDirListing($owner: String!, $name: String!, $objExpr: String!) { repository(owner: $owner, name: $name) { object(expression: $objExpr) { ... on Tree { entries { name type object { ... on Blob { byteSize } } } } } } }'
-
 export type QViewerRepoDirContentsVars = {
     name: string
     objExpr: string

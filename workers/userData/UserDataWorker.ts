@@ -1,16 +1,6 @@
 import { readRecentNav, writeNavVisit } from '@sidelines/data/tx/repoNav'
 import { readRepoPackages } from '@sidelines/data/tx/repoPackages'
-import {
-    type ReadRepoContent,
-    readRepoContent,
-    type ReadRepoListing,
-    readRepoListing,
-} from '@sidelines/data/tx/repoSources'
-import type {
-    RepositoryId,
-    RepositoryObject,
-    RepositoryPackage,
-} from '@sidelines/model'
+import type { RepositoryId, RepositoryPackage } from '@sidelines/model'
 import type { RefNotFound, RepoNotFound } from '@sidelines/model/errors'
 import {
     isMessageObject,
@@ -44,20 +34,6 @@ export type ProjectNavGetResponse = {
     repos: Array<RepositoryId>
 } & UserDataRpcMessageBase<ProjectNavGetRequest['kind']>
 
-export type RepoListingRequest = ReadRepoListing &
-    UserDataRpcMessageBase<'repo-ls'>
-
-export type RepoListingResponse = {
-    objects: 'repo-not-found' | Array<RepositoryObject>
-} & UserDataRpcMessageBase<RepoListingRequest['kind']>
-
-export type RepoObjectRequest = ReadRepoContent &
-    UserDataRpcMessageBase<'repo-cat'>
-
-export type RepoObjectResponse = {
-    content: 'file-not-found' | 'repo-not-found' | string
-} & UserDataRpcMessageBase<RepoObjectRequest['kind']>
-
 export type RepoPackagesRequest = {
     ghToken: string
     repo: RepositoryId
@@ -69,17 +45,9 @@ export type RepoPackagesResponse = {
 
 export type UserDataRequest = UserDataRpcRequest | ProjectNavUpdateRequest
 
-export type UserDataRpcRequest =
-    | ProjectNavGetRequest
-    | RepoListingRequest
-    | RepoObjectRequest
-    | RepoPackagesRequest
+export type UserDataRpcRequest = ProjectNavGetRequest | RepoPackagesRequest
 
-export type UserDataRpcResponse =
-    | ProjectNavGetResponse
-    | RepoListingResponse
-    | RepoObjectResponse
-    | RepoPackagesResponse
+export type UserDataRpcResponse = ProjectNavGetResponse | RepoPackagesResponse
 
 async function processAsyncRequest(request: UserDataRequest): Promise<void> {
     switch (request.kind) {
@@ -100,18 +68,6 @@ async function processRpcRequest(
                 kind: request.kind,
                 id: request.id,
                 repos: await readRecentNav(request),
-            }
-        case 'repo-cat':
-            return {
-                kind: request.kind,
-                id: request.id,
-                content: await readRepoContent(request),
-            }
-        case 'repo-ls':
-            return {
-                kind: request.kind,
-                id: request.id,
-                objects: await readRepoListing(request),
             }
         case 'repo-pkgs':
             return {
