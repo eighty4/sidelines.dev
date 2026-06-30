@@ -1,17 +1,19 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type BrowserContext } from '@playwright/test'
 import type { CommitReviewRecord } from '@sidelines/data/RECORDS'
 import type {
     QMultipleReposLatestTagsGraph,
     QMultipleReposLatestTagsVars,
+    QViewerAndExplicitRepoHeadOidsGraph,
     QViewerRepoDefaultBranchDirContentsGraph,
     QViewerRepoDefaultBranchDirContentsVars,
     QViewerReposNamesGraph,
     QViewerReposNamesVars,
 } from '@sidelines/github/GRAPHS'
-import { indexedDBStateFrom } from './indexedDBState.ts'
+import { indexedDBStateFrom, type IndexedDBContent } from './indexedDBState.ts'
 import { login, userStoryWithSidelinesRepo } from './login.ts'
 import { readRepoCommitAddition } from './opfsState.ts'
 import { userStoryProjectPage } from './project.ts'
+import retryUntilCondition from './retryUntilCondition.ts'
 import screenshotOnFailure from './screenshotOnFailure.ts'
 
 test.afterEach(screenshotOnFailure)
@@ -22,6 +24,17 @@ test(
     async ({ baseURL, context, page }) => {
         const committedDate = new Date()
         await userStoryWithSidelinesRepo()
+            .withGraphqlResponse('QViewerAndExplicitRepoHeadOids', null, {
+                viewer: {
+                    repositories: {
+                        nodes: [],
+                        pageInfo: {
+                            endCursor: null,
+                            hasNextPage: false,
+                        },
+                    },
+                },
+            } satisfies QViewerAndExplicitRepoHeadOidsGraph)
             .withGraphqlResponse(
                 'QViewerReposNames',
                 { cursor: null, pageSize: 100 } satisfies QViewerReposNamesVars,
@@ -117,36 +130,25 @@ jobs:
         await expect(execButton).toBeVisible()
         await execButton.click()
         await expect(execButton).toBeDisabled()
-        const indexedDBState = await retryUntilCondition(
-            1000,
-            1000,
-            20000,
-            async () => {
-                const indexedDBState = await indexedDBStateFrom(
-                    baseURL!,
-                    context,
-                )
-                if (
-                    indexedDBState.records['job-log'].length === 1 &&
-                    indexedDBState.records['job-log'][0].whenDone instanceof
-                        Date
-                ) {
-                    return indexedDBState
-                }
-            },
-        )
+        const indexedDBState = await waitForRepoJobComplete(baseURL!, context)
         expect(indexedDBState.records['commit-review'].length).toBe(1)
-        const commitReview: CommitReviewRecord =
-            indexedDBState.records['commit-review'][0]
-        expect(commitReview.branch).toStrictEqual({
-            name: 'master',
-            headOid: 'abcabc12',
-        })
-        expect(commitReview.additions!.length).toBe(1)
-        expect(commitReview.additions![0]).toStrictEqual({
-            dirpath: '.github/workflows',
-            filename: 'ci_verify.yml',
-        })
+        const commitReview = indexedDBState.records['commit-review'][0]
+        expect(indexedDBState.records['commit-review'][0]).toStrictEqual({
+            reviewId: commitReview.reviewId,
+            nameWithOwner: 'eighty4/l3',
+            branch: {
+                name: 'master',
+                headOid: 'abcabc12',
+            },
+            commitMessage: 'Upgrading GitHub actions',
+            additions: [
+                {
+                    dirpath: '.github/workflows',
+                    filename: 'ci_verify.yml',
+                },
+            ],
+            deletions: null,
+        } satisfies CommitReviewRecord)
         expect(
             await readRepoCommitAddition(
                 page,
@@ -166,6 +168,17 @@ test(
     async ({ baseURL, context, page }) => {
         const committedDate = new Date()
         await userStoryProjectPage()
+            .withGraphqlResponse('QViewerAndExplicitRepoHeadOids', null, {
+                viewer: {
+                    repositories: {
+                        nodes: [],
+                        pageInfo: {
+                            endCursor: null,
+                            hasNextPage: false,
+                        },
+                    },
+                },
+            } satisfies QViewerAndExplicitRepoHeadOidsGraph)
             .withGraphqlResponse(
                 'QViewerRepoDefaultBranchDirContents',
                 {
@@ -239,36 +252,25 @@ jobs:
         await expect(execButton).toBeVisible()
         await execButton.click()
         await expect(execButton).toBeDisabled()
-        const indexedDBState = await retryUntilCondition(
-            1000,
-            1000,
-            20000,
-            async () => {
-                const indexedDBState = await indexedDBStateFrom(
-                    baseURL!,
-                    context,
-                )
-                if (
-                    indexedDBState.records['job-log'].length === 1 &&
-                    indexedDBState.records['job-log'][0].whenDone instanceof
-                        Date
-                ) {
-                    return indexedDBState
-                }
-            },
-        )
+        const indexedDBState = await waitForRepoJobComplete(baseURL!, context)
         expect(indexedDBState.records['commit-review'].length).toBe(1)
-        const commitReview: CommitReviewRecord =
-            indexedDBState.records['commit-review'][0]
-        expect(commitReview.branch).toStrictEqual({
-            name: 'master',
-            headOid: 'abcabc12',
-        })
-        expect(commitReview.additions!.length).toBe(1)
-        expect(commitReview.additions![0]).toStrictEqual({
-            dirpath: '.github/workflows',
-            filename: 'ci_verify.yml',
-        })
+        const commitReview = indexedDBState.records['commit-review'][0]
+        expect(indexedDBState.records['commit-review'][0]).toStrictEqual({
+            reviewId: commitReview.reviewId,
+            nameWithOwner: 'eighty4/l3',
+            branch: {
+                name: 'master',
+                headOid: 'abcabc12',
+            },
+            commitMessage: 'Upgrading GitHub actions',
+            additions: [
+                {
+                    dirpath: '.github/workflows',
+                    filename: 'ci_verify.yml',
+                },
+            ],
+            deletions: null,
+        } satisfies CommitReviewRecord)
         expect(
             await readRepoCommitAddition(
                 page,
@@ -282,21 +284,20 @@ jobs:
     },
 )
 
-async function retryUntilCondition<T>(
-    delay: number,
-    interval: number,
-    timeout: number,
-    fn: () => Promise<T | undefined>,
-): Promise<T> {
-    await new Promise(res => setTimeout(res, delay))
-    timeout -= delay
-    let result: T | undefined
-    while (typeof (result = await fn()) === 'undefined') {
-        await new Promise(res => setTimeout(res, interval))
-        timeout -= interval
-        if (timeout <= 0) {
-            throw Error('timed out retrying operation')
+async function waitForRepoJobComplete(
+    baseURL: string,
+    context: BrowserContext,
+): Promise<IndexedDBContent> {
+    return await retryUntilCondition(1000, 1000, 10000, async () => {
+        const indexedDBState = await indexedDBStateFrom(baseURL!, context)
+        const repoJobs = indexedDBState.records['job-log'].filter(
+            jobLogRecord =>
+                jobLogRecord.jobKind === 'repos' &&
+                jobLogRecord.jobId === 'JOB_repos_UPGRADE_ACTIONS' &&
+                jobLogRecord.whenDone instanceof Date,
+        )
+        if (repoJobs.length === 1) {
+            return indexedDBState
         }
-    }
-    return result
+    })
 }

@@ -52,11 +52,16 @@ export default defineConfig({
     webServer: webServer(),
 })
 
+// chromium skips logout tests when --headed
+// webkit skips opfs tests
 function projects(): PlaywrightTestConfig['projects'] {
     return [
         {
             name: 'chromium',
             use: { ...devices['Desktop Chrome'] },
+            grepInvert: process.argv.includes('--headed')
+                ? /@clearSiteData/
+                : undefined,
         },
         {
             name: 'firefox',

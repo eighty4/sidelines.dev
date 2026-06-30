@@ -1,22 +1,18 @@
-import type {
-    RepoCommitAddition,
-    RepoCommitInputs,
-    RepoCommitReview,
-    RepoNameWithOwner,
-    RepositoryId,
+import {
+    joinRepoName,
+    type RepoCommitAddition,
+    type RepoCommitInputs,
+    type RepoCommitReview,
+    type RepositoryId,
 } from '@sidelines/model'
 import { ulid } from 'ulid'
 import { DB_STORE_COMMIT_REVIEW, idbPutRecord } from '../database.ts'
 import { opfsLookupDir, opfsWriteFile } from '../opfs.ts'
+import type { CommitReviewRecord } from '../records.ts'
 
-// DB_STORE_COMMIT_REVIEW
-export type CommitReviewRecord = {
-    reviewId: string
-    nameWithOwner: RepoNameWithOwner
-    additions?: Array<Omit<RepoCommitAddition, 'content'>>
-} & Pick<RepoCommitInputs, 'branch' | 'commitMessage' | 'deletions'>
-
+// todo atomicity
 export async function saveRepoCommitReview(
+    db: IDBDatabase,
     commit: RepoCommitInputs,
 ): Promise<RepoCommitReview> {
     const id = ulid()
@@ -24,6 +20,7 @@ export async function saveRepoCommitReview(
         await writeAdditionsToOpfs(id, commit.repo, commit.additions)
     }
     await idbPutRecord<CommitReviewRecord>(
+        db,
         DB_STORE_COMMIT_REVIEW,
         createRecord(id, commit),
     )
@@ -36,14 +33,15 @@ function createRecord(
 ): CommitReviewRecord {
     return {
         reviewId,
-        nameWithOwner: `${commit.repo.owner}/${commit.repo.name}`,
+        nameWithOwner: joinRepoName(commit.repo),
         commitMessage: commit.commitMessage,
         branch: commit.branch,
-        additions: commit.additions?.map(addition => ({
-            dirpath: addition.dirpath,
-            filename: addition.filename,
-        })),
-        deletions: commit.deletions,
+        additions:
+            commit.additions?.map(addition => ({
+                dirpath: addition.dirpath,
+                filename: addition.filename,
+            })) ?? null,
+        deletions: commit.deletions ?? null,
     }
 }
 

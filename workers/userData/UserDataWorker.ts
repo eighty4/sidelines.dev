@@ -1,3 +1,4 @@
+import { connectToDb } from '@sidelines/data/indexeddb'
 import { readRecentNav, writeNavVisit } from '@sidelines/data/tx/repoNav'
 import { readRepoPackages } from '@sidelines/data/tx/repoPackages'
 import type { RepositoryId, RepositoryPackage } from '@sidelines/model'
@@ -49,10 +50,12 @@ export type UserDataRpcRequest = ProjectNavGetRequest | RepoPackagesRequest
 
 export type UserDataRpcResponse = ProjectNavGetResponse | RepoPackagesResponse
 
+let connectingToDb = connectToDb()
+
 async function processAsyncRequest(request: UserDataRequest): Promise<void> {
     switch (request.kind) {
         case 'nav-update':
-            await writeNavVisit(request.repo)
+            await writeNavVisit(await connectingToDb, request.repo)
             break
         default:
             throw Error(request.kind + ' is not an async user data request')
@@ -67,13 +70,17 @@ async function processRpcRequest(
             return {
                 kind: request.kind,
                 id: request.id,
-                repos: await readRecentNav(request),
+                repos: await readRecentNav(await connectingToDb, request),
             }
         case 'repo-pkgs':
             return {
                 kind: request.kind,
                 id: request.id,
-                result: await readRepoPackages(request.ghToken, request.repo),
+                result: await readRepoPackages(
+                    await connectingToDb,
+                    request.ghToken,
+                    request.repo,
+                ),
             }
         default:
             throw Error(

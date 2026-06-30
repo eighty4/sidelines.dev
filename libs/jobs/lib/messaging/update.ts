@@ -1,52 +1,80 @@
 import {
-    type RepoJobExecStatus,
+    type JobIdForJobKind,
+    type JobKind,
+    type RepoJobExecResult,
     type RepoNameWithOwner,
+    type SyncedRefsJobExecResult,
 } from '@sidelines/model'
 import {
-    isMessageObject,
     isJobKind,
-    isString,
+    isMessageObject,
     isRepoName,
+    isString,
 } from '@sidelines/model/validate'
 
-export type JobWorkerUpdateMessage =
-    | {
-          kind: 'starting'
-          jobKind: 'repos'
-          jobExecId: string
-      }
-    | {
-          kind: 'status'
-          jobKind: 'repos'
-          jobExecId: string
-          repo: RepoNameWithOwner
-          status: RepoJobExecStatus
-      }
-    | {
-          kind: 'complete'
-          jobKind: 'repos'
-          jobExecId: string
-      }
+export type JobWorkerUpdate =
+    | RepoJobWorkerUpdate
+    | ScheduledJobWorkerUpdate
+    | SyncedRefsJobWorkerUpdate
 
-export function isJobWorkerUpdateMessage(
-    data: unknown,
-): data is JobWorkerUpdateMessage {
-    if (!isMessageObject(data)) {
-        return false
+type JobWorkerUpdateCommon<JK extends JobKind> = {
+    kind: string
+    jobKind: JK
+    jobId: JobIdForJobKind<JK>
+    jobExecId: string
+}
+
+export type RepoJobWorkerUpdate =
+    | JobWorkerUpdateStarting<'repos'>
+    | RepoJobWorkerUpdateStatus
+    | JobWorkerUpdateComplete<'repos'>
+
+export type JobWorkerUpdateStarting<JK extends JobKind> =
+    JobWorkerUpdateCommon<JK> & {
+        kind: 'starting'
     }
-    if ('kind' in data) {
-        switch (data.kind) {
-            case 'starting':
-                return isJobKind(data.jobKind) && isString(data.jobExecId)
-            case 'status':
-                return (
-                    isJobKind(data.jobKind) &&
-                    isString(data.jobExecId) &&
-                    isRepoName(data) &&
-                    'status' in data
-                )
-            case 'complete':
-                return isJobKind(data.jobKind) && isString(data.jobExecId)
+
+export type JobWorkerUpdateComplete<JK extends JobKind> =
+    JobWorkerUpdateCommon<JK> & {
+        kind: 'complete'
+    }
+
+export type RepoJobWorkerUpdateStatus = JobWorkerUpdateCommon<'repos'> & {
+    kind: 'status'
+    repo: RepoNameWithOwner
+    status: RepoJobExecResult
+}
+
+export type ScheduledJobWorkerUpdate =
+    | JobWorkerUpdateStarting<'scheduled'>
+    | JobWorkerUpdateComplete<'scheduled'>
+
+export type SyncedRefsJobWorkerUpdate =
+    | JobWorkerUpdateStarting<'syncedRefs'>
+    | SyncedRefsJobWorkerUpdateStatus
+    | JobWorkerUpdateComplete<'syncedRefs'>
+
+export type SyncedRefsJobWorkerUpdateStatus =
+    JobWorkerUpdateCommon<'syncedRefs'> & {
+        kind: 'status'
+        repo: RepoNameWithOwner
+        status: SyncedRefsJobExecResult
+    }
+
+export function isJobWorkerUpdate(data: unknown): data is JobWorkerUpdate {
+    if (
+        isMessageObject(data) &&
+        isJobKind(data.jobKind) &&
+        isString(data.jobExecId)
+    ) {
+        if (isString(data.kind)) {
+            switch (data.kind) {
+                case 'starting':
+                case 'complete':
+                    return true
+                case 'status':
+                    return isRepoName(data.repo) && 'status' in data
+            }
         }
     }
     return false

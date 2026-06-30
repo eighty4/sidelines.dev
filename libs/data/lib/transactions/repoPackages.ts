@@ -1,8 +1,10 @@
-import type {
-    BranchRef,
-    RepoNameWithOwner,
-    RepositoryId,
-    RepositoryPackage,
+import {
+    joinRepoName,
+    splitRepoName,
+    type BranchRef,
+    type RepoNameWithOwner,
+    type RepositoryId,
+    type RepositoryPackage,
 } from '@sidelines/model'
 import { RefNotFound, RepoNotFound } from '@sidelines/model/errors'
 import { findRepoPackages } from '@sidelines/packages/findRepoPackages'
@@ -11,35 +13,28 @@ import {
     idbGetRecord,
     idbPutRecord,
 } from '../database.ts'
+import type { RepoPackagesRecord } from '../records.ts'
 import { readRepoHead } from './repoHeads.ts'
-
-// DB_STORE_REPO_PACKAGES
-type PackagesRecord = {
-    nameWithOwner: RepoNameWithOwner
-    defaultBranch: string
-    headOid: string
-    committedWhen: Date
-    packages: Array<RepositoryPackage>
-}
 
 const LOG_LABEL = '@sidelines/data/tx/readRepoPackages'
 
 // todo RefNotFound from readRepoHead could openCursor and attempt to find most recent computed packages data
 export async function readRepoPackages(
+    db: IDBDatabase,
     ghToken: string,
     repo: RepositoryId,
 ): Promise<
     Array<RepositoryPackage> | typeof RefNotFound | typeof RepoNotFound
 > {
-    const defaultBranch = await readRepoHead(ghToken, repo)
+    const defaultBranch = await readRepoHead(db, ghToken, repo)
     console.log(LOG_LABEL, 'default branch', defaultBranch)
     switch (defaultBranch) {
         case RefNotFound:
         case RepoNotFound:
             return defaultBranch
     }
-    const nameWithOwner: RepoNameWithOwner = `${repo.owner}/${repo.name}`
-    const fromDb = await readFromDb(nameWithOwner, defaultBranch)
+    const nameWithOwner: RepoNameWithOwner = joinRepoName(repo)
+    const fromDb = await readFromDb(db, nameWithOwner, defaultBranch)
     console.log(LOG_LABEL, 'read from db', fromDb)
     if (fromDb) {
         return fromDb
@@ -49,40 +44,47 @@ export async function readRepoPackages(
     if (fromApi === RepoNotFound) {
         return fromApi
     }
-    await writeToDb(nameWithOwner, defaultBranch, fromApi)
+    await writeToDb(db, nameWithOwner, defaultBranch, fromApi)
     return fromApi
 }
 
 export async function updateRepoPackages(
+    db: IDBDatabase,
     ghToken: string,
-    repo: RepositoryId,
+    repo: RepoNameWithOwner,
     defaultBranch: BranchRef,
 ) {
-    const packages = await findRepoPackages(ghToken, repo, defaultBranch)
+    const packages = await findRepoPackages(
+        ghToken,
+        splitRepoName(repo),
+        defaultBranch,
+    )
     if (packages === RepoNotFound) {
         return
     }
-    await writeToDb(`${repo.owner}/${repo.name}`, defaultBranch, packages)
+    await writeToDb(db, repo, defaultBranch, packages)
 }
 
 async function readFromDb(
+    db: IDBDatabase,
     nameWithOwner: RepoNameWithOwner,
     defaultBranch: BranchRef,
 ): Promise<Array<RepositoryPackage> | null> {
-    const record = await idbGetRecord<PackagesRecord>(DB_STORE_REPO_PACKAGES, [
-        nameWithOwner,
-        defaultBranch.name,
-        defaultBranch.headOid,
-    ])
+    const record = await idbGetRecord<RepoPackagesRecord>(
+        db,
+        DB_STORE_REPO_PACKAGES,
+        [nameWithOwner, defaultBranch.name, defaultBranch.headOid],
+    )
     return record?.packages || null
 }
 
-async function writeToDb(
+function writeToDb(
+    db: IDBDatabase,
     nameWithOwner: RepoNameWithOwner,
     defaultBranch: BranchRef,
     packages: Array<RepositoryPackage>,
 ): Promise<void> {
-    await idbPutRecord<PackagesRecord>(DB_STORE_REPO_PACKAGES, {
+    return idbPutRecord<RepoPackagesRecord>(db, DB_STORE_REPO_PACKAGES, {
         nameWithOwner,
         defaultBranch: defaultBranch.name,
         headOid: defaultBranch.headOid,

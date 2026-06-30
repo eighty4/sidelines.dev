@@ -1,7 +1,9 @@
-import { JobKinds, type JobKind } from './jobs.ts'
+import { JobKinds, type JobId, type JobKind } from './jobs.ts'
 import type { RepoNameWithOwner, RepositoryId } from './repo.ts'
 
-type MessageObject = { kind: string } & UnspecifiedObject
+/**********************/
+/*** LANG LIB TYPES ***/
+/**********************/
 
 type UnspecifiedObject = {
     [key: string]: unknown
@@ -11,7 +13,7 @@ function isUnspecifiedObject(v: unknown): v is UnspecifiedObject {
     return v !== null && typeof v === 'object'
 }
 
-function isUndefined(v: unknown): v is undefined {
+export function isUndefined(v: unknown): v is undefined {
     return typeof v === 'undefined'
 }
 
@@ -23,20 +25,26 @@ function isNumber(v: unknown): v is number {
     return typeof v === 'number'
 }
 
+export function isDate(v: unknown): v is Date {
+    return v instanceof Date
+}
+
+export function isArray<T>(a: unknown, p: (v: T) => boolean): a is Array<T> {
+    return Array.isArray(a) && a.every(p)
+}
+
+/*******************/
+/*** MODEL TYPES ***/
+/*******************/
+
+type MessageObject = { kind: string } & UnspecifiedObject
+
 export function isMessageObject(v: unknown): v is MessageObject {
     return isUnspecifiedObject(v) && 'kind' in v
 }
 
-export function isOptionalNumber(v: unknown): v is number | undefined {
-    return isUndefined(v) || isNumber(v)
-}
-
-export function isNullOrString(v: unknown): v is string | null {
-    return v === null || isString(v)
-}
-
-export function isOptionalRepoId(v: unknown): v is RepositoryId | undefined {
-    return isUndefined(v) || isRepoId(v)
+export function isJobId(v: unknown): v is JobId {
+    return isString(v) && v.startsWith('JOB_')
 }
 
 export function isJobKind(v: unknown): v is JobKind {
@@ -54,6 +62,18 @@ export function isRepoName(v: unknown): v is RepoNameWithOwner {
     return isString(v) && v.includes('/')
 }
 
-export function isArray<T>(a: unknown, p: (v: T) => boolean): a is Array<T> {
-    return Array.isArray(a) && a.every(p)
+/*******************************/
+/*** NULL/UNDEFINED VARIANTS ***/
+/*******************************/
+
+export function isOptionalNumber(v: unknown): v is number | undefined {
+    return isUndefined(v) || isNumber(v)
+}
+
+export function isNullOrString(v: unknown): v is string | null {
+    return v === null || isString(v)
+}
+
+export function isOptionalRepoId(v: unknown): v is RepositoryId | undefined {
+    return isUndefined(v) || isRepoId(v)
 }

@@ -84,7 +84,7 @@ jobs:
         run: pnpm exec playwright install --with-deps --only-shell
       - name: playwright test
         env:
-          CI: ${{ matrix.browser }}
+          CI: true
         run: pnpm test:e2e
       - uses: actions/upload-artifact@v7
         if: always()

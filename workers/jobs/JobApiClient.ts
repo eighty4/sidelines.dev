@@ -14,6 +14,9 @@ import {
 import startJobSchedulingWorker from './startJobsSWorker.ts'
 
 export default class JobApiClient {
+    // todo use AvailableJobsReq/Res for available job data in UI
+    // do not req on BroadcastChannel because SharedWorker might not be up in time
+    // use SharedWorker postMessage and onmessage to guarantee delivery and processing
     static availableJobs(): Array<RepoJobSpec> {
         return [
             {

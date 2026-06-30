@@ -3,9 +3,14 @@ import type {
     QRepoDefaultBranchVars,
     QRepoMultipleObjectContentsGraph,
     QRepoMultipleObjectContentsVars,
+    QViewerAndExplicitRepoHeadOidsGraph,
     QViewerRepoUserContextGraph,
     QViewerRepoUserContextVars,
 } from '@sidelines/github/GRAPHS'
+import {
+    makeRepoPackagesQRepoMultipleObjectContentsGraph,
+    type PackageHint,
+} from './github/graphs/packages.ts'
 import type { UserStory } from './github/UserStory.ts'
 import { userStoryWithSidelinesRepo } from './login.ts'
 
@@ -27,6 +32,17 @@ export function userStoryProjectPage(
 ): UserStory {
     const committedDate = opts?.defaultBranch?.committedDate || new Date()
     return userStoryWithSidelinesRepo()
+        .withGraphqlResponse('QViewerAndExplicitRepoHeadOids', null, {
+            viewer: {
+                repositories: {
+                    nodes: [],
+                    pageInfo: {
+                        endCursor: null,
+                        hasNextPage: false,
+                    },
+                },
+            },
+        } satisfies QViewerAndExplicitRepoHeadOidsGraph)
         .withGraphqlResponse(
             'QViewerRepoUserContext',
             {
@@ -77,33 +93,8 @@ export function userStoryProjectPage(
                 owner: opts?.repo?.owner || 'eighty4',
                 name: opts?.repo?.name || 'l3',
             } satisfies QRepoMultipleObjectContentsVars,
-            createQRepoMultipleObjectContentsGraph(
+            makeRepoPackagesQRepoMultipleObjectContentsGraph(
                 opts?.packageHintContents || {},
             ) satisfies QRepoMultipleObjectContentsGraph,
         )
-}
-
-const PACKAGE_HINTS = [
-    'pubspec.yaml',
-    'go.mod',
-    'package.json',
-    'Cargo.toml',
-    'build.zig',
-    'build.zig.zon',
-    'pnpm-workspace.yaml',
-] as const
-
-type PackageHint = (typeof PACKAGE_HINTS)[number]
-
-function createQRepoMultipleObjectContentsGraph(
-    contents: Partial<Record<PackageHint, string>>,
-): QRepoMultipleObjectContentsGraph {
-    return {
-        repository: Object.fromEntries(
-            PACKAGE_HINTS.map((filename, i) => [
-                `obj${i}`,
-                contents[filename] ? { text: contents[filename] } : null,
-            ]),
-        ),
-    }
 }

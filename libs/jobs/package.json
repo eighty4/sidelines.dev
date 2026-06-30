@@ -15,8 +15,6 @@
     "build:clean": "rm -rf lib_js lib_types *.tsbuildinfo"
   },
   "dependencies": {
-    "@sidelines/data": "workspace:*",
-    "@sidelines/github": "workspace:*",
     "@sidelines/model": "workspace:*"
   },
   "devDependencies": {

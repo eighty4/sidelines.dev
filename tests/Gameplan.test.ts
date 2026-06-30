@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { GH_TOKEN } from '@sidelines/data/cookie'
+import type { QViewerAndExplicitRepoHeadOidsGraph } from '@sidelines/github/GRAPHS'
 import { login, userStoryWithSidelinesRepo } from './login.ts'
 import screenshotOnFailure from './screenshotOnFailure.ts'
 
@@ -7,10 +8,14 @@ test.afterEach(screenshotOnFailure)
 
 test.describe('initializing page', () => {
     test.describe('redirects to login', () => {
-        test('without auth token', async ({ page }) => {
-            await page.goto('/gameplan')
-            await page.waitForURL('/')
-        })
+        test(
+            'without auth token',
+            { tag: '@clearSiteData' },
+            async ({ page }) => {
+                await page.goto('/gameplan')
+                await page.waitForURL('/')
+            },
+        )
         test.describe('with invalid auth token', () => {
             test('and without session stored username', async ({
                 baseURL,
@@ -67,7 +72,19 @@ test.describe('initializing page', () => {
 
 test.describe('job list', () => {
     test('exec button click disables button', async ({ page }) => {
-        await userStoryWithSidelinesRepo().configureRoutes(page)
+        await userStoryWithSidelinesRepo()
+            .withGraphqlResponse('QViewerAndExplicitRepoHeadOids', null, {
+                viewer: {
+                    repositories: {
+                        nodes: [],
+                        pageInfo: {
+                            endCursor: null,
+                            hasNextPage: false,
+                        },
+                    },
+                },
+            } satisfies QViewerAndExplicitRepoHeadOidsGraph)
+            .configureRoutes(page)
         await login(page)
         const execButton = page.getByRole('button', { name: 'Exec' })
         await expect(execButton).toBeVisible()

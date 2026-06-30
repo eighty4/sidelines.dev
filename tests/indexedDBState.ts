@@ -1,4 +1,14 @@
 import type { BrowserContext } from '@playwright/test'
+import type {
+    CommitReviewRecord,
+    JobLogRecord,
+    JobSchedulingRecord,
+    ReadingWatchRecord,
+    RepoContextRecord,
+    RepoHeadRecord,
+    RepoNavRecord,
+    RepoPackagesRecord,
+} from '@sidelines/data/RECORDS'
 
 type OriginStorageState = {
     origin: string
@@ -53,29 +63,38 @@ type IndexedDBIndexStorageState = {
     unique: boolean
 }
 
-const SidelinesColumnFamilies = [
-    'job-log',
+const SidelinesObjectStores = [
     'commit-review',
-    // 'read-commits',
-    'read-watches',
+    'job-log',
+    'job-scheduling',
     'repo-context',
-    'repo-nav',
     'repo-heads',
+    'repo-nav',
     'repo-pkgs',
-    'repo-syncing',
-    'sync-log',
+    'read-watches',
 ] as const
 
-export type SidelinesColumnFamily = (typeof SidelinesColumnFamilies)[number]
+export type SidelinesObjectStore = (typeof SidelinesObjectStores)[number]
 
-function isSidelinesColumnFamily(name: string): name is SidelinesColumnFamily {
-    return SidelinesColumnFamilies.includes(name as any)
+type SidelinesObjectStoreRecords = {
+    'commit-review': Array<CommitReviewRecord>
+    'job-log': Array<JobLogRecord>
+    'job-scheduling': Array<JobSchedulingRecord>
+    'read-watches': Array<ReadingWatchRecord>
+    'repo-context': Array<RepoContextRecord>
+    'repo-heads': Array<RepoHeadRecord>
+    'repo-nav': Array<RepoNavRecord>
+    'repo-pkgs': Array<RepoPackagesRecord>
+}
+
+function isSidelinesColumnFamily(name: string): name is SidelinesObjectStore {
+    return SidelinesObjectStores.includes(name as any)
 }
 
 export type IndexedDBContent = {
     db: string
     version: number
-    records: Record<SidelinesColumnFamily, Array<any>>
+    records: SidelinesObjectStoreRecords
 }
 
 export async function indexedDBStateFrom(
@@ -84,27 +103,40 @@ export async function indexedDBStateFrom(
     print: boolean = false,
 ): Promise<IndexedDBContent> {
     const storageState = await context.storageState({ indexedDB: true })
-    const originState = (
+    const originStates =
         storageState.origins as unknown as Array<OriginStorageState>
-    ).find(originState => originState.origin === baseURL)
+    const originState = originStates.find(
+        originState => originState.origin === baseURL,
+    )
     if (!originState) {
-        throw Error('origin not found')
+        if (!storageState.origins.length) {
+            throw Error(
+                'context.storageState did not return storage state for any origins',
+            )
+        } else {
+            const originList = storageState.origins
+                .map(originState => originState.origin)
+                .join(', ')
+            throw Error(
+                `context.storageState baseURL "${baseURL}" not found in origins: ${originList}`,
+            )
+        }
     }
     if (originState.indexedDB.length !== 1) {
-        throw Error('db not found')
+        throw Error(
+            `context.storageState for baseURL "${baseURL}" did not have an IndexedDB db`,
+        )
     }
     const indexedDBState = originState.indexedDB[0]
     const records: IndexedDBContent['records'] = {
-        'job-log': [],
         'commit-review': [],
-        // 'read-commits': [],
-        'read-watches': [],
+        'job-log': [],
+        'job-scheduling': [],
         'repo-context': [],
-        'repo-nav': [],
+        'read-watches': [],
         'repo-heads': [],
+        'repo-nav': [],
         'repo-pkgs': [],
-        'repo-syncing': [],
-        'sync-log': [],
     }
     for (const objectStore of indexedDBState.stores) {
         if (!isSidelinesColumnFamily(objectStore.name)) {
@@ -132,11 +164,11 @@ The record data from Playwright is: ${JSON.stringify(record)}.`)
             })
         }
     }
-    if (indexedDBState.stores.length !== SidelinesColumnFamilies.length) {
+    if (indexedDBState.stores.length !== SidelinesObjectStores.length) {
         const extras = Array.from(
             new Set(
                 indexedDBState.stores.map(objectStore => objectStore.name),
-            ).symmetricDifference(new Set(SidelinesColumnFamilies)),
+            ).symmetricDifference(new Set(SidelinesObjectStores)),
         )
         throw Error(`\
 ObjectStores were removed from \`@sidelines/data\` without removing from \`SidelinesColumnFamilies\` in tests/indexedDBState.ts.\
@@ -159,7 +191,7 @@ export function debugPrintIndexedDBContent(content: IndexedDBContent) {
     console.log(separator)
     console.log(header)
     console.log(separator)
-    for (const columnFamily of SidelinesColumnFamilies) {
+    for (const columnFamily of SidelinesObjectStores) {
         console.log('~~~', columnFamily, '~~~')
         console.log(JSON.stringify(content.records[columnFamily], null, 4))
     }

@@ -1,4 +1,5 @@
 export function onDomInteractive(fn: () => void) {
+    console.log('pageload', location.pathname)
     if (document.readyState !== 'loading') {
         fn()
     } else {

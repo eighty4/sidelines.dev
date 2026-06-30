@@ -1,4 +1,5 @@
 import { readWorkflowModel } from '@eighty4/model-t'
+import { connectToDb } from '@sidelines/data/indexeddb'
 import { saveRepoCommitReview } from '@sidelines/data/tx/commitReview'
 import { registerRepoJob } from '@sidelines/jobs/workers/repos'
 import { queryViewerRepoDefaultBranchDirContents } from '@sidelines/github/repository/objects/queryViewerRepoDefaultBranchDirContents'
@@ -7,7 +8,7 @@ import { queryMultipleReposLatestFloatingMajorTag } from '@sidelines/github/repo
 import {
     RepositorySet,
     RepositoryValues,
-    type RepoJobExecStatus,
+    type RepoJobExecResult,
     type RepositoryId,
 } from '@sidelines/model'
 import { RepoNotFound, TreeObjectNotFound } from '@sidelines/model/errors'
@@ -18,7 +19,7 @@ registerRepoJob({ forRepo: upgradeWorkflowActions })
 async function upgradeWorkflowActions(
     ghToken: string,
     repo: RepositoryId,
-): Promise<RepoJobExecStatus | void> {
+): Promise<RepoJobExecResult | void> {
     console.log('UpgradeWorkflowActions starting on', repo)
     const queryWorkflowResult = await queryViewerRepoDefaultBranchDirContents(
         ghToken,
@@ -81,19 +82,21 @@ async function upgradeWorkflowActions(
             }
         }
     }
-    const commit = await saveRepoCommitReview({
+    const db = await connectToDb()
+    const commit = await saveRepoCommitReview(db, {
         repo,
         branch: {
             name: queryWorkflowResult.defaultBranch.name,
             headOid: queryWorkflowResult.defaultBranch.headOid,
         },
-        commitMessage: 'Upgrade GitHub actions',
+        commitMessage: 'Upgrading GitHub actions',
         additions: upgraded.map(wf => ({
             dirpath: '.github/workflows',
             filename: wf.filename,
             content: wf.yaml,
         })),
     })
+    db.close()
     console.log(
         'UpgradeWorkflowActions',
         repo,

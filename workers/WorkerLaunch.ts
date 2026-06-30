@@ -4,10 +4,10 @@ import { ulid } from 'ulid'
 
 export type WorkerLaunchId =
     | 'DATA_resolveRepoJobRepos'
-    | 'JOB_SCHEDULED_sync'
     | 'JOB_SYNC_packages'
     | 'JOB_SYNC_watches'
     | 'JOB_REPO_upgradeWorkflowActions'
+    | 'JOB_SCHEDULED_sync_refs'
 
 function createWorkerFromLaunchId(workerId: WorkerLaunchId): Worker {
     switch (workerId) {
@@ -15,7 +15,7 @@ function createWorkerFromLaunchId(workerId: WorkerLaunchId): Worker {
             return new Worker('./jobs/ResolveRepoJobReposWorker.ts', {
                 name: 'Sidelines.dev - resolve repo job repos',
             })
-        case 'JOB_SCHEDULED_sync':
+        case 'JOB_SCHEDULED_sync_refs':
             return new Worker('./jobs/scheduled/SyncRefs.ts', {
                 name: 'Sidelines.dev - sync refs',
             })

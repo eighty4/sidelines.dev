@@ -1,11 +1,11 @@
 import {
     registerSyncedRefJob,
-    type SyncedRefs,
+    type SyncedRefsJobInput,
 } from '@sidelines/jobs/workers/syncedRefs'
 
 registerSyncedRefJob({ forSyncedRefs: syncWatches })
 
 async function syncWatches(
     _ghToken: string,
-    _syncedRef: SyncedRefs,
+    _syncedRef: SyncedRefsJobInput,
 ): Promise<void> {}

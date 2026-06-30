@@ -11,41 +11,19 @@ if (dank.IS_DEV) {
     // if (location.port === '4000') {
     //     registerServiceWorker()
     // }
-
-    // const dataLink = document.createElement('a')
-    // dataLink.style.cursor = 'pointer'
-    // dataLink.style.color = '#282'
-    // dataLink.style.background = '#ccc'
-    // dataLink.style.width = '4rem'
-    // dataLink.style.height = '2rem'
-    // dataLink.style.fontSize = '.8rem'
-    // dataLink.style.display = 'flex'
-    // dataLink.style.alignItems = 'center'
-    // dataLink.style.justifyContent = 'center'
-    // dataLink.style.position = 'fixed'
-    // dataLink.style.left = '0'
-    // dataLink.style.bottom = '0'
-    // dataLink.innerText = '/_data'
-    // dataLink.target = '_blank'
-    // dataLink.href = dataLink.innerText
-
-    // document.body.appendChild(dataLink)
 }
 
 // if (dank.IS_PROD) {
 //     onLoadComplete(registerServiceWorker)
 // }
 
-registerSharedWorkers()
-
-function registerSharedWorkers() {
-    const ghToken = ghTokenFromCookie(document.cookie)
-    if (!ghToken) {
-        return
-    }
+const ghToken = ghTokenFromCookie(document.cookie)
+if (ghToken) {
     const workerLauncher = new PageSideWorkerLauncher()
     window.addEventListener('beforeunload', () => workerLauncher.shutdown())
-    startJobSchedulingWorker(ghToken)
+    if (location.pathname !== '/configure') {
+        startJobSchedulingWorker(ghToken)
+    }
 }
 
 // recent chrome versions do not HTTP cache service workers

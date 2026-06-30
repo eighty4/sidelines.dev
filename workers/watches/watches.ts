@@ -1,3 +1,4 @@
+import { connectToDb } from '@sidelines/data/indexeddb'
 import {
     createWatch,
     deleteWatch,
@@ -10,14 +11,24 @@ import type { WatchAsyncReq, WatchRpcReq, WatchRpcRes } from './WatchesApi.ts'
 
 declare const self: DedicatedWorkerGlobalScope
 
+let connectingToDb = connectToDb()
+
 async function processAsyncRequest(request: WatchAsyncReq): Promise<void> {
     switch (request.kind) {
         case 'watch-path':
             switch (request.op) {
                 case 'create':
-                    return await createWatch(request.repo, request.path)
+                    return await createWatch(
+                        await connectingToDb,
+                        request.repo,
+                        request.path,
+                    )
                 case 'delete':
-                    return await deleteWatch(request.repo, request.path)
+                    return await deleteWatch(
+                        await connectingToDb,
+                        request.repo,
+                        request.path,
+                    )
             }
         default:
             throw Error(request.kind + ' is not an async user data request')
@@ -30,13 +41,16 @@ async function processRpcRequest(request: WatchRpcReq): Promise<WatchRpcRes> {
             return {
                 kind: request.kind,
                 id: request.id,
-                watches: await getAllWatches(),
+                watches: await getAllWatches(await connectingToDb),
             }
         case 'repo-watches':
             return {
                 kind: request.kind,
                 id: request.id,
-                paths: await getWatchesForRepo(request.repo),
+                paths: await getWatchesForRepo(
+                    await connectingToDb,
+                    request.repo,
+                ),
             }
         default:
             throw Error(

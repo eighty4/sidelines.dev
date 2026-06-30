@@ -18,18 +18,8 @@ export function splitRepoName(repo: RepoNameWithOwner): RepositoryId {
     return { owner, name }
 }
 
-export type RepoDefaultBranch = {
-    repo: RepositoryId
-    defaultBranch: BranchRef
-}
-
 export type BranchRef = {
     name: string
     committedDate: Date
     headOid: string
-}
-
-export type SyncedRepoDefaultBranch = RepoDefaultBranch & {
-    from?: string
-    to: string
 }

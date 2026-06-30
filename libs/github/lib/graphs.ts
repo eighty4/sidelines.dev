@@ -1,3 +1,6 @@
+import type { RepoNameWithOwner } from '@sidelines/model'
+import type { PageInfo } from './pagingGraphqlQueries.ts'
+
 /**
  * Exporting Q*Graph and Q*Vars types for Playwright testing.
  * Ideally, my graphql schema integration would be advanced
@@ -57,10 +60,7 @@ export type QViewerReposNamesGraph = {
                     login: string
                 }
             }>
-            pageInfo: {
-                endCursor: string | null
-                hasNextPage: boolean
-            }
+            pageInfo: PageInfo
         }
     }
 }
@@ -114,6 +114,23 @@ export type QRepoObjectGraph = {
             | {
                   __typename: 'Commit'
               }
+    }
+}
+
+/* QViewerAndExplicitRepoHeadOids */
+
+export type QViewerAndExplicitRepoHeadOidsGraph = {
+    [repo: `r${number}`]: null | {
+        defaultBranchRef: null | MRepoDefaultBranch
+    }
+    viewer: {
+        repositories: {
+            nodes: Array<{
+                nameWithOwner: RepoNameWithOwner
+                defaultBranchRef: null | MRepoDefaultBranch
+            }>
+            pageInfo: PageInfo
+        }
     }
 }
 

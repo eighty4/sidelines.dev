@@ -1,4 +1,4 @@
-import type { JobSchedulingRequest } from './jobApiMessaging.ts'
+import type { JobInitRequest } from './jobApiMessaging.ts'
 
 export default function startJobSchedulingWorker(
     ghToken: string,
@@ -12,7 +12,7 @@ export default function startJobSchedulingWorker(
     sw.port.postMessage({
         kind: 'INIT',
         ghToken,
-    } satisfies JobSchedulingRequest)
+    } satisfies JobInitRequest)
     return sw
 }
 

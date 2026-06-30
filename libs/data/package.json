@@ -14,6 +14,11 @@
       "node": "./lib_js/cookie.js",
       "default": "./lib/cookie.ts"
     },
+    "./indexeddb": {
+      "types": "./lib_types/indexeddb.d.ts",
+      "node": "./lib_js/indexeddb.js",
+      "default": "./lib/indexeddb.ts"
+    },
     "./tx/*": {
       "types": "./lib_types/transactions/*.d.ts",
       "node": "./lib_js/transactions/*.js",

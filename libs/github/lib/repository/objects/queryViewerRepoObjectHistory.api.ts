@@ -1,4 +1,4 @@
-import type { Pageable } from '../../pagingGraphqlQueries.ts'
+import type { Pageable, PageInfo } from '../../pagingGraphqlQueries.ts'
 import queryGraphqlApi from '../../queryGraphqlApi.ts'
 import {
     QViewerRepoObjectHistory,
@@ -35,10 +35,7 @@ export default async function queryViewerRepoObjectHistory(
         json.data.viewer.repository.ref.target.history
     return {
         totalCount,
-        pageInfo: {
-            hasNextPage: pageInfo.hasNextPage,
-            endCursor: pageInfo.endCursor,
-        },
+        pageInfo,
         data: nodes.map((node: HistoryNodeGraphData) => {
             return {
                 oid: node.oid,
@@ -58,10 +55,7 @@ type GraphData = {
                     history: null | {
                         nodes: Array<HistoryNodeGraphData>
                         totalCount: number
-                        pageInfo: {
-                            hasNextPage: boolean
-                            endCursor: string
-                        }
+                        pageInfo: PageInfo
                     }
                 }
             }

@@ -1,4 +1,4 @@
-import type { RepoWatches } from '@sidelines/model'
+import { joinRepoName, type RepoWatches } from '@sidelines/model'
 import { onDomInteractive } from '@sidelines/pageload/ready'
 import { lookupGhToken } from '@sidelines/pageload/session'
 import { type FC, useEffect, useMemo, useState } from 'react'
@@ -41,8 +41,10 @@ const Watches: FC<WatchesProps> = ({ ghToken }) => {
             watchesApi.getRepoWatches(searchLocation.repo).then(paths => {
                 if (watches === 'loading') throw Error()
                 const repo = searchLocation.repo
-                const nameWithOwner = `${repo.owner}/${repo.name}`
-                setWatches({ ...watches, [nameWithOwner]: { repo, paths } })
+                setWatches({
+                    ...watches,
+                    [joinRepoName(repo)]: { repo, paths },
+                })
             })
         }
     }, [searchLocation])

@@ -5,13 +5,9 @@
     "outDir": "lib_js",
     "declarationDir": "lib_types",
     "composite": true,
-    "lib": ["DOM"]
+    "lib": ["ESNext", "DOM"]
   },
   "include": ["lib/**/*.ts"],
   "exclude": ["node_modules", "lib/workers/**/*.ts"],
-  "references": [
-    { "path": "../data" },
-    { "path": "../github/tsconfig.lib.json" },
-    { "path": "../model/tsconfig.lib.json" }
-  ]
+  "references": [{ "path": "../model/tsconfig.lib.json" }]
 }

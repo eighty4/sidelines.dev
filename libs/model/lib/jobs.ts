@@ -6,19 +6,96 @@ export type JobKind = (typeof JobKinds)[number]
 
 export type JobId = `JOB_${JobKind}_${string}`
 
-// union of completion states for jobs
-export type JobExecState =
-    | {
-          kind: 'schedule'
-      }
-    | RepoJobExecState
-    | SyncedRefsJobExecState
+type JobIdFormat<T extends string> = T extends JobId ? T : never
+
+export type JobIdForJobKind<JK extends JobKind> = JK extends 'repos'
+    ? RepoJobId
+    : JK extends 'scheduled'
+      ? ScheduledJobId
+      : SyncedRefsJobId
+
+/***************************************************/
+/*** Requesting available jobs from jobs backend ***/
+/***************************************************/
+
+// syncedRefs jobs use SidelinesJobDataCN to retrieve AvailableJobs<'syncedRefs'>
+// Pages use JobApiClient to retrieve jobs to execute
+
+// JobKind excluding `scheduled`
+export type JobKindForAvailableJobs<JK extends JobKind = JobKind> =
+    JK extends 'scheduled' ? never : JK
+
+export type AvailableJob<JK extends JobKindForAvailableJobs> = {
+    jobId: JobIdForJobKind<JK>
+    critiera?: Partial<Record<AvailableJobCriterion, boolean>>
+}
+
+export const AvailableJobCriteria = ['watch'] as const
+
+export type AvailableJobCriterion = (typeof AvailableJobCriteria)[number]
+
+export type AvailableJobsReq<JK extends JobKindForAvailableJobs> = {
+    jobKind: JK
+}
+
+export type AvailableJobsRes<JK extends JobKindForAvailableJobs> = {
+    jobs: Array<AvailableJob<JK>>
+}
+
+/****************************************************/
+/*** Tracking job parameters and completion state ***/
+/****************************************************/
+
+export type JobExecState<JK extends JobKind = JobKind> = JK extends JobKind
+    ? { jobKind: JK } & JobExecStates[JK]
+    : never
+
+type JobExecStates = {
+    repos: {
+        repos: Record<RepoNameWithOwner, RepoJobExecResult>
+        target: RepoJobTarget
+        whenLastActivity: Date | null
+    }
+    scheduled: {}
+    syncedRefs: {
+        repos: Record<RepoNameWithOwner, SyncedRefsState>
+        whenLastActivity: Date | null
+    }
+}
+
+export type SyncedRefsData = {
+    from?: BranchRef
+    to: BranchRef
+}
+
+export type SyncedRefsState = SyncedRefsData & {
+    result?: SyncedRefsJobExecResult
+}
+
+export type JobExecResultDone = {
+    state: 'done'
+    when: Date
+}
+
+export type JobExecResultFailed = {
+    state: 'failed'
+    when: Date
+    error: string
+}
+
+export type JobExecResultException = {
+    state: 'exception'
+    when: Date
+    error: string
+    message?: string
+    stack?: string
+}
 
 /*****************/
 /*** REPO JOBS ***/
 /*****************/
 
-export type RepoJobId = `JOB_repos_${string}`
+export type RepoJobId = JobIdFormat<`JOB_repos_${string}`>
 
 export type RepoJobSpec = {
     jobId: RepoJobId
@@ -28,15 +105,7 @@ export type RepoJobSpec = {
 export type RepoJobExecUpdate = {
     jobId: RepoJobId
     jobExecId: string
-    status: RepoJobExecStatus
-}
-
-// completion state of a job execution
-// saved to db with JobLogRecord
-export type RepoJobExecState = {
-    kind: 'repo'
-    target: RepoJobTarget
-    repos: Record<RepoNameWithOwner, RepoJobExecStatus>
+    status: RepoJobExecResult
 }
 
 // defines scope of a repo job
@@ -52,31 +121,12 @@ export type RepoJobTarget =
       }
 
 // result of job on a repo
-export type RepoJobExecStatus =
-    | RepoJobExecResultDone
-    | RepoJobExecResultFailed
-    | RepoJobExecResultException
+export type RepoJobExecResult =
+    | JobExecResultDone
+    | JobExecResultFailed
+    | JobExecResultException
     | RepoJobExecResultCommitReview
     | RepoJobExecResultCommitMerged
-
-export type RepoJobExecResultDone = {
-    state: 'done'
-    when: Date
-}
-
-export type RepoJobExecResultFailed = {
-    state: 'failed'
-    when: Date
-    error: string
-}
-
-export type RepoJobExecResultException = {
-    state: 'exception'
-    when: Date
-    error: string
-    message?: string
-    stack?: string
-}
 
 export type RepoJobExecResultCommitReview = {
     state: 'review'
@@ -90,19 +140,23 @@ export type RepoJobExecResultCommitMerged = {
     sha: string
 }
 
+/***************************/
+/*** SCHEDULED REFS JOBS ***/
+/***************************/
+
+export type ScheduledJobId = JobIdFormat<`JOB_scheduled_${string}`>
+
 /************************/
 /*** SYNCED REFS JOBS ***/
 /************************/
 
-// completion state of a job execution
-// saved to db with JobLogRecord
-export type SyncedRefsJobExecState = {
-    kind: 'refs'
-    repos: Record<RepoNameWithOwner, SyncedRefsJobExecStatus>
-}
+export type SyncedRefsJobId = JobIdFormat<`JOB_syncedRefs_${string}`>
 
 // result of job on a repo's synced refs
-export type SyncedRefsJobExecStatus = {}
+export type SyncedRefsJobExecResult =
+    | JobExecResultDone
+    | JobExecResultFailed
+    | JobExecResultException
 
 /**************************/
 /*** REPO COMMIT REVIEW ***/

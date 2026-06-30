@@ -1,14 +1,19 @@
+import { connectToDb } from '@sidelines/data/indexeddb'
 import { updateRepoPackages } from '@sidelines/data/tx/repoPackages'
 import {
     registerSyncedRefJob,
-    type SyncedRefs,
+    type SyncedRefsJobInput,
 } from '@sidelines/jobs/workers/syncedRefs'
 
 registerSyncedRefJob({ forSyncedRefs: syncPackages })
 
 async function syncPackages(
     ghToken: string,
-    syncedRef: SyncedRefs,
+    syncedRef: SyncedRefsJobInput,
 ): Promise<void> {
-    await updateRepoPackages(ghToken, syncedRef.repo, syncedRef.defaultBranch)
+    console.log('updating repo packages in indexeddb')
+    const db = await connectToDb()
+    await updateRepoPackages(db, ghToken, syncedRef.repo, syncedRef.to)
+    db.close()
+    console.log('updated repo packages in indexeddb')
 }

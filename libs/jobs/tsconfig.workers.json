@@ -5,12 +5,9 @@
     "outDir": "lib_js/workers",
     "declarationDir": "lib_types/workers",
     "composite": true,
-    "lib": ["DOM", "WebWorker"]
+    "lib": ["ESNext", "DOM", "WebWorker"]
   },
   "include": ["lib/workers/**/*.ts"],
   "exclude": ["node_modules"],
-  "references": [
-    { "path": "../model/tsconfig.lib.json" },
-    { "path": "./tsconfig.lib.json" }
-  ]
+  "references": [{ "path": "./tsconfig.lib.json" }]
 }

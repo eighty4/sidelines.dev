@@ -1,81 +1,60 @@
+import { connectToDb } from '@sidelines/data/indexeddb'
 import {
-    isMessageObject,
-    isOptionalRepoId,
-    isString,
-} from '@sidelines/model/validate'
-import type { JobApiRequest, JobSchedulingRequest } from './jobApiMessaging.ts'
-import JobsBackend from './JobsSWorkerBackend.ts'
+    isJobApiRequest,
+    isJobInitRequest,
+    type JobApiRequest,
+} from './jobApiMessaging.ts'
+import JobsBackend from './JobsBackend.ts'
 
 declare const self: SharedWorkerGlobalScope
 
-let backend: JobsBackend | null = null
+let _backend: JobsBackend | Promise<JobsBackend> | null = null
 
 self.onconnect = (e: MessageEvent<unknown>) => {
     for (const port of e.ports) port.onmessage = onMessage
 }
 
-async function onMessage(e: MessageEvent<unknown>) {
-    if (e.data === null || typeof e.data !== 'object') {
-        return
+function onMessage(e: MessageEvent<unknown>) {
+    if (isJobInitRequest(e.data)) {
+        initJobsBackend(e.data.ghToken)
+    } else if (isJobApiRequest(e.data)) {
+        onJobApiRequest(e.data)
     }
-    let processing: Promise<void>
-    if (isJobSchedulingRequest(e.data)) {
-        processing = onJobSchedulingRequest(e.data)
-    } else if (isJobExecRequest(e.data)) {
-        processing = onJobExecRequest(e.data)
+}
+
+function initJobsBackend(ghToken: string) {
+    if (_backend === null) {
+        _backend = connectToDb().then(db => {
+            return (_backend = new JobsBackend(db, ghToken))
+        })
+    } else if (_backend instanceof JobsBackend) {
+        verifyGhToken(_backend, ghToken)
     } else {
-        return
-    }
-
-    try {
-        await processing
-    } catch (e) {
-        console.error(e)
+        _backend.then(backend => verifyGhToken(backend, ghToken))
     }
 }
 
-function isJobSchedulingRequest(req: Object): req is JobSchedulingRequest {
-    if (!isMessageObject(req)) return false
-    switch (req.kind) {
-        case 'INIT':
-            return isString(req.ghToken)
-    }
-    return false
-}
-
-async function onJobSchedulingRequest(request: JobSchedulingRequest) {
-    if (backend === null && request.kind !== 'INIT') {
-        console.error('bad init')
-    } else if (request.kind === 'INIT') {
-        if (backend === null) {
-            backend = new JobsBackend(request.ghToken)
-        } else if (backend.hasGhTokenChanged(request.ghToken)) {
-            backend.shutdown()
-            backend = null
-            console.warn('new auth, closing ports')
-        }
+function verifyGhToken(backend: JobsBackend, ghToken: string) {
+    if (backend.hasGhTokenChanged(ghToken)) {
+        backend.shutdownApiChannels()
+        _backend = null
+        console.warn('JobsSWorker new auth, closing ports')
     }
 }
 
-function isJobExecRequest(req: unknown): req is JobApiRequest {
-    if (!isMessageObject(req)) return false
-    switch (req.kind) {
-        case 'LS':
-            return isString(req.channelId)
-        case 'EXEC':
-            return (
-                isString(req.channelId) &&
-                isString(req.jobId) &&
-                isOptionalRepoId(req.repo)
-            )
+function onJobApiRequest(request: JobApiRequest) {
+    if (_backend === null) {
+        console.error(
+            'JobsSWorker api request received without JobsBackend initialized',
+        )
+    } else if (_backend instanceof JobsBackend) {
+        dispatchApiRequest(_backend, request)
+    } else {
+        _backend.then(backend => dispatchApiRequest(backend, request))
     }
-    return false
 }
 
-async function onJobExecRequest(request: JobApiRequest) {
-    if (backend === null) {
-        throw Error()
-    }
+function dispatchApiRequest(backend: JobsBackend, request: JobApiRequest) {
     switch (request.kind) {
         case 'EXEC':
             backend.exec(request.channelId, request.jobId, request.repo)

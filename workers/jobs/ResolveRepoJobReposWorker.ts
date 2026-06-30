@@ -18,9 +18,8 @@ export type ResolveRepoJobReposWorkerResult = {
 }
 
 self.onmessage = async (e: MessageEvent<ResolveRepoJobReposWorkerInit>) => {
-    const repos = await queryViewerOwnedRepoNames(e.data.ghToken)
     makePostAndCloseChannel(e.data.channel, {
-        repos,
+        repos: await queryViewerOwnedRepoNames(e.data.ghToken),
     } satisfies ResolveRepoJobReposWorkerResult)
     postMessage({ kind: 'finished' } satisfies LaunchedWorkerMessage)
 }

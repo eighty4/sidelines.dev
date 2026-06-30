@@ -1,28 +1,21 @@
-import type { RepoNameWithOwner, RepositoryId } from '@sidelines/model'
+import { joinRepoName, type RepositoryId } from '@sidelines/model'
 import {
-    connectToDb,
     DB_INDEX_REPO_NAV_WHEN,
     DB_STORE_REPO_NAV,
     idbPutRecord,
 } from '../database.ts'
+import type { RepoNavRecord } from '../records.ts'
 
 const LIMIT_NAV = 5
 
-// DB_STORE_REPO_NAV
-type NavRecord = {
-    nameWithOwner: RepoNameWithOwner
-    repo: RepositoryId
-    when: Date
-}
-
-type NavQueryOpts = {
+export type NavQueryOpts = {
     limit?: number
 }
 
-export async function readRecentNav(
+export function readRecentNav(
+    db: IDBDatabase,
     opts: NavQueryOpts,
 ): Promise<Array<RepositoryId>> {
-    const db = await connectToDb()
     return new Promise((res, rej) => {
         const tx = db.transaction([DB_STORE_REPO_NAV], 'readonly')
         const req: IDBRequest<IDBCursorWithValue | null> = tx
@@ -36,7 +29,7 @@ export async function readRecentNav(
         req.onsuccess = () => {
             const cursor: IDBCursorWithValue | null = req.result
             if (cursor) {
-                const record = cursor.value as NavRecord
+                const record = cursor.value as RepoNavRecord
                 repos.push(record.repo)
                 if (repos.length < limit) {
                     cursor.continue()
@@ -53,9 +46,12 @@ export async function readRecentNav(
     })
 }
 
-export async function writeNavVisit(repo: RepositoryId) {
-    await idbPutRecord<NavRecord>(DB_STORE_REPO_NAV, {
-        nameWithOwner: `${repo.owner}/${repo.name}`,
+export function writeNavVisit(
+    db: IDBDatabase,
+    repo: RepositoryId,
+): Promise<void> {
+    return idbPutRecord<RepoNavRecord>(db, DB_STORE_REPO_NAV, {
+        nameWithOwner: joinRepoName(repo),
         repo,
         when: new Date(),
     })

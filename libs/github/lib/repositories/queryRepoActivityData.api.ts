@@ -1,4 +1,4 @@
-import { pageQueryWithVars } from '../pagingGraphqlQueries.ts'
+import { pageQueryWithVars, type PageInfo } from '../pagingGraphqlQueries.ts'
 import {
     QViewerReposActivityData,
     type QViewerReposActivityDataVars,
@@ -35,10 +35,7 @@ type GraphData = {
                 stargazerCount: number
                 updatedAt: string
             }>
-            pageInfo: {
-                endCursor: string
-                hasNextPage: boolean
-            }
+            pageInfo: PageInfo
         }
     }
 }
