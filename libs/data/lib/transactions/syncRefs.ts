@@ -1,19 +1,22 @@
 import {
-    AvailableJobCriteria,
-    type AvailableJobCriterion,
-    type AvailableJobsReq,
-    type AvailableJobsRes,
     type BranchRef,
     type DataCallback,
     type RepoNameWithOwner,
-    type SyncedRefsData,
-    type SyncedRefsJobId,
 } from '@sidelines/model'
 import {
     makeAwaitMessageAndCloseChannel,
     makeNeverCloseAndSubscribeChannel,
     makePostAndCloseChannel,
 } from '@sidelines/model/channels'
+import type { SyncedRefsJobId } from '@sidelines/model/jobs/id'
+import {
+    AvailableJobCriteria,
+    type AvailableJobCriterion,
+    type AvailableJobsReq,
+    type AvailableJobsRes,
+} from '@sidelines/model/jobs/available'
+import type { SyncedRefsData } from '@sidelines/model/jobs/spec'
+import type { SyncedRefsExecState } from '@sidelines/model/jobs/state'
 import { ulid } from 'ulid'
 import { DB_STORE_JOB_LOG, DB_STORE_REPO_HEADS } from '../database.ts'
 import type { JobLogRecord, RepoHeadRecord } from '../records.ts'
@@ -153,7 +156,7 @@ function addRepoHeadRecords(
 ) {
     for (const { defaultBranch, repo } of Object.values(reposToRefs)) {
         repoHeadStore.add({ repo, defaultBranch } satisfies RepoHeadRecord)
-        syncedRefs[repo] = { to: defaultBranch }
+        syncedRefs[repo] = { to: defaultBranch, from: null }
     }
 }
 
@@ -169,7 +172,7 @@ function addJobLogRecords(
     // build lookup records
     const jobsToCreate: Record<
         SyncedRefsJobId,
-        Record<RepoNameWithOwner, SyncedRefsData> | null
+        Record<RepoNameWithOwner, SyncedRefsExecState> | null
     > = Object.fromEntries(
         availableSyncedRefsJobs.jobs.map(j => [j.jobId, null]),
     )
@@ -199,13 +202,19 @@ function addJobLogRecords(
             for (const criterion of criteria) {
                 for (const jobId of jobIdsByCriteria[criterion]) {
                     if (!jobsToCreate[jobId]) jobsToCreate[jobId] = {}
-                    jobsToCreate[jobId][repo] = syncedRefs[repo]
+                    jobsToCreate[jobId][repo] = {
+                        synced: syncedRefs[repo],
+                        result: null,
+                    }
                 }
             }
         }
         for (const jobId of jobIdsWithoutCriteria) {
             if (!jobsToCreate[jobId]) jobsToCreate[jobId] = {}
-            jobsToCreate[jobId][repo] = syncedRefs[repo]
+            jobsToCreate[jobId][repo] = {
+                synced: syncedRefs[repo],
+                result: null,
+            }
         }
     }
 

@@ -1,4 +1,5 @@
-import { JobKinds, type JobId, type JobKind } from './jobs.ts'
+import type { JobId } from './jobs/id.api.ts'
+import { JobKinds, type JobKind } from './jobs/kind.api.ts'
 import type { RepoNameWithOwner, RepositoryId } from './repo.ts'
 
 /**********************/

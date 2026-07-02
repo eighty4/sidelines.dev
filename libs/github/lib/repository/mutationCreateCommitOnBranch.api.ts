@@ -2,10 +2,10 @@ import type {
     RepoCommitAddition,
     RepoCommitDeletion,
     RepoCommitInputs,
-} from '@sidelines/model'
+} from '@sidelines/model/commits'
 import queryGraphqlApi from '../queryGraphqlApi.ts'
 
-export type { RepoCommitInputs } from '@sidelines/model'
+export type { RepoCommitInputs } from '@sidelines/model/commits'
 
 // https://docs.github.com/en/graphql/reference/mutations#createcommitonbranch
 export async function createCommitOnBranch(

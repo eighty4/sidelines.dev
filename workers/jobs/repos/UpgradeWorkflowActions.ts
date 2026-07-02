@@ -8,10 +8,10 @@ import { queryMultipleReposLatestFloatingMajorTag } from '@sidelines/github/repo
 import {
     RepositorySet,
     RepositoryValues,
-    type RepoJobExecResult,
     type RepositoryId,
 } from '@sidelines/model'
 import { RepoNotFound, TreeObjectNotFound } from '@sidelines/model/errors'
+import type { RepoJobExecResult } from '@sidelines/model/jobs/result'
 import replaceActionsVersions from './replaceActionsVersions.ts'
 
 registerRepoJob({ forRepo: upgradeWorkflowActions })

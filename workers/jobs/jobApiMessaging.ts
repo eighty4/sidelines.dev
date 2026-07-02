@@ -1,5 +1,6 @@
-import type { RepoJobId, RepositoryId } from '@sidelines/model'
+import type { RepositoryId } from '@sidelines/model'
 import { makeChannel } from '@sidelines/model/channels'
+import type { RepoJobId } from '@sidelines/model/jobs/id'
 import {
     isMessageObject,
     isOptionalRepoId,

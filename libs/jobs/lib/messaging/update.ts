@@ -1,10 +1,10 @@
-import {
-    type JobIdForJobKind,
-    type JobKind,
-    type RepoJobExecResult,
-    type RepoNameWithOwner,
-    type SyncedRefsJobExecResult,
-} from '@sidelines/model'
+import { type RepoNameWithOwner } from '@sidelines/model'
+import type { JobIdForJobKind } from '@sidelines/model/jobs/id'
+import type { JobKind } from '@sidelines/model/jobs/kind'
+import type {
+    RepoJobExecResult,
+    SyncedRefsJobExecResult,
+} from '@sidelines/model/jobs/result'
 import {
     isJobKind,
     isMessageObject,

@@ -6,7 +6,8 @@ import {
     registerScheduledJob,
     type ScheduledJobExecContext,
 } from '@sidelines/jobs/workers/scheduled'
-import type { AvailableJobCriterion, RepoNameWithOwner } from '@sidelines/model'
+import type { RepoNameWithOwner } from '@sidelines/model'
+import type { AvailableJobCriterion } from '@sidelines/model/jobs/available'
 
 registerScheduledJob({ onSchedule: sync })
 

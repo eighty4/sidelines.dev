@@ -1,9 +1,6 @@
-import {
-    splitRepoName,
-    type RepoJobExecResult,
-    type RepositoryId,
-} from '@sidelines/model'
+import { splitRepoName, type RepositoryId } from '@sidelines/model'
 import { isError } from '@sidelines/model/errors'
+import type { RepoJobExecResult } from '@sidelines/model/jobs/result'
 import { isExecRepoJobMessage } from '../messaging/exec.ts'
 import {
     createJobUpdateChannel,

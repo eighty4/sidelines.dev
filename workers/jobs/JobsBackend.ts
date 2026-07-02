@@ -26,19 +26,8 @@ import {
 } from '@sidelines/jobs/messaging'
 import {
     joinRepoName,
-    type AvailableJob,
-    type AvailableJobsRes,
-    type JobId,
-    type JobIdForJobKind,
-    type JobKind,
-    type JobKindForAvailableJobs,
-    type RepoJobId,
-    type RepoJobTarget,
     type RepoNameWithOwner,
     type RepositoryId,
-    type ScheduledJobId,
-    type SyncedRefsData,
-    type SyncedRefsJobId,
 } from '@sidelines/model'
 import {
     makeAwaitMessageAndCloseChannel,
@@ -46,6 +35,20 @@ import {
     makeNeverCloseAndSubscribeChannel,
     type SidelinesJobDataCN,
 } from '@sidelines/model/channels'
+import type {
+    AvailableJob,
+    AvailableJobsRes,
+    JobKindForAvailableJobs,
+} from '@sidelines/model/jobs/available'
+import type {
+    JobId,
+    JobIdForJobKind,
+    RepoJobId,
+    ScheduledJobId,
+    SyncedRefsJobId,
+} from '@sidelines/model/jobs/id'
+import type { JobKind } from '@sidelines/model/jobs/kind'
+import type { RepoJobTarget, SyncedRefsData } from '@sidelines/model/jobs/spec'
 import { ulid } from 'ulid'
 import {
     SharedWorkerSideWorkerLauncher,
@@ -252,11 +255,19 @@ type RunningJobStates = {
     }
 }
 
+type JobUpdateChannels = {
+    api: Record<JobApiRequest['kind'], Array<BroadcastChannel>>
+    jobExecId: Record<string, BroadcastChannel>
+}
+
 export default class JobsBackend {
     #available: AvailableJobs = createAvailableJobs()
-    #channels: Record<JobApiRequest['kind'], Array<BroadcastChannel>> = {
-        EXEC: [],
-        LS: [],
+    #channels: JobUpdateChannels = {
+        api: {
+            EXEC: [],
+            LS: [],
+        },
+        jobExecId: {},
     }
     #db: IDBDatabase
     #ghToken: string
@@ -308,11 +319,17 @@ export default class JobsBackend {
     }
 
     shutdownApiChannels() {
-        for (const channels of Object.values(this.#channels)) {
+        for (const channels of Object.values(this.#channels.api)) {
             for (const channel of channels) {
                 channel.close()
             }
         }
+        this.#channels.api.EXEC.length = 0
+        this.#channels.api.LS.length = 0
+        for (const channel of Object.values(this.#channels.jobExecId)) {
+            channel.close()
+        }
+        this.#channels.jobExecId = {}
     }
 
     #availableJobs<JK extends JobKindForAvailableJobs>(
@@ -337,7 +354,7 @@ export default class JobsBackend {
 
     #createChannel(kind: JobApiRequest['kind'], channelId: string) {
         const channel = createJobApiChannel(kind, channelId)
-        this.#channels[kind].push(channel)
+        this.#channels.api[kind].push(channel)
     }
 
     #initScheduledJobTiming(

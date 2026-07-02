@@ -1,11 +1,11 @@
 import {
     ChannelDataSubscription,
     type DataCallback,
-    type RepoJobExecUpdate,
-    type RepoJobId,
-    type RepoJobSpec,
     type RepositoryId,
 } from '@sidelines/model'
+import type { RepoJobId } from '@sidelines/model/jobs/id'
+import type { RepoJobSpec } from '@sidelines/model/jobs/spec'
+import type { RepoJobExecUpdate } from '@sidelines/model/jobs/updates'
 import {
     createJobApiChannel,
     type JobApiRequest,

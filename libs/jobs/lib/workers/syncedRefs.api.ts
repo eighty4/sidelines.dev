@@ -1,10 +1,7 @@
-import type {
-    BranchRef,
-    RepoNameWithOwner,
-    SyncedRefsData,
-    SyncedRefsJobExecResult,
-} from '@sidelines/model'
+import type { BranchRef, RepoNameWithOwner } from '@sidelines/model'
 import { isError } from '@sidelines/model/errors'
+import type { SyncedRefsJobExecResult } from '@sidelines/model/jobs/result'
+import type { SyncedRefsData } from '@sidelines/model/jobs/spec'
 import {
     isExecSyncedRefsJobMessage,
     type ExecSyncedRefsJobMessage,
@@ -15,8 +12,8 @@ import { workerLabel } from './location.ts'
 
 export type SyncedRefsJobInput = {
     repo: RepoNameWithOwner
-    from?: BranchRef
     to: BranchRef
+    from: BranchRef | null
 }
 
 export type SyncedRefsJobExec = {

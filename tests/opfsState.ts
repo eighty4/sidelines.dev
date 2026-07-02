@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
-import type { RepoCommitAddition, RepositoryId } from '@sidelines/model'
+import type { RepositoryId } from '@sidelines/model'
+import type { RepoCommitAddition } from '@sidelines/model/commits'
 
 export async function readFileContent(
     page: Page,

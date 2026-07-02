@@ -4,7 +4,8 @@ import type {
     QRepoMultipleObjectContentsVars,
     QViewerAndExplicitRepoHeadOidsGraph,
 } from '@sidelines/github/GRAPHS'
-import type { RepoNameWithOwner, SyncedRefsJobId } from '@sidelines/model'
+import type { RepoNameWithOwner } from '@sidelines/model'
+import type { SyncedRefsJobId } from '@sidelines/model/jobs/id'
 import { makeRepoPackagesQRepoMultipleObjectContentsGraph } from './github/graphs/packages.ts'
 import { indexedDBStateFrom, type IndexedDBContent } from './indexedDBState.ts'
 import { login, userStoryWithSidelinesRepo } from './login.ts'

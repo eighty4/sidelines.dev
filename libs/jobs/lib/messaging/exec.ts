@@ -1,9 +1,7 @@
-import type {
-    JobIdForJobKind,
-    JobKind,
-    RepoNameWithOwner,
-    SyncedRefsData,
-} from '@sidelines/model'
+import type { RepoNameWithOwner } from '@sidelines/model'
+import type { JobIdForJobKind } from '@sidelines/model/jobs/id'
+import type { JobKind } from '@sidelines/model/jobs/kind'
+import type { SyncedRefsData } from '@sidelines/model/jobs/spec'
 import {
     isArray,
     isDate,

@@ -3,7 +3,8 @@ import type { DataCallback } from './channels.ts'
 export type SidelinesChannelName =
     | SidelinesJobApiCN
     | SidelinesJobDataCN
-    | SidelinesJobUpdateCN
+    | SidelinesJobWorkerUpdateCN
+    | SidelinesJobUpdateByJobExecIdCN
     | SidelinesGitHubRateLimitCN
     | SidelinesJobSyncRefsCN
     | SidelinesWorkerLaunchCN
@@ -23,7 +24,11 @@ export type SidelinesJobDataCN =
 export type SidelinesJobSyncRefsCN = 'sl.job.syncedRefs'
 
 // job updates from job exec worker to jobs shared worker
-export type SidelinesJobUpdateCN = 'sl.job.worker.update'
+export type SidelinesJobWorkerUpdateCN = 'sl.job.worker.update'
+
+// job updates from jobs shared worker to pages
+export type SidelinesJobUpdateByJobExecIdCN =
+    `sl.job.update.jobExecId.${string}`
 
 // negotiating page side dedicated worker launching
 export type SidelinesWorkerLaunchCN =

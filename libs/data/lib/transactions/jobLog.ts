@@ -1,15 +1,18 @@
+import type { RepoNameWithOwner } from '@sidelines/model'
+import type {
+    RepoJobExecResult,
+    SyncedRefsJobExecResult,
+} from '@sidelines/model/jobs/result'
 import type {
     JobId,
     JobIdForJobKind,
-    RepoJobExecResult,
     RepoJobId,
-    RepoJobTarget,
-    RepoNameWithOwner,
     ScheduledJobId,
-    SyncedRefsData,
-    SyncedRefsJobExecResult,
     SyncedRefsJobId,
-} from '@sidelines/model'
+} from '@sidelines/model/jobs/id'
+import type { JobKind } from '@sidelines/model/jobs/kind'
+import type { RepoJobTarget, SyncedRefsData } from '@sidelines/model/jobs/spec'
+import type { JobExecState } from '@sidelines/model/jobs/state'
 import {
     DB_STORE_JOB_LOG,
     DB_STORE_JOB_SCHEDULING,
@@ -18,6 +21,14 @@ import {
     idbGetRecord,
 } from '../database.ts'
 import type { JobLogRecord, JobSchedulingRecord } from '../records.ts'
+
+export type JobState<JK extends JobKind = JobKind> = {
+    jobExecId: string
+    jobId: JobIdForJobKind<JK>
+    jobKind: JK
+    whenInit: Date
+    whenDone: Date | null
+} & JobExecState<JK>
 
 // retrieve a model of incomplete jobs from a previous browser session
 // used to initialize the SharedWorker of JobsSWorkerBackend
@@ -84,10 +95,10 @@ export function createScheduledJobLog(
 }
 
 // not happy about returning the record type
-export function readJobExec(
+export function readJobState(
     db: IDBDatabase,
     jobExecId: string,
-): Promise<JobLogRecord | null> {
+): Promise<JobState | null> {
     return idbGetRecord(db, DB_STORE_JOB_LOG, jobExecId)
 }
 
@@ -117,10 +128,7 @@ export async function readSyncedRefsJobData(
                     return true
                 }
             })
-            .map(([repo, state]) => [
-                repo,
-                { to: state.to, from: state.from } satisfies SyncedRefsData,
-            ]),
+            .map(([repo, { synced }]) => [repo, synced]),
     )
     return { completed, unfinished }
 }

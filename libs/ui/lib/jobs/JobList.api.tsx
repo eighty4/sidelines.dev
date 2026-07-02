@@ -1,10 +1,7 @@
-import type {
-    ChannelDataSubscription,
-    DataCallback,
-    RepoJobExecUpdate,
-    RepoJobId,
-    RepoJobSpec,
-} from '@sidelines/model'
+import type { ChannelDataSubscription, DataCallback } from '@sidelines/model'
+import type { RepoJobId } from '@sidelines/model/jobs/id'
+import type { RepoJobSpec } from '@sidelines/model/jobs/spec'
+import type { RepoJobExecUpdate } from '@sidelines/model/jobs/updates'
 import { useEffect, useState, type FC } from 'react'
 import styles from './JobList.module.css'
 

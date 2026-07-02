@@ -1,10 +1,9 @@
-import {
-    joinRepoName,
-    type RepoCommitAddition,
-    type RepoCommitInputs,
-    type RepoCommitReview,
-    type RepositoryId,
-} from '@sidelines/model'
+import { joinRepoName, type RepositoryId } from '@sidelines/model'
+import type {
+    RepoCommitAddition,
+    RepoCommitInputs,
+    RepoCommitReview,
+} from '@sidelines/model/commits'
 import { ulid } from 'ulid'
 import { DB_STORE_COMMIT_REVIEW, idbPutRecord } from '../database.ts'
 import { opfsLookupDir, opfsWriteFile } from '../opfs.ts'

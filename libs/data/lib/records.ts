@@ -1,16 +1,17 @@
 import type {
     BranchRef,
-    JobExecState,
-    JobIdForJobKind,
-    JobKind,
-    RepoCommitAddition,
-    RepoCommitDeletion,
-    RepoCommitInputs,
     RepoNameWithOwner,
     RepositoryId,
     RepositoryPackage,
-    ScheduledJobId,
 } from '@sidelines/model'
+import type {
+    RepoCommitAddition,
+    RepoCommitDeletion,
+    RepoCommitInputs,
+} from '@sidelines/model/commits'
+import type { JobIdForJobKind, ScheduledJobId } from '@sidelines/model/jobs/id'
+import type { JobKind } from '@sidelines/model/jobs/kind'
+import type { JobExecState } from '@sidelines/model/jobs/state'
 import type { ViewerRepoUserContext } from './transactions/repoContext.ts'
 
 /**
