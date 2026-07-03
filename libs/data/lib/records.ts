@@ -11,8 +11,16 @@ import type {
 } from '@sidelines/model/commits'
 import type { JobIdForJobKind, ScheduledJobId } from '@sidelines/model/jobs/id'
 import type { JobKind } from '@sidelines/model/jobs/kind'
-import type { JobExecState } from '@sidelines/model/jobs/state'
+import type {
+    RepoJobExecSpec,
+    SyncedRefsData,
+    SyncedRefsJobExecSpec,
+} from '@sidelines/model/jobs/spec'
 import type { ViewerRepoUserContext } from './transactions/repoContext.ts'
+import type {
+    RepoJobExecResult,
+    SyncedRefsJobExecResult,
+} from '@sidelines/model/jobs/result'
 
 /**
  * Exporting IndexedDB record types for testing with Playwright.
@@ -39,7 +47,40 @@ export type JobLogRecord<JK extends JobKind = JobKind> = {
     jobId: JobIdForJobKind<JK>
     whenInit: Date
     whenDone: Date | null
-} & JobExecState<JK>
+} & ExtendJobLogForJobKind[JK]
+
+type ExtendJobLogForJobKind = {
+    repos: {
+        spec: RepoJobExecSpec
+        whenLastActivity: Date | null
+    }
+    scheduled: {}
+    syncedRefs: {
+        spec: SyncedRefsJobExecSpec
+        whenLastActivity: Date | null
+    }
+}
+
+// DB_STORE_JOB_RESULT
+export type JobResultRecord<JK extends 'repos' | 'syncedRefs'> = {
+    // DB_STORE_JOB_RESULT_KEY
+    jobExecId: string
+    // ulid
+    whenDone: string
+
+    repo: RepoNameWithOwner
+    jobKind: JK
+} & ExtendJobResultForJobKind[JK]
+
+type ExtendJobResultForJobKind = {
+    repos: {
+        result: RepoJobExecResult
+    }
+    syncedRefs: {
+        result: SyncedRefsJobExecResult
+        syncedRefs: SyncedRefsData
+    }
+}
 
 // DB_STORE_JOB_SCHEDULING
 export type JobSchedulingRecord = {

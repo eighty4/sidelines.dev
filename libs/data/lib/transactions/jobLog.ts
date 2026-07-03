@@ -1,34 +1,32 @@
 import type { RepoNameWithOwner } from '@sidelines/model'
 import type {
-    RepoJobExecResult,
-    SyncedRefsJobExecResult,
-} from '@sidelines/model/jobs/result'
-import type {
     JobId,
     JobIdForJobKind,
     RepoJobId,
     ScheduledJobId,
     SyncedRefsJobId,
 } from '@sidelines/model/jobs/id'
-import type { JobKind } from '@sidelines/model/jobs/kind'
+import type {
+    RepoJobExecResult,
+    SyncedRefsJobExecResult,
+} from '@sidelines/model/jobs/result'
 import type { RepoJobTarget, SyncedRefsData } from '@sidelines/model/jobs/spec'
-import type { JobExecState } from '@sidelines/model/jobs/state'
+import { ulid } from 'ulid'
 import {
     DB_STORE_JOB_LOG,
+    DB_STORE_JOB_RESULT,
     DB_STORE_JOB_SCHEDULING,
+} from '../database.ts'
+import type {
+    JobLogRecord,
+    JobResultRecord,
+    JobSchedulingRecord,
+} from '../records.ts'
+import {
     idbAddRecord,
     idbGetComputePutRecordWithTx,
     idbGetRecord,
-} from '../database.ts'
-import type { JobLogRecord, JobSchedulingRecord } from '../records.ts'
-
-export type JobState<JK extends JobKind = JobKind> = {
-    jobExecId: string
-    jobId: JobIdForJobKind<JK>
-    jobKind: JK
-    whenInit: Date
-    whenDone: Date | null
-} & JobExecState<JK>
+} from '../tx.ts'
 
 // retrieve a model of incomplete jobs from a previous browser session
 // used to initialize the SharedWorker of JobsSWorkerBackend
@@ -48,6 +46,17 @@ export type OutstandingJobs = {
     }>
 }
 
+export type JobProgress<U> = {
+    completed: Set<RepoNameWithOwner>
+    unfinished: U
+}
+
+export type RepoJobProgress = JobProgress<Set<RepoNameWithOwner>>
+
+export type SyncedRefsJobProgress = JobProgress<
+    Record<RepoNameWithOwner, SyncedRefsData>
+>
+
 export function createRepoJobLog(
     db: IDBDatabase,
     jobId: RepoJobId,
@@ -58,11 +67,12 @@ export function createRepoJobLog(
         jobId,
         jobExecId,
         jobKind: 'repos',
-        target,
         whenInit: new Date(),
-        repos: {},
         whenDone: null,
         whenLastActivity: null,
+        spec: {
+            target,
+        },
     })
 }
 
@@ -94,45 +104,6 @@ export function createScheduledJobLog(
     })
 }
 
-// not happy about returning the record type
-export function readJobState(
-    db: IDBDatabase,
-    jobExecId: string,
-): Promise<JobState | null> {
-    return idbGetRecord(db, DB_STORE_JOB_LOG, jobExecId)
-}
-
-export async function readSyncedRefsJobData(
-    db: IDBDatabase,
-    jobExecId: string,
-): Promise<{
-    completed: Set<RepoNameWithOwner>
-    unfinished: Record<RepoNameWithOwner, SyncedRefsData>
-}> {
-    const jobLogRecord = await idbGetRecord<JobLogRecord>(
-        db,
-        DB_STORE_JOB_LOG,
-        jobExecId,
-    )
-    if (!jobLogRecord) throw Error()
-    if (jobLogRecord.jobKind !== 'syncedRefs') throw Error()
-
-    const completed = new Set<RepoNameWithOwner>()
-    const unfinished = Object.fromEntries(
-        Object.entries(jobLogRecord.repos)
-            .filter(([repo, state]) => {
-                if (state.result) {
-                    completed.add(repo as RepoNameWithOwner)
-                    return false
-                } else {
-                    return true
-                }
-            })
-            .map(([repo, { synced }]) => [repo, synced]),
-    )
-    return { completed, unfinished }
-}
-
 // returns jobs matching criteria for `whenDone` and `whenLastActivity`
 export function readOutsandingJobs(
     db: IDBDatabase,
@@ -158,7 +129,7 @@ export function readOutsandingJobs(
                             result.repos.push({
                                 jobId: record.jobId as JobIdForJobKind<'repos'>,
                                 jobExecId: record.jobExecId,
-                                target: record.target,
+                                target: record.spec.target,
                             })
                             break
                         case 'syncedRefs':
@@ -190,7 +161,7 @@ function makeOutstandingJobPredicate(
         record,
     ): record is JobLogRecord<'repos'> | JobLogRecord<'syncedRefs'> =>
         record.whenDone === null &&
-        record.jobKind !== 'scheduled' &&
+        isReposOrSyncedRefsJobLog(record) &&
         isTimestampBeforeDate(
             lastActivity,
             record.whenLastActivity ?? record.whenInit,
@@ -212,86 +183,144 @@ function minutesAgoDate(minutes: number): Date {
 // completed is determined by the repo having a result state
 // some result states require user interaction but they are
 // still taxonomically completed in terms of restarting the job
-export function readRepoJobReposCompleted(
+export async function readRepoJobProgressData(
     db: IDBDatabase,
     jobExecId: string,
-): Promise<Set<RepoNameWithOwner>> {
+): Promise<RepoJobProgress['completed']> {
+    const logRecord = await idbGetRecord<JobLogRecord<'repos'>>(
+        db,
+        DB_STORE_JOB_LOG,
+        jobExecId,
+    )
+    if (!logRecord) throw Error()
+    if (logRecord.jobKind !== 'repos') throw Error()
+    if (logRecord.spec.target.repos === 'single') throw Error()
     return new Promise((res, rej) => {
         const tx = db.transaction(DB_STORE_JOB_LOG, 'readonly')
-        const req: IDBRequest<JobLogRecord> = db
-            .transaction(DB_STORE_JOB_LOG, 'readonly')
+        const req: IDBRequest<IDBCursorWithValue | null> = tx
             .objectStore(DB_STORE_JOB_LOG)
-            .get(jobExecId)
-
+            .openCursor(IDBKeyRange.bound([jobExecId], [jobExecId, '\uffff']))
+        const completed = new Set<RepoNameWithOwner>()
         req.onsuccess = () => {
-            if (req.result === null) {
-                throw Error('not found')
+            if (req.result) {
+                const cursor = req.result
+                const resultRecord =
+                    cursor.value as JobResultRecord<'syncedRefs'>
+                completed.add(resultRecord.repo)
+                cursor.continue()
             }
-            if (req.result.jobKind !== 'repos') {
-                throw Error('not a repo job')
-            }
-            res(
-                new Set(
-                    Object.keys(req.result.repos) as Array<RepoNameWithOwner>,
-                ),
-            )
         }
+        tx.oncomplete = () => res(completed)
         tx.onerror = rej
     })
 }
 
-export function markRepoJobStatus(
+export async function readSyncedRefsJobProgressData(
+    db: IDBDatabase,
+    jobExecId: string,
+): Promise<SyncedRefsJobProgress> {
+    const logRecord = await idbGetRecord<JobLogRecord<'syncedRefs'>>(
+        db,
+        DB_STORE_JOB_LOG,
+        jobExecId,
+    )
+    if (!logRecord) throw Error()
+    if (logRecord.jobKind !== 'syncedRefs') throw Error()
+    return new Promise((res, rej) => {
+        const tx = db.transaction(DB_STORE_JOB_LOG, 'readonly')
+        const req: IDBRequest<IDBCursorWithValue | null> = tx
+            .objectStore(DB_STORE_JOB_LOG)
+            .openCursor(IDBKeyRange.bound([jobExecId], [jobExecId, '\uffff']))
+        const result: SyncedRefsJobProgress = {
+            completed: new Set(),
+            unfinished: logRecord.spec.repos,
+        }
+        req.onsuccess = () => {
+            if (req.result) {
+                const cursor = req.result
+                const resultRecord =
+                    cursor.value as JobResultRecord<'syncedRefs'>
+                result.completed.add(resultRecord.repo)
+                delete result.unfinished[resultRecord.repo]
+                cursor.continue()
+            }
+        }
+        tx.oncomplete = () => res(result)
+        tx.onerror = rej
+    })
+}
+
+export function setRepoJobExecResult(
     db: IDBDatabase,
     jobExecId: string,
     repo: RepoNameWithOwner,
-    status: RepoJobExecResult,
+    result: RepoJobExecResult,
 ): Promise<Date> {
     return new Promise((res, rej) => {
-        const tx = db.transaction(DB_STORE_JOB_LOG, 'readwrite')
-        const objectStore = tx.objectStore(DB_STORE_JOB_LOG)
-        const req: IDBRequest<JobLogRecord> = tx
-            .objectStore(DB_STORE_JOB_LOG)
-            .get(jobExecId)
+        const tx = db.transaction(
+            [DB_STORE_JOB_LOG, DB_STORE_JOB_RESULT],
+            'readwrite',
+        )
+        const jobLogStore = tx.objectStore(DB_STORE_JOB_LOG)
+        const req: IDBRequest<JobLogRecord<'repos'> | null> =
+            jobLogStore.get(jobExecId)
         const whenLastActivity = new Date()
         req.onsuccess = () => {
-            if (req.result === null) {
+            const record = req.result
+            if (record === null) {
                 throw Error('not found')
             }
-            if (req.result.jobKind !== 'repos') {
+            if (record.jobKind !== 'repos') {
                 throw Error('not a repo job')
             }
-            req.result.repos[repo] = status
-            req.result.whenLastActivity = new Date()
-            objectStore.put(req.result)
+            tx.objectStore(DB_STORE_JOB_RESULT).add({
+                jobExecId,
+                whenDone: ulid(whenLastActivity.getTime()),
+                repo,
+                jobKind: 'repos',
+                result,
+            } satisfies JobResultRecord<'repos'>)
+            record.whenLastActivity = whenLastActivity
+            jobLogStore.put(record)
         }
         tx.oncomplete = () => res(whenLastActivity)
         tx.onerror = rej
     })
 }
 
-export function markSyncedRefsJobStatus(
+export function setSyncedRefsJobExecResult(
     db: IDBDatabase,
     jobExecId: string,
     repo: RepoNameWithOwner,
-    status: SyncedRefsJobExecResult,
+    result: SyncedRefsJobExecResult,
 ): Promise<Date> {
     return new Promise((res, rej) => {
-        const tx = db.transaction(DB_STORE_JOB_LOG, 'readwrite')
-        const objectStore = tx.objectStore(DB_STORE_JOB_LOG)
-        const req: IDBRequest<JobLogRecord> = tx
-            .objectStore(DB_STORE_JOB_LOG)
-            .get(jobExecId)
+        const tx = db.transaction(
+            [DB_STORE_JOB_LOG, DB_STORE_JOB_RESULT],
+            'readwrite',
+        )
+        const jobLogStore = tx.objectStore(DB_STORE_JOB_LOG)
+        const req: IDBRequest<JobLogRecord<'syncedRefs'> | null> =
+            jobLogStore.get(jobExecId)
         const whenLastActivity = new Date()
         req.onsuccess = () => {
-            if (req.result === null) {
+            const record = req.result
+            if (record === null) {
                 throw Error('not found')
             }
-            if (req.result.jobKind !== 'syncedRefs') {
+            if (record.jobKind !== 'syncedRefs') {
                 throw Error('not a syncedRefs job')
             }
-            req.result.repos[repo].result = status
-            req.result.whenLastActivity = new Date()
-            objectStore.put(req.result)
+            tx.objectStore(DB_STORE_JOB_RESULT).add({
+                jobExecId,
+                whenDone: ulid(whenLastActivity.getTime()),
+                repo,
+                jobKind: 'syncedRefs',
+                result,
+                syncedRefs: record.spec.repos[repo],
+            } satisfies JobResultRecord<'syncedRefs'>)
+            record.whenLastActivity = whenLastActivity
+            jobLogStore.put(record)
         }
         tx.oncomplete = () => res(whenLastActivity)
         tx.onerror = rej
@@ -307,18 +336,28 @@ export function markJobDone(db: IDBDatabase, jobExecId: string): Promise<Date> {
         const objectStore = tx.objectStore(DB_STORE_JOB_LOG)
         const whenDone = new Date()
         tx.objectStore(DB_STORE_JOB_LOG).get(jobExecId).onsuccess = e => {
-            const record = (e.target as IDBRequest<JobLogRecord>).result
+            const record = (e.target as IDBRequest<JobLogRecord<any> | null>)
+                .result
+            if (!record) {
+                throw Error('not found')
+            }
             record.whenDone = whenDone
-            if (record.jobKind === 'scheduled') {
-                markScheduledJobDone(tx, record.jobId)
-            } else {
+            if (isReposOrSyncedRefsJobLog(record)) {
                 record.whenLastActivity = whenDone
+            } else {
+                markScheduledJobDone(tx, record.jobId)
             }
             objectStore.put(record)
         }
         tx.oncomplete = () => res(whenDone)
         tx.onerror = rej
     })
+}
+
+function isReposOrSyncedRefsJobLog(
+    record: JobLogRecord<any>,
+): record is JobLogRecord<'repos' | 'syncedRefs'> {
+    return record.jobKind !== 'scheduled'
 }
 
 function markScheduledJobDone(tx: IDBTransaction, jobId: JobId) {

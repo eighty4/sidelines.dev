@@ -7,10 +7,9 @@ import {
 import {
     DB_INDEX_READ_WATCHES_REPO,
     DB_STORE_READ_WATCHES,
-    idbDeleteRecord,
-    idbPutRecord,
 } from '../database.ts'
 import type { ReadingWatchRecord } from '../records.ts'
+import { idbDeleteRecord, idbPutRecord } from '../tx.ts'
 
 export function createWatch(
     db: IDBDatabase,

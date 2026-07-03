@@ -1,5 +1,8 @@
-import type { BranchRef, RepositoryId } from '../repo.ts'
-import type { RepoJobId } from './id.api.ts'
+import type { BranchRef, RepoNameWithOwner, RepositoryId } from '../repo.ts'
+
+export type RepoJobExecSpec = {
+    target: RepoJobTarget
+}
 
 export type RepoJobTarget =
     | {
@@ -10,9 +13,8 @@ export type RepoJobTarget =
           repos: 'owner'
       }
 
-export type RepoJobSpec = {
-    jobId: RepoJobId
-    label: string
+export type SyncedRefsJobExecSpec = {
+    repos: Record<RepoNameWithOwner, SyncedRefsData>
 }
 
 export type SyncedRefsData = {

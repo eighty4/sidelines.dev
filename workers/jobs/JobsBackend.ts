@@ -2,12 +2,14 @@ import {
     createRepoJobLog,
     createScheduledJobLog,
     markJobDone,
-    markRepoJobStatus,
-    markSyncedRefsJobStatus,
+    setRepoJobExecResult,
+    setSyncedRefsJobExecResult,
     readOutsandingJobs,
-    readRepoJobReposCompleted,
+    readRepoJobProgressData,
     readScheduledJobRuns,
-    readSyncedRefsJobData,
+    readSyncedRefsJobProgressData,
+    type RepoJobProgress,
+    type SyncedRefsJobProgress,
 } from '@sidelines/data/tx/jobLog'
 import {
     onSyncedRefs,
@@ -48,7 +50,7 @@ import type {
     SyncedRefsJobId,
 } from '@sidelines/model/jobs/id'
 import type { JobKind } from '@sidelines/model/jobs/kind'
-import type { RepoJobTarget, SyncedRefsData } from '@sidelines/model/jobs/spec'
+import type { RepoJobTarget } from '@sidelines/model/jobs/spec'
 import { ulid } from 'ulid'
 import {
     SharedWorkerSideWorkerLauncher,
@@ -223,14 +225,12 @@ type RunningJobStates = {
             target: RepoJobTarget
         }
         launching: {
-            repos: Set<RepoNameWithOwner>
-            completed: Set<RepoNameWithOwner>
+            progress: RepoJobProgress
             target: RepoJobTarget
         }
         running: {
             lastActivity: Date
-            repos: Set<RepoNameWithOwner>
-            completed: Set<RepoNameWithOwner>
+            progress: RepoJobProgress
             target: RepoJobTarget
         }
     }
@@ -242,15 +242,11 @@ type RunningJobStates = {
     syncedRefs: {
         resolving: never
         launching: {
-            syncedRefs: Record<RepoNameWithOwner, SyncedRefsData>
-            completed: Set<RepoNameWithOwner>
-            total: number
+            progress: SyncedRefsJobProgress
         }
         running: {
             lastActivity: Date
-            syncedRefs: Record<RepoNameWithOwner, SyncedRefsData>
-            completed: Set<RepoNameWithOwner>
-            total: number
+            progress: SyncedRefsJobProgress
         }
     }
 }
@@ -310,8 +306,8 @@ export default class JobsBackend {
             .catch((e: unknown) => console.error('JobsBackend.exec error', e))
     }
 
-    ls(_channelId: string) {
-        throw Error('todo')
+    ls(channelId: string) {
+        this.#createChannel('LS', channelId)
     }
 
     hasGhTokenChanged(ghToken: string): boolean {
@@ -478,23 +474,17 @@ export default class JobsBackend {
             data: { target },
         })
         this.#resolveRepoJobRepos(jobExecId, target)
-            .then(launching => {
+            .then(progress => {
                 this.#running.repos.transitionToLaunching(jobExecId, {
                     kind: 'launching',
-                    data: {
-                        target,
-                        ...launching,
-                    },
+                    data: { progress, target },
                 })
-                const repos = Array.from(
-                    launching.repos.difference(launching.completed),
-                )
                 console.log(
                     'JobsBackend.#launchRepoJob',
                     jobId,
                     jobExecId,
                     'launching to run on',
-                    repos.length,
+                    progress.unfinished.size,
                     'repos',
                 )
                 this.#launcher.request(workerLaunchId(jobId), {
@@ -502,7 +492,7 @@ export default class JobsBackend {
                     ghToken: this.#ghToken,
                     jobId,
                     jobExecId,
-                    repos,
+                    repos: Array.from(progress.unfinished),
                 } satisfies ExecRepoJobMessage)
             })
             .catch(e => {
@@ -521,13 +511,12 @@ export default class JobsBackend {
             case 'starting':
                 this.#running.repos.computeTransitionToRunning(
                     e.jobExecId,
-                    launching => ({
+                    ({ data }) => ({
                         kind: 'running',
                         data: {
-                            target: launching.data.target,
                             lastActivity: new Date(),
-                            completed: launching.data.completed,
-                            repos: launching.data.repos,
+                            progress: data.progress,
+                            target: data.target,
                         },
                     }),
                 )
@@ -537,13 +526,14 @@ export default class JobsBackend {
                 await this.#running.repos.resolveUpdatedRunningState(
                     e.jobExecId,
                     async running => {
-                        running.data.lastActivity = await markRepoJobStatus(
+                        running.data.lastActivity = await setRepoJobExecResult(
                             this.#db,
                             e.jobExecId,
                             e.repo,
                             e.status,
                         )
-                        running.data.completed.add(e.repo)
+                        running.data.progress.completed.add(e.repo)
+                        running.data.progress.unfinished.delete(e.repo)
                         return running
                     },
                 )
@@ -567,20 +557,15 @@ export default class JobsBackend {
         this.#running.syncedRefs.addResolving(jobExecId, jobId, {
             kind: 'resolving',
         })
-        readSyncedRefsJobData(this.#db, jobExecId)
-            .then(({ completed, unfinished }) => {
-                const unfinishedCount = Object.keys(unfinished).length
-                const total = completed.size + unfinishedCount
-                if (Object.keys(unfinished).length === 0) {
+        readSyncedRefsJobProgressData(this.#db, jobExecId)
+            .then(progress => {
+                const unfinishedCount = Object.keys(progress.unfinished).length
+                if (!unfinishedCount) {
                     throw Error('no synced refs')
                 }
                 this.#running.syncedRefs.transitionToLaunching(jobExecId, {
                     kind: 'launching',
-                    data: {
-                        completed,
-                        syncedRefs: unfinished,
-                        total,
-                    },
+                    data: { progress },
                 })
                 console.log(
                     'JobsBackend.#launchSyncedRefsJob',
@@ -595,7 +580,7 @@ export default class JobsBackend {
                     ghToken: this.#ghToken,
                     jobId,
                     jobExecId,
-                    repos: unfinished,
+                    repos: progress.unfinished,
                 } satisfies ExecSyncedRefsJobMessage)
             })
             .catch(e => {
@@ -614,13 +599,11 @@ export default class JobsBackend {
             case 'starting':
                 this.#running.syncedRefs.computeTransitionToRunning(
                     e.jobExecId,
-                    launching => ({
+                    ({ data }) => ({
                         kind: 'running',
                         data: {
                             lastActivity: new Date(),
-                            completed: launching.data.completed,
-                            syncedRefs: launching.data.syncedRefs,
-                            total: launching.data.total,
+                            progress: data.progress,
                         },
                     }),
                 )
@@ -631,13 +614,14 @@ export default class JobsBackend {
                     e.jobExecId,
                     async running => {
                         running.data.lastActivity =
-                            await markSyncedRefsJobStatus(
+                            await setSyncedRefsJobExecResult(
                                 this.#db,
                                 e.jobExecId,
                                 e.repo,
                                 e.status,
                             )
-                        running.data.completed.add(e.repo)
+                        running.data.progress.completed.add(e.repo)
+                        delete running.data.progress.unfinished[e.repo]
                         return running
                     },
                 )
@@ -731,16 +715,11 @@ export default class JobsBackend {
     async #resolveRepoJobRepos(
         jobExecId: string,
         target: RepoJobTarget,
-    ): Promise<
-        Pick<
-            RunningJob<'repos', 'launching'>['state']['data'],
-            'completed' | 'repos'
-        >
-    > {
+    ): Promise<RepoJobProgress> {
         if (target.repos === 'single') {
             return {
                 completed: new Set(),
-                repos: new Set([joinRepoName(target.repo)]),
+                unfinished: new Set([joinRepoName(target.repo)]),
             }
         }
         // todo this SharedWorker calls GitHub API directly
@@ -749,12 +728,11 @@ export default class JobsBackend {
             this.#launcher,
             this.#ghToken,
         )
-        const completed = await readRepoJobReposCompleted(this.#db, jobExecId)
-        const repos = new Set(await fetchingViewerRepoNames)
-        return {
+        const completed = await readRepoJobProgressData(this.#db, jobExecId)
+        const unfinished = new Set(await fetchingViewerRepoNames).difference(
             completed,
-            repos,
-        }
+        )
+        return { completed, unfinished }
     }
 }
 

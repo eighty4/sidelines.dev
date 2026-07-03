@@ -2,6 +2,7 @@ import type { BrowserContext } from '@playwright/test'
 import type {
     CommitReviewRecord,
     JobLogRecord,
+    JobResultRecord,
     JobSchedulingRecord,
     ReadingWatchRecord,
     RepoContextRecord,
@@ -66,6 +67,7 @@ type IndexedDBIndexStorageState = {
 const SidelinesObjectStores = [
     'commit-review',
     'job-log',
+    'job-result',
     'job-scheduling',
     'repo-context',
     'repo-heads',
@@ -79,6 +81,7 @@ export type SidelinesObjectStore = (typeof SidelinesObjectStores)[number]
 type SidelinesObjectStoreRecords = {
     'commit-review': Array<CommitReviewRecord>
     'job-log': Array<JobLogRecord>
+    'job-result': Array<JobResultRecord<any>>
     'job-scheduling': Array<JobSchedulingRecord>
     'read-watches': Array<ReadingWatchRecord>
     'repo-context': Array<RepoContextRecord>
@@ -131,6 +134,7 @@ export async function indexedDBStateFrom(
     const records: IndexedDBContent['records'] = {
         'commit-review': [],
         'job-log': [],
+        'job-result': [],
         'job-scheduling': [],
         'repo-context': [],
         'read-watches': [],

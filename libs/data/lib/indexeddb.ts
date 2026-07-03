@@ -9,6 +9,8 @@ import {
     DB_STORE_JOB_LOG_KEY,
     DB_STORE_JOB_SCHEDULING,
     DB_STORE_JOB_SCHEDULING_KEY,
+    DB_STORE_JOB_RESULT,
+    DB_STORE_JOB_RESULT_KEY,
     DB_STORE_READ_WATCHES,
     DB_STORE_READ_WATCHES_KEY,
     DB_STORE_REPO_CONTEXT,
@@ -68,6 +70,9 @@ function upgradeDatabaseSchema(db: IDBDatabase, oldVersion: number) {
             })
             db.createObjectStore(DB_STORE_JOB_LOG, {
                 keyPath: DB_STORE_JOB_LOG_KEY,
+            })
+            db.createObjectStore(DB_STORE_JOB_RESULT, {
+                keyPath: DB_STORE_JOB_RESULT_KEY,
             })
             db.createObjectStore(DB_STORE_JOB_SCHEDULING, {
                 keyPath: DB_STORE_JOB_SCHEDULING_KEY,

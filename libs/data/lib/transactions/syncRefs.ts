@@ -15,8 +15,10 @@ import {
     type AvailableJobsReq,
     type AvailableJobsRes,
 } from '@sidelines/model/jobs/available'
-import type { SyncedRefsData } from '@sidelines/model/jobs/spec'
-import type { SyncedRefsExecState } from '@sidelines/model/jobs/state'
+import type {
+    SyncedRefsData,
+    SyncedRefsJobExecSpec,
+} from '@sidelines/model/jobs/spec'
 import { ulid } from 'ulid'
 import { DB_STORE_JOB_LOG, DB_STORE_REPO_HEADS } from '../database.ts'
 import type { JobLogRecord, RepoHeadRecord } from '../records.ts'
@@ -170,12 +172,6 @@ function addJobLogRecords(
         return null
     }
     // build lookup records
-    const jobsToCreate: Record<
-        SyncedRefsJobId,
-        Record<RepoNameWithOwner, SyncedRefsExecState> | null
-    > = Object.fromEntries(
-        availableSyncedRefsJobs.jobs.map(j => [j.jobId, null]),
-    )
     const jobIdsWithoutCriteria: Array<SyncedRefsJobId> = []
     const jobIdsByCriteria: Record<
         AvailableJobCriterion,
@@ -195,44 +191,47 @@ function addJobLogRecords(
                 .map(j => j.jobId),
         ]),
     ) as Record<AvailableJobCriterion, Array<SyncedRefsJobId>>
+    const jobsToCreate: Record<SyncedRefsJobId, SyncedRefsJobExecSpec | null> =
+        Object.fromEntries(
+            availableSyncedRefsJobs.jobs.map(j => [j.jobId, null]),
+        )
+    const addSyncedRefsToJob = (
+        jobId: SyncedRefsJobId,
+        repo: RepoNameWithOwner,
+    ) => {
+        if (!jobsToCreate[jobId]) jobsToCreate[jobId] = { repos: {} }
+        jobsToCreate[jobId].repos[repo] = syncedRefs[repo]
+    }
 
     // resolve what jobs to launch for which repos
     for (const { repo, criteria } of Object.values(reposToRefs)) {
         if (criteria?.size) {
             for (const criterion of criteria) {
                 for (const jobId of jobIdsByCriteria[criterion]) {
-                    if (!jobsToCreate[jobId]) jobsToCreate[jobId] = {}
-                    jobsToCreate[jobId][repo] = {
-                        synced: syncedRefs[repo],
-                        result: null,
-                    }
+                    addSyncedRefsToJob(jobId, repo)
                 }
             }
         }
         for (const jobId of jobIdsWithoutCriteria) {
-            if (!jobsToCreate[jobId]) jobsToCreate[jobId] = {}
-            jobsToCreate[jobId][repo] = {
-                synced: syncedRefs[repo],
-                result: null,
-            }
+            addSyncedRefsToJob(jobId, repo)
         }
     }
 
     // add to object store
     const jobsToLaunch: Array<SyncedRefsJobLaunch> = []
     const whenInit = new Date()
-    for (const [jobId, repos] of Object.entries(jobsToCreate)) {
-        if (!repos) continue
+    for (const [jobId, spec] of Object.entries(jobsToCreate)) {
+        if (!spec) continue
         const jobExecId = ulid()
         jobLogStore.add({
             jobId: jobId as SyncedRefsJobId,
             jobExecId,
             jobKind: 'syncedRefs',
-            repos,
+            spec,
             whenInit,
             whenLastActivity: null,
             whenDone: null,
-        } satisfies JobLogRecord)
+        } satisfies JobLogRecord<'syncedRefs'>)
         jobsToLaunch.push({ jobId: jobId as SyncedRefsJobId, jobExecId })
     }
 

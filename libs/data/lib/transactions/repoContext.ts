@@ -9,13 +9,10 @@ import {
 } from '@sidelines/model'
 import { isFetchFailed, Unavailable } from '@sidelines/model/errors'
 import { ghLoginToSession } from '../caches/ghLogin.ts'
-import {
-    DB_STORE_REPO_CONTEXT,
-    idbGetRecord,
-    idbPutRecord,
-} from '../database.ts'
+import { DB_STORE_REPO_CONTEXT } from '../database.ts'
 import { connectToDb } from '../indexeddb.ts'
 import type { RepoContextRecord } from '../records.ts'
+import { idbGetRecord, idbPutRecord } from '../tx.ts'
 
 // todo candidate for `@sidelines/model`?
 export type { ViewerRepoUserContext } from '@sidelines/github/repository/queryViewerRepoUserContext'

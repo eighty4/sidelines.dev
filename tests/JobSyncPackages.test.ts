@@ -4,7 +4,6 @@ import type {
     QRepoMultipleObjectContentsVars,
     QViewerAndExplicitRepoHeadOidsGraph,
 } from '@sidelines/github/GRAPHS'
-import type { RepoNameWithOwner } from '@sidelines/model'
 import type { SyncedRefsJobId } from '@sidelines/model/jobs/id'
 import { makeRepoPackagesQRepoMultipleObjectContentsGraph } from './github/graphs/packages.ts'
 import { indexedDBStateFrom, type IndexedDBContent } from './indexedDBState.ts'
@@ -68,7 +67,6 @@ test(
             baseURL!,
             context,
             'JOB_syncedRefs_PACKAGES',
-            'eighty4/l3',
         )
         expect(indexedDBState.records['repo-pkgs'].length).toBe(1)
         const repoPackages = indexedDBState.records['repo-pkgs'][0]
@@ -95,7 +93,6 @@ async function waitForSyncedRefsJobComplete(
     baseURL: string,
     context: BrowserContext,
     jobId: SyncedRefsJobId,
-    repoWithResult: RepoNameWithOwner,
 ): Promise<IndexedDBContent> {
     return await retryUntilCondition(1000, 1000, 10000, async () => {
         const indexedDBState = await indexedDBStateFrom(baseURL!, context)
@@ -103,8 +100,7 @@ async function waitForSyncedRefsJobComplete(
             jobLogRecord =>
                 jobLogRecord.jobKind === 'syncedRefs' &&
                 jobLogRecord.jobId === jobId &&
-                jobLogRecord.whenDone instanceof Date &&
-                !!jobLogRecord.repos[repoWithResult].result,
+                jobLogRecord.whenDone instanceof Date,
         )
         if (jobMatches.length === 1) {
             return indexedDBState

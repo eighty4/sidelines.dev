@@ -4,7 +4,6 @@ import {
     type RepositoryId,
 } from '@sidelines/model'
 import type { RepoJobId } from '@sidelines/model/jobs/id'
-import type { RepoJobSpec } from '@sidelines/model/jobs/spec'
 import type { RepoJobExecUpdate } from '@sidelines/model/jobs/updates'
 import {
     createJobApiChannel,
@@ -17,7 +16,10 @@ export default class JobApiClient {
     // todo use AvailableJobsReq/Res for available job data in UI
     // do not req on BroadcastChannel because SharedWorker might not be up in time
     // use SharedWorker postMessage and onmessage to guarantee delivery and processing
-    static availableJobs(): Array<RepoJobSpec> {
+    static availableJobs(): Array<{
+        jobId: RepoJobId
+        label: string
+    }> {
         return [
             {
                 jobId: 'JOB_repos_UPGRADE_ACTIONS',

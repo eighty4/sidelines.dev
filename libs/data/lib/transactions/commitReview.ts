@@ -5,9 +5,10 @@ import type {
     RepoCommitReview,
 } from '@sidelines/model/commits'
 import { ulid } from 'ulid'
-import { DB_STORE_COMMIT_REVIEW, idbPutRecord } from '../database.ts'
+import { DB_STORE_COMMIT_REVIEW } from '../database.ts'
 import { opfsLookupDir, opfsWriteFile } from '../opfs.ts'
 import type { CommitReviewRecord } from '../records.ts'
+import { idbPutRecord } from '../tx.ts'
 
 // todo atomicity
 export async function saveRepoCommitReview(
