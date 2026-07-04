@@ -6,8 +6,8 @@ import {
     type RepositoryId,
 } from '@sidelines/model'
 import { RefNotFound, RepoNotFound } from '@sidelines/model/errors'
-import { DB_STORE_REPO_HEADS } from '../database.ts'
 import type { RepoHeadRecord } from '../records.ts'
+import { DB_STORE_REPO_HEADS } from '../stores.ts'
 
 const LOG_LABEL = '@sidelines/data/tx/readRepoHead'
 

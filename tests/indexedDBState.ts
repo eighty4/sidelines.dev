@@ -1,15 +1,5 @@
 import type { BrowserContext } from '@playwright/test'
-import type {
-    CommitReviewRecord,
-    JobLogRecord,
-    JobResultRecord,
-    JobSchedulingRecord,
-    ReadingWatchRecord,
-    RepoContextRecord,
-    RepoHeadRecord,
-    RepoNavRecord,
-    RepoPackagesRecord,
-} from '@sidelines/data/RECORDS'
+import { fromEncodedValue, type EncodedValue } from './indexedDBEncodedValue.ts'
 
 type OriginStorageState = {
     origin: string
@@ -38,25 +28,6 @@ type IndexedDBRecordStorageState = {
     }
 }
 
-type EncodedValue =
-    | {
-          a: [EncodedValue]
-      }
-    | {
-          d: {
-              value: string
-          }
-      }
-    | {
-          o: Array<{
-              k: string
-              v: EncodedValue
-          }>
-      }
-    | {
-          v: any
-      }
-
 type IndexedDBIndexStorageState = {
     name: string
     keyPath: string
@@ -64,40 +35,10 @@ type IndexedDBIndexStorageState = {
     unique: boolean
 }
 
-const SidelinesObjectStores = [
-    'commit-review',
-    'job-log',
-    'job-result',
-    'job-scheduling',
-    'repo-context',
-    'repo-heads',
-    'repo-nav',
-    'repo-pkgs',
-    'read-watches',
-] as const
-
-export type SidelinesObjectStore = (typeof SidelinesObjectStores)[number]
-
-type SidelinesObjectStoreRecords = {
-    'commit-review': Array<CommitReviewRecord>
-    'job-log': Array<JobLogRecord>
-    'job-result': Array<JobResultRecord<any>>
-    'job-scheduling': Array<JobSchedulingRecord>
-    'read-watches': Array<ReadingWatchRecord>
-    'repo-context': Array<RepoContextRecord>
-    'repo-heads': Array<RepoHeadRecord>
-    'repo-nav': Array<RepoNavRecord>
-    'repo-pkgs': Array<RepoPackagesRecord>
-}
-
-function isSidelinesColumnFamily(name: string): name is SidelinesObjectStore {
-    return SidelinesObjectStores.includes(name as any)
-}
-
 export type IndexedDBContent = {
     db: string
     version: number
-    records: SidelinesObjectStoreRecords
+    records: Record<string, Array<any>>
 }
 
 export async function indexedDBStateFrom(
@@ -131,52 +72,26 @@ export async function indexedDBStateFrom(
         )
     }
     const indexedDBState = originState.indexedDB[0]
-    const records: IndexedDBContent['records'] = {
-        'commit-review': [],
-        'job-log': [],
-        'job-result': [],
-        'job-scheduling': [],
-        'repo-context': [],
-        'read-watches': [],
-        'repo-heads': [],
-        'repo-nav': [],
-        'repo-pkgs': [],
-    }
+    const records: IndexedDBContent['records'] = {}
     for (const objectStore of indexedDBState.stores) {
-        if (!isSidelinesColumnFamily(objectStore.name)) {
-            throw Error(`\
-ObjectStore \`${objectStore.name}\` was unexpected when collecting data from IndexedDB during Playwright tests.\
-Verify \`SidelinesColumnFamilies\` in tests/indexedDBState.ts was updated with any object store additions in \`@sidelines/data\`.`)
-        } else if (objectStore.records.length) {
-            records[objectStore.name] = objectStore.records.map(record => {
-                if (record.value) {
-                    return record.value
-                } else if (record.valueEncoded) {
-                    try {
-                        return mapEncodedValue(record.valueEncoded)
-                    } catch (e: any) {
-                        throw Error(`\
+        records[objectStore.name] = objectStore.records.map(record => {
+            if (record.value) {
+                return record.value
+            } else if (record.valueEncoded) {
+                try {
+                    return fromEncodedValue(record.valueEncoded)
+                } catch (e: any) {
+                    throw Error(`\
 ObjectStore \`${objectStore.name}\` has a record that was not mapped from the Playwright IndexedDBRecordStorageState's EncodedValue format.\
 The record data from Playwright is: ${JSON.stringify(record)}.\
 The unexpected EncodedValue that could not be extracted is: ${e.message}.`)
-                    }
-                } else {
-                    throw Error(`\
+                }
+            } else {
+                throw Error(`\
 ObjectStore \`${objectStore.name}\` has a record that was not mapped from Playwright's IndexedDBRecordStorageState representation.\
 The record data from Playwright is: ${JSON.stringify(record)}.`)
-                }
-            })
-        }
-    }
-    if (indexedDBState.stores.length !== SidelinesObjectStores.length) {
-        const extras = Array.from(
-            new Set(
-                indexedDBState.stores.map(objectStore => objectStore.name),
-            ).symmetricDifference(new Set(SidelinesObjectStores)),
-        )
-        throw Error(`\
-ObjectStores were removed from \`@sidelines/data\` without removing from \`SidelinesColumnFamilies\` in tests/indexedDBState.ts.\
-The offending ObjectStore names are: [${extras.map(name => `"${name}"`).join(', ')}].`)
+            }
+        })
     }
     const content = {
         db: indexedDBState.name,
@@ -195,34 +110,8 @@ export function debugPrintIndexedDBContent(content: IndexedDBContent) {
     console.log(separator)
     console.log(header)
     console.log(separator)
-    for (const columnFamily of SidelinesObjectStores) {
-        console.log('~~~', columnFamily, '~~~')
-        console.log(JSON.stringify(content.records[columnFamily], null, 4))
-    }
-}
-
-function mapEncodedValue(v: EncodedValue): any {
-    if (v === null) {
-        return null
-    }
-    switch (typeof v) {
-        case 'boolean':
-        case 'number':
-        case 'string':
-        case 'undefined':
-            return v
-    }
-    if ('a' in v && Array.isArray(v.a)) {
-        return v.a.map(mapEncodedValue)
-    } else if ('o' in v && Array.isArray(v.o)) {
-        return Object.fromEntries(
-            v.o.map(({ k, v }) => [k, mapEncodedValue(v)]),
-        )
-    } else if ('d' in v && typeof v.d === 'string') {
-        return new Date(v.d)
-    } else if ('v' in v) {
-        return v.v
-    } else {
-        throw Error(JSON.stringify(v))
+    for (const [objectStore, records] of Object.entries(content.records)) {
+        console.log('~~~', objectStore, '~~~')
+        console.log(JSON.stringify(records, null, 4))
     }
 }

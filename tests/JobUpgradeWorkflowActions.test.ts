@@ -9,7 +9,10 @@ import type {
     QViewerReposNamesGraph,
     QViewerReposNamesVars,
 } from '@sidelines/github/GRAPHS'
-import { indexedDBStateFrom, type IndexedDBContent } from './indexedDBState.ts'
+import {
+    sidelinesObjectStoreRecords,
+    type SidelinesObjectStoreRecords,
+} from './indexedDBSidelinesDev.ts'
 import { login, userStoryWithSidelinesRepo } from './login.ts'
 import { readRepoCommitAddition } from './opfsState.ts'
 import { userStoryProjectPage } from './project.ts'
@@ -130,10 +133,10 @@ jobs:
         await expect(execButton).toBeVisible()
         await execButton.click()
         await expect(execButton).toBeDisabled()
-        const indexedDBState = await waitForRepoJobComplete(baseURL!, context)
-        expect(indexedDBState.records['commit-review'].length).toBe(1)
-        const commitReview = indexedDBState.records['commit-review'][0]
-        expect(indexedDBState.records['commit-review'][0]).toStrictEqual({
+        const records = await waitForRepoJobComplete(baseURL!, context)
+        expect(records['commit-review'].length).toBe(1)
+        const commitReview = records['commit-review'][0]
+        expect(records['commit-review'][0]).toStrictEqual({
             reviewId: commitReview.reviewId,
             nameWithOwner: 'eighty4/l3',
             branch: {
@@ -252,10 +255,10 @@ jobs:
         await expect(execButton).toBeVisible()
         await execButton.click()
         await expect(execButton).toBeDisabled()
-        const indexedDBState = await waitForRepoJobComplete(baseURL!, context)
-        expect(indexedDBState.records['commit-review'].length).toBe(1)
-        const commitReview = indexedDBState.records['commit-review'][0]
-        expect(indexedDBState.records['commit-review'][0]).toStrictEqual({
+        const records = await waitForRepoJobComplete(baseURL!, context)
+        expect(records['commit-review'].length).toBe(1)
+        const commitReview = records['commit-review'][0]
+        expect(records['commit-review'][0]).toStrictEqual({
             reviewId: commitReview.reviewId,
             nameWithOwner: 'eighty4/l3',
             branch: {
@@ -287,17 +290,17 @@ jobs:
 async function waitForRepoJobComplete(
     baseURL: string,
     context: BrowserContext,
-): Promise<IndexedDBContent> {
+): Promise<SidelinesObjectStoreRecords> {
     return await retryUntilCondition(1000, 1000, 10000, async () => {
-        const indexedDBState = await indexedDBStateFrom(baseURL!, context)
-        const repoJobs = indexedDBState.records['job-log'].filter(
+        const records = await sidelinesObjectStoreRecords(baseURL!, context)
+        const repoJobs = records['job-log'].filter(
             jobLogRecord =>
                 jobLogRecord.jobKind === 'repos' &&
                 jobLogRecord.jobId === 'JOB_repos_UPGRADE_ACTIONS' &&
                 jobLogRecord.whenDone instanceof Date,
         )
         if (repoJobs.length === 1) {
-            return indexedDBState
+            return records
         }
     })
 }

@@ -21,7 +21,7 @@ import {
     DB_STORE_REPO_NAV_KEY,
     DB_STORE_REPO_PACKAGES,
     DB_STORE_REPO_PACKAGES_KEY,
-} from './database.ts'
+} from './stores.ts'
 
 const DB_NAME = 'sidelines-dev'
 const DB_VERSION = 1

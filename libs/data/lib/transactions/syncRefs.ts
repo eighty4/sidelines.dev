@@ -20,8 +20,8 @@ import type {
     SyncedRefsJobExecSpec,
 } from '@sidelines/model/jobs/spec'
 import { ulid } from 'ulid'
-import { DB_STORE_JOB_LOG, DB_STORE_REPO_HEADS } from '../database.ts'
 import type { JobLogRecord, RepoHeadRecord } from '../records.ts'
+import { DB_STORE_JOB_LOG, DB_STORE_REPO_HEADS } from '../stores.ts'
 
 export type SyncRefsInput = {
     criteria: Set<AvailableJobCriterion>

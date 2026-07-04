@@ -36,6 +36,11 @@
     },
     "./RECORDS": {
       "types": "./lib_types/records.d.ts"
+    },
+    "./STORES": {
+      "types": "./lib_types/stores.d.ts",
+      "node": "./lib_js/stores.js",
+      "default": "./lib/stores.ts"
     }
   },
   "scripts": {

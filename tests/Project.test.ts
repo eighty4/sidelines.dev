@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
-import { indexedDBStateFrom } from './indexedDBState.ts'
+import { sidelinesObjectStoreRecords } from './indexedDBSidelinesDev.ts'
 import { login } from './login.ts'
-import screenshotOnFailure from './screenshotOnFailure.ts'
 import { userStoryProjectPage } from './project.ts'
+import screenshotOnFailure from './screenshotOnFailure.ts'
 
 test.afterEach(screenshotOnFailure)
 
@@ -40,8 +40,8 @@ test.describe('showing package data', () => {
         await expect(page.getByRole('button', { name: 'Exec' })).toBeVisible()
         await expect(page.getByText('l3_cli')).toBeVisible()
 
-        const indexedDBState = await indexedDBStateFrom(baseURL!, context)
-        expect(indexedDBState.records['repo-pkgs']).toStrictEqual([
+        const records = await sidelinesObjectStoreRecords(baseURL!, context)
+        expect(records['repo-pkgs']).toStrictEqual([
             {
                 nameWithOwner: 'eighty4/l3',
                 defaultBranch: 'main',

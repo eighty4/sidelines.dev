@@ -1,6 +1,6 @@
 import { joinRepoName, type RepositoryId } from '@sidelines/model'
-import { DB_INDEX_REPO_NAV_WHEN, DB_STORE_REPO_NAV } from '../database.ts'
 import type { RepoNavRecord } from '../records.ts'
+import { DB_INDEX_REPO_NAV_WHEN, DB_STORE_REPO_NAV } from '../stores.ts'
 import { idbPutRecord } from '../tx.ts'
 
 const LIMIT_NAV = 5

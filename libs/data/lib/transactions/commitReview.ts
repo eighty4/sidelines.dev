@@ -5,9 +5,9 @@ import type {
     RepoCommitReview,
 } from '@sidelines/model/commits'
 import { ulid } from 'ulid'
-import { DB_STORE_COMMIT_REVIEW } from '../database.ts'
 import { opfsLookupDir, opfsWriteFile } from '../opfs.ts'
 import type { CommitReviewRecord } from '../records.ts'
+import { DB_STORE_COMMIT_REVIEW } from '../stores.ts'
 import { idbPutRecord } from '../tx.ts'
 
 // todo atomicity

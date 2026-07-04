@@ -12,16 +12,16 @@ import type {
 } from '@sidelines/model/jobs/result'
 import type { RepoJobTarget, SyncedRefsData } from '@sidelines/model/jobs/spec'
 import { ulid } from 'ulid'
-import {
-    DB_STORE_JOB_LOG,
-    DB_STORE_JOB_RESULT,
-    DB_STORE_JOB_SCHEDULING,
-} from '../database.ts'
 import type {
     JobLogRecord,
     JobResultRecord,
     JobSchedulingRecord,
 } from '../records.ts'
+import {
+    DB_STORE_JOB_LOG,
+    DB_STORE_JOB_RESULT,
+    DB_STORE_JOB_SCHEDULING,
+} from '../stores.ts'
 import {
     idbAddRecord,
     idbGetComputePutRecordWithTx,

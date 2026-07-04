@@ -8,8 +8,8 @@ import {
 } from '@sidelines/model'
 import { RefNotFound, RepoNotFound } from '@sidelines/model/errors'
 import { findRepoPackages } from '@sidelines/packages/findRepoPackages'
-import { DB_STORE_REPO_PACKAGES } from '../database.ts'
 import type { RepoPackagesRecord } from '../records.ts'
+import { DB_STORE_REPO_PACKAGES } from '../stores.ts'
 import { idbGetRecord, idbPutRecord } from '../tx.ts'
 import { readRepoHead } from './repoHeads.ts'
 
