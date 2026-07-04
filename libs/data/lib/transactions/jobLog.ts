@@ -156,20 +156,22 @@ type OutstandingJobPredicate = (
 function makeOutstandingJobPredicate(
     minutesSinceLastActivity: number,
 ): OutstandingJobPredicate {
-    const lastActivity = minutesAgoDate(minutesSinceLastActivity).getTime()
+    const beforeWhen = minutesAgoDate(minutesSinceLastActivity).getTime()
     return (
         record,
-    ): record is JobLogRecord<'repos'> | JobLogRecord<'syncedRefs'> =>
-        record.whenDone === null &&
-        isReposOrSyncedRefsJobLog(record) &&
-        isTimestampBeforeDate(
-            lastActivity,
-            record.whenLastActivity ?? record.whenInit,
+    ): record is JobLogRecord<'repos'> | JobLogRecord<'syncedRefs'> => {
+        return (
+            !record.whenDone &&
+            isReposOrSyncedRefsJobLog(record) &&
+            beforeWhen > lastActivityWhen(record)
         )
+    }
 }
 
-function isTimestampBeforeDate(time: number, date: Date): boolean {
-    return time < date.getTime()
+function lastActivityWhen(
+    record: JobLogRecord<'repos' | 'syncedRefs'>,
+): number {
+    return (record.whenLastActivity ?? record.whenInit).getTime()
 }
 
 function minutesAgoDate(minutes: number): Date {
@@ -196,10 +198,12 @@ export async function readRepoJobProgressData(
     if (logRecord.jobKind !== 'repos') throw Error()
     if (logRecord.spec.target.repos === 'single') throw Error()
     return new Promise((res, rej) => {
-        const tx = db.transaction(DB_STORE_JOB_LOG, 'readonly')
+        const tx = db.transaction(DB_STORE_JOB_RESULT, 'readonly')
         const req: IDBRequest<IDBCursorWithValue | null> = tx
-            .objectStore(DB_STORE_JOB_LOG)
-            .openCursor(IDBKeyRange.bound([jobExecId], [jobExecId, '\uffff']))
+            .objectStore(DB_STORE_JOB_RESULT)
+            .openCursor(
+                IDBKeyRange.bound([jobExecId, ''], [jobExecId, '\uffff']),
+            )
         const completed = new Set<RepoNameWithOwner>()
         req.onsuccess = () => {
             if (req.result) {
@@ -227,10 +231,12 @@ export async function readSyncedRefsJobProgressData(
     if (!logRecord) throw Error()
     if (logRecord.jobKind !== 'syncedRefs') throw Error()
     return new Promise((res, rej) => {
-        const tx = db.transaction(DB_STORE_JOB_LOG, 'readonly')
+        const tx = db.transaction(DB_STORE_JOB_RESULT, 'readonly')
         const req: IDBRequest<IDBCursorWithValue | null> = tx
-            .objectStore(DB_STORE_JOB_LOG)
-            .openCursor(IDBKeyRange.bound([jobExecId], [jobExecId, '\uffff']))
+            .objectStore(DB_STORE_JOB_RESULT)
+            .openCursor(
+                IDBKeyRange.bound([jobExecId, ''], [jobExecId, '\uffff']),
+            )
         const result: SyncedRefsJobProgress = {
             completed: new Set(),
             unfinished: logRecord.spec.repos,

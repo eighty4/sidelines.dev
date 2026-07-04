@@ -30,7 +30,7 @@ export type QViewerRepoDefaultBranchDirContentsVars = {
 }
 
 export const QViewerRepoDefaultBranchDirContents: string =
-    'query QViewerRepoDefaultBranchDirContents($name: String!, $objExpr: String!) { viewer { repository(name: $name) { defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { committedDate oid } } } } } } } object(expression: $objExpr) { ... on Tree { entries { name type object { ... on Blob { text } } } } } } } }'
+    'query QViewerRepoDefaultBranchDirContents($name: String!, $objExpr: String!) { viewer { repository(name: $name) { defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { oid } } } } } } } object(expression: $objExpr) { ... on Tree { entries { name type object { ... on Blob { text } } } } } } } }'
 
 export type QViewerRepoObjectHistoryVars = {
     repo: string

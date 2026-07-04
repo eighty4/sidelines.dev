@@ -13,12 +13,23 @@ export type IDBDatabaseStorageState = {
     stores: Array<IDBObjectStoreStorageState>
 }
 
-export type IDBObjectStoreStorageState = {
+export type IDBObjectStoreStorageState = IDBKeyPath & {
     name: string
     autoIncrement: boolean
-    keyPathArray: Array<string>
     records: Array<IDBRecordStorageState>
     indexes: Array<IDBIndexStorageState>
+}
+
+export type IDBIndexStorageState = IDBKeyPath & {
+    name: string
+    multiEntry: boolean
+    unique: boolean
+}
+
+export type IDBKeyPath = { keyPathArray: Array<string> } | { keyPath: string }
+
+export function toIDBKeyPath(keyPath: Array<string> | string): IDBKeyPath {
+    return Array.isArray(keyPath) ? { keyPathArray: keyPath } : { keyPath }
 }
 
 export type IDBRecordStorageState =
@@ -28,13 +39,6 @@ export type IDBRecordStorageState =
     | {
           valueEncoded: EncodedValue
       }
-
-export type IDBIndexStorageState = {
-    name: string
-    keyPath: string
-    multiEntry: boolean
-    unique: boolean
-}
 
 export type IDBDatabaseRead = {
     db: string

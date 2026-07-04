@@ -10,6 +10,15 @@ import type {
     RepoNavRecord,
     RepoPackagesRecord,
 } from '@sidelines/data/RECORDS'
+import {
+    setIndexedDBStorageState,
+    type CreateIDBObjectStore,
+} from './idbCreate.ts'
+import {
+    indicesForObjectStore,
+    keyPathForIndex,
+    keyPathForObjectStore,
+} from './idbSidelinesDevStores.ts'
 import { indexedDBStateFrom } from './idbState.ts'
 
 const SidelinesObjectStoreNames = [
@@ -24,7 +33,8 @@ const SidelinesObjectStoreNames = [
     'read-watches',
 ] as const
 
-type SidelinesObjectStoreName = (typeof SidelinesObjectStoreNames)[number]
+export type SidelinesObjectStoreName =
+    (typeof SidelinesObjectStoreNames)[number]
 
 export type SidelinesObjectStoreRecords = {
     'commit-review': Array<CommitReviewRecord>
@@ -69,4 +79,28 @@ ObjectStores were removed from \`@sidelines/data\` without removing from \`Sidel
 The offending ObjectStore names are: [${extras.map(name => `"${name}"`).join(', ')}].`)
     }
     return records as SidelinesObjectStoreRecords
+}
+
+export async function createSidelinesDatabase(
+    baseURL: string,
+    context: BrowserContext,
+    records: Partial<SidelinesObjectStoreRecords>,
+) {
+    await setIndexedDBStorageState(baseURL, context, {
+        name: 'sidelines-dev',
+        version: 1,
+        stores: Object.fromEntries(
+            SidelinesObjectStoreNames.map(store => [
+                store,
+                {
+                    keyPath: keyPathForObjectStore(store),
+                    indices: indicesForObjectStore(store).map(index => ({
+                        name: index,
+                        keyPath: keyPathForIndex(store, index)[0],
+                    })),
+                } satisfies CreateIDBObjectStore,
+            ]),
+        ),
+        records,
+    })
 }

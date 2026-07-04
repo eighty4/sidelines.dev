@@ -21,15 +21,11 @@ test.describe('showing package data', () => {
         context,
         page,
     }) => {
-        const committedDate = new Date()
         await userStoryProjectPage({
             login: 'eighty4',
             repo: {
                 owner: 'eighty4',
                 name: 'l3',
-            },
-            defaultBranch: {
-                committedDate,
             },
             packageHintContents: {
                 'Cargo.toml': `[package]\nname = "l3_cli"\nversion = "0.0.1"`,
@@ -46,7 +42,6 @@ test.describe('showing package data', () => {
                 nameWithOwner: 'eighty4/l3',
                 defaultBranch: 'main',
                 headOid: 'abcabc12',
-                committedWhen: committedDate,
                 packages: [
                     {
                         name: 'l3_cli',
@@ -61,15 +56,11 @@ test.describe('showing package data', () => {
         ])
     })
     test('offline retrieves from indexeddb cache', async ({ page }) => {
-        const committedDate = new Date()
         await userStoryProjectPage({
             login: 'eighty4',
             repo: {
                 owner: 'eighty4',
                 name: 'l3',
-            },
-            defaultBranch: {
-                committedDate,
             },
             packageHintContents: {
                 'Cargo.toml': `[package]\nname = "l3_cli"\nversion = "0.0.1"`,

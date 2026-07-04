@@ -21,7 +21,6 @@ export type ProjectPageUserStoryOpts = {
         name?: string
     }
     defaultBranch?: {
-        committedDate?: Date
         oid?: string
     }
     packageHintContents?: Partial<Record<PackageHint, string>>
@@ -30,7 +29,6 @@ export type ProjectPageUserStoryOpts = {
 export function userStoryProjectPage(
     opts?: ProjectPageUserStoryOpts,
 ): UserStory {
-    const committedDate = opts?.defaultBranch?.committedDate || new Date()
     return userStoryWithSidelinesRepo()
         .withGraphqlResponse('QViewerAndExplicitRepoHeadOids', null, {
             viewer: {
@@ -73,8 +71,6 @@ export function userStoryProjectPage(
                                 edges: [
                                     {
                                         node: {
-                                            committedDate:
-                                                committedDate.toISOString(),
                                             oid:
                                                 opts?.defaultBranch?.oid ||
                                                 'abcabc12',

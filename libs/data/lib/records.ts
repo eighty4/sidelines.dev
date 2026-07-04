@@ -12,15 +12,15 @@ import type {
 import type { JobIdForJobKind, ScheduledJobId } from '@sidelines/model/jobs/id'
 import type { JobKind } from '@sidelines/model/jobs/kind'
 import type {
+    RepoJobExecResult,
+    SyncedRefsJobExecResult,
+} from '@sidelines/model/jobs/result'
+import type {
     RepoJobExecSpec,
     SyncedRefsData,
     SyncedRefsJobExecSpec,
 } from '@sidelines/model/jobs/spec'
 import type { ViewerRepoUserContext } from './transactions/repoContext.ts'
-import type {
-    RepoJobExecResult,
-    SyncedRefsJobExecResult,
-} from '@sidelines/model/jobs/result'
 
 /**
  * Exporting IndexedDB record types for testing with Playwright.
@@ -132,6 +132,5 @@ export type RepoPackagesRecord = {
     defaultBranch: string
     headOid: string
 
-    committedWhen: Date
     packages: Array<RepositoryPackage>
 }

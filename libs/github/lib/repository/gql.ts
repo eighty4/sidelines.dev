@@ -11,14 +11,14 @@ export type QRepoDefaultBranchVars = {
 }
 
 export const QRepoDefaultBranch: string =
-    'query QRepoDefaultBranch($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { committedDate oid } } } } } } } } }'
+    'query QRepoDefaultBranch($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { oid } } } } } } } } }'
 
 export type QViewerRepoDefaultBranchVars = {
     repo: string
 }
 
 export const QViewerRepoDefaultBranch: string =
-    'query QViewerRepoDefaultBranch($repo: String!) { viewer { repository(name: $repo) { defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { committedDate oid } } } } } } } } } }'
+    'query QViewerRepoDefaultBranch($repo: String!) { viewer { repository(name: $repo) { defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { oid } } } } } } } } } }'
 
 export type QViewerRepoUserContextVars = {
     owner: string

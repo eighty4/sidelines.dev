@@ -9,7 +9,6 @@ const repo: RepositoryId = { owner: '', name: '' }
 const branchRef: BranchRef = {
     name: '',
     headOid: '',
-    committedDate: new Date(),
 }
 
 test('js package standalone package', async () => {

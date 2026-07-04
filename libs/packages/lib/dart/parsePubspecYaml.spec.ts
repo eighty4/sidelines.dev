@@ -10,7 +10,6 @@ const repo: RepositoryId = { owner: 'eighty4', name: 'picking.pl' }
 const branchRef: BranchRef = {
     name: 'main',
     headOid: 'abcdefgXXX',
-    committedDate: new Date(),
 }
 
 test('dart package name and version from pubspec.yaml', async () => {

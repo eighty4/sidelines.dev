@@ -64,7 +64,6 @@ query QViewerRepoDefaultBranchDirContents($name: String!, $objExpr: String!) {
                             edges {
                                 node {
                                     ... on Commit {
-                                        committedDate
                                         oid
                                     }
                                 }

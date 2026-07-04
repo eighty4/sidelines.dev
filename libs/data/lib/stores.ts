@@ -3,7 +3,7 @@
 /*********************/
 
 export const DB_STORE_COMMIT_REVIEW = 'commit-review'
-export const DB_STORE_COMMIT_REVIEW_KEY = ['reviewId']
+export const DB_STORE_COMMIT_REVIEW_KEY = 'reviewId'
 
 /***************/
 /*** JOB LOG ***/

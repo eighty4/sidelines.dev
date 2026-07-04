@@ -30,7 +30,6 @@ const repo: RepositoryId = { name: 'ZON', owner: '' }
 const branchRef: BranchRef = {
     headOid: 'abcdefgXXX',
     name: '',
-    committedDate: new Date(),
 }
 
 test('zig package name from repo name', async () => {

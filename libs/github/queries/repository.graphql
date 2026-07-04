@@ -16,7 +16,6 @@ query QRepoDefaultBranch($owner: String!, $name: String!) {
                         edges {
                             node {
                                 ... on Commit {
-                                    committedDate
                                     oid
                                 }
                             }
@@ -39,7 +38,6 @@ query QViewerRepoDefaultBranch($repo: String!) {
                             edges {
                                 node {
                                     ... on Commit {
-                                        committedDate
                                         oid
                                     }
                                 }

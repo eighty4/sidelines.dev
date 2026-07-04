@@ -90,7 +90,7 @@ export async function queryViewerAndExplicitRepoHeadOids(
 }
 
 function buildOidQuery(): string {
-    return `defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { committedDate, oid } } } } } } }`
+    return `defaultBranchRef { name target { ... on Commit { history(first: 1) { edges { node { ... on Commit { oid } } } } } } }`
 }
 
 function buildViewerRepoPagingQuery(): string {

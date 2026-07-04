@@ -24,7 +24,6 @@ export type MRepoDefaultBranch = {
             edges: Array<{
                 node: {
                     oid: string
-                    committedDate: string
                 }
             }>
         }
@@ -147,7 +146,6 @@ export type QRepoDefaultBranchGraph = {
                     edges: Array<{
                         node: {
                             oid: string
-                            committedDate: string
                         }
                     }>
                 }
@@ -204,7 +202,6 @@ export type QViewerRepoDefaultBranchDirContentsGraph = {
                         edges: Array<{
                             node: {
                                 oid: string
-                                committedDate: string
                             }
                         }>
                     }

@@ -729,10 +729,12 @@ export default class JobsBackend {
             this.#ghToken,
         )
         const completed = await readRepoJobProgressData(this.#db, jobExecId)
-        const unfinished = new Set(await fetchingViewerRepoNames).difference(
+        return {
             completed,
-        )
-        return { completed, unfinished }
+            unfinished: new Set(await fetchingViewerRepoNames).difference(
+                completed,
+            ),
+        }
     }
 }
 

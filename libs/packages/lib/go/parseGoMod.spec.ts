@@ -18,7 +18,6 @@ const repo: RepositoryId = { owner: 'eighty4', name: 'maestro' }
 const branchRef: BranchRef = {
     headOid: 'abcdefgXXX',
     name: '',
-    committedDate: new Date(),
 }
 
 test('go package name from go.mod', async () => {

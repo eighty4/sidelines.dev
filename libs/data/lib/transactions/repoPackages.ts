@@ -65,12 +65,12 @@ export async function updateRepoPackages(
 async function readFromDb(
     db: IDBDatabase,
     nameWithOwner: RepoNameWithOwner,
-    defaultBranch: BranchRef,
+    { name, headOid }: BranchRef,
 ): Promise<Array<RepositoryPackage> | null> {
     const record = await idbGetRecord<RepoPackagesRecord>(
         db,
         DB_STORE_REPO_PACKAGES,
-        [nameWithOwner, defaultBranch.name, defaultBranch.headOid],
+        [nameWithOwner, name, headOid],
     )
     return record?.packages || null
 }
@@ -78,14 +78,13 @@ async function readFromDb(
 function writeToDb(
     db: IDBDatabase,
     nameWithOwner: RepoNameWithOwner,
-    defaultBranch: BranchRef,
+    { name: defaultBranch, headOid }: BranchRef,
     packages: Array<RepositoryPackage>,
 ): Promise<void> {
     return idbPutRecord<RepoPackagesRecord>(db, DB_STORE_REPO_PACKAGES, {
         nameWithOwner,
-        defaultBranch: defaultBranch.name,
-        headOid: defaultBranch.headOid,
-        committedWhen: defaultBranch.committedDate,
+        defaultBranch,
+        headOid,
         packages,
     })
 }
