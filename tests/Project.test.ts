@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { sidelinesObjectStoreRecords } from './indexedDBSidelinesDev.ts'
+import { sidelinesObjectStoreRecords } from './idbSidelinesDev.ts'
 import { login } from './login.ts'
 import { userStoryProjectPage } from './project.ts'
 import screenshotOnFailure from './screenshotOnFailure.ts'

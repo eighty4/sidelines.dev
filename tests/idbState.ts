@@ -1,41 +1,42 @@
 import type { BrowserContext } from '@playwright/test'
-import { fromEncodedValue, type EncodedValue } from './indexedDBEncodedValue.ts'
+import { fromEncodedValue, type EncodedValue } from './idbEncodedValue.ts'
 
-type OriginStorageState = {
+export type OriginStorageState = {
     origin: string
     localStorage: Array<any>
-    indexedDB: Array<IndexedDBStorageState>
+    indexedDB: Array<IDBDatabaseStorageState>
 }
 
-type IndexedDBStorageState = {
+export type IDBDatabaseStorageState = {
     name: string
     version: number
-    stores: Array<IndexedDBStoreStorageState>
+    stores: Array<IDBObjectStoreStorageState>
 }
 
-type IndexedDBStoreStorageState = {
+export type IDBObjectStoreStorageState = {
     name: string
     autoIncrement: boolean
     keyPathArray: Array<string>
-    records: Array<IndexedDBRecordStorageState>
-    indexes: Array<IndexedDBIndexStorageState>
+    records: Array<IDBRecordStorageState>
+    indexes: Array<IDBIndexStorageState>
 }
 
-type IndexedDBRecordStorageState = {
-    value?: any
-    valueEncoded?: EncodedValue & {
-        id: number
-    }
-}
+export type IDBRecordStorageState =
+    | {
+          value: any
+      }
+    | {
+          valueEncoded: EncodedValue
+      }
 
-type IndexedDBIndexStorageState = {
+export type IDBIndexStorageState = {
     name: string
     keyPath: string
     multiEntry: boolean
     unique: boolean
 }
 
-export type IndexedDBContent = {
+export type IDBDatabaseRead = {
     db: string
     version: number
     records: Record<string, Array<any>>
@@ -45,7 +46,7 @@ export async function indexedDBStateFrom(
     baseURL: string,
     context: BrowserContext,
     print: boolean = false,
-): Promise<IndexedDBContent> {
+): Promise<IDBDatabaseRead> {
     const storageState = await context.storageState({ indexedDB: true })
     const originStates =
         storageState.origins as unknown as Array<OriginStorageState>
@@ -72,10 +73,10 @@ export async function indexedDBStateFrom(
         )
     }
     const indexedDBState = originState.indexedDB[0]
-    const records: IndexedDBContent['records'] = {}
+    const records: IDBDatabaseRead['records'] = {}
     for (const objectStore of indexedDBState.stores) {
         records[objectStore.name] = objectStore.records.map(record => {
-            if (record.value) {
+            if ('value' in record) {
                 return record.value
             } else if (record.valueEncoded) {
                 try {
@@ -104,7 +105,7 @@ The record data from Playwright is: ${JSON.stringify(record)}.`)
     return content
 }
 
-export function debugPrintIndexedDBContent(content: IndexedDBContent) {
+export function debugPrintIndexedDBContent(content: IDBDatabaseRead) {
     const header = `~~~ IndexedDB ${content.db} v${content.version} ~~~`
     const separator = '~'.repeat(header.length)
     console.log(separator)

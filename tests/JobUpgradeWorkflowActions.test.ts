@@ -12,7 +12,7 @@ import type {
 import {
     sidelinesObjectStoreRecords,
     type SidelinesObjectStoreRecords,
-} from './indexedDBSidelinesDev.ts'
+} from './idbSidelinesDev.ts'
 import { login, userStoryWithSidelinesRepo } from './login.ts'
 import { readRepoCommitAddition } from './opfsState.ts'
 import { userStoryProjectPage } from './project.ts'

@@ -10,7 +10,7 @@ import type {
     RepoNavRecord,
     RepoPackagesRecord,
 } from '@sidelines/data/RECORDS'
-import { indexedDBStateFrom } from './indexedDBState.ts'
+import { indexedDBStateFrom } from './idbState.ts'
 
 const SidelinesObjectStoreNames = [
     'commit-review',
