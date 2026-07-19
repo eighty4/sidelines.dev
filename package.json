@@ -2,7 +2,7 @@
   "name": "@sidelines/webapp",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@11.5.2",
+  "packageManager": "pnpm@11.15.0",
   "workspaces": [
     "libs/*"
   ],
@@ -35,15 +35,15 @@
     "ulid": "^3.0.2"
   },
   "devDependencies": {
-    "@eighty4/dank": "0.0.5-12",
-    "@playwright/test": "^1.59.1",
+    "@eighty4/dank": "0.0.5-13",
+    "@playwright/test": "^1.61.1",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "esbuild": "0.28.0",
+    "esbuild": "0.28.1",
     "graphql": "catalog:",
     "parse5": "^8.0.1",
-    "prettier": "^3.8.3",
+    "prettier": "^3.9.5",
     "typescript": "catalog:"
   }
 }

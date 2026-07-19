@@ -13,9 +13,7 @@ import {
 } from '@sidelines/model/validate'
 
 export type JobWorkerUpdate =
-    | RepoJobWorkerUpdate
-    | ScheduledJobWorkerUpdate
-    | SyncedRefsJobWorkerUpdate
+    RepoJobWorkerUpdate | ScheduledJobWorkerUpdate | SyncedRefsJobWorkerUpdate
 
 type JobWorkerUpdateCommon<JK extends JobKind> = {
     kind: string
@@ -46,8 +44,7 @@ export type RepoJobWorkerUpdateStatus = JobWorkerUpdateCommon<'repos'> & {
 }
 
 export type ScheduledJobWorkerUpdate =
-    | JobWorkerUpdateStarting<'scheduled'>
-    | JobWorkerUpdateComplete<'scheduled'>
+    JobWorkerUpdateStarting<'scheduled'> | JobWorkerUpdateComplete<'scheduled'>
 
 export type SyncedRefsJobWorkerUpdate =
     | JobWorkerUpdateStarting<'syncedRefs'>

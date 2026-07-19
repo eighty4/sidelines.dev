@@ -11,8 +11,7 @@ export interface SessionCache<T> {
 }
 
 type StorageApi =
-    | typeof globalThis.localStorage
-    | typeof globalThis.sessionStorage
+    typeof globalThis.localStorage | typeof globalThis.sessionStorage
 
 export function createCache(
     storage: StorageApi,

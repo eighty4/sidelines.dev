@@ -47,6 +47,4 @@ export type RepoJobExecResultCommitMerged = {
 
 // result of job on a repo's synced refs
 export type SyncedRefsJobExecResult =
-    | JobExecResultDone
-    | JobExecResultFailed
-    | JobExecResultException
+    JobExecResultDone | JobExecResultFailed | JobExecResultException

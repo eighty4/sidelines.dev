@@ -16,3 +16,11 @@ directory the codegen output is written to.
 Prepending a `.graphql` file in the queries directory with `_` will exclude it from codegen.
 Within a processed `.graphql` file prepending a query name with `_` will exclude the query
 from that codegen's output.
+
+## GitHub's GraphQL schema
+
+Update to the latest GitHub GraphQL schema with this command:
+
+```shell
+curl -Ss -L --no-buffer -o queries/github.graphql https://docs.github.com/public/fpt/schema.docs.graphql
+```
